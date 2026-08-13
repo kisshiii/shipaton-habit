@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "app",
+    "name": "Grad Habit",
     "slug": "app",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -8,7 +8,11 @@
     "scheme": "app",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "bundleIdentifier": "com.kisshi.gradhabit",
+      "supportsTablet": false,
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -37,6 +41,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "4f38209f-8ecc-4df5-a507-6e1fc55417fc"
+      }
     }
   }
 }
