@@ -160,20 +160,26 @@ export async function deleteRoutine(id: string): Promise<void> {
 // --- DailyRecord ------------------------------------------------------------
 
 /**
- * その日の分母。
+ * その日の分母に数えるルーティンの ID。
  * Day 1 に限り、登録した時点で既に時刻が過ぎていた項目を分母から外す
  * (22時にインストールした人の「07:00 起きる」が確実に未達成になるのを防ぐ)。
  */
-function denominatorFor(
+function countedIdsFor(
   routines: RoutineItem[],
   date: string,
   startedOn: string | undefined,
-): number {
-  if (date !== startedOn) return routines.length;
-  return routines.filter((routine) => {
-    const createdTime = toTimeKey(new Date(routine.createdAt));
-    return routine.time >= createdTime;
-  }).length;
+): string[] {
+  const counted =
+    date === startedOn
+      ? routines.filter((routine) => routine.time >= toTimeKey(new Date(routine.createdAt)))
+      : routines;
+  return counted.map((routine) => routine.id);
+}
+
+/** 今日の分母に数えるルーティンの ID */
+export async function getTodayCountedIds(): Promise<string[]> {
+  const [routines, appState] = await Promise.all([getRoutines(), getAppState()]);
+  return countedIdsFor(routines, todayKey(), appState.startedOn);
 }
 
 /**
@@ -189,7 +195,7 @@ export async function getTodayRecord(): Promise<DailyRecord> {
     readJson<RecordMap>(KEYS.records, {}),
   ]);
 
-  const totalCount = denominatorFor(routines, date, appState.startedOn);
+  const totalCount = countedIdsFor(routines, date, appState.startedOn).length;
   const current = records[date];
   const next: DailyRecord = {
     date,
