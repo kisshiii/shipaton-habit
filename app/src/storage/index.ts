@@ -7,9 +7,11 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { MAX_ROUTINES } from '@/constants/routines';
 import { normalizeTime, todayKey, toTimeKey } from '@/lib/date';
 import { containsSelfHarmText } from '@/lib/self-harm-guard';
+import { countChars } from '@/lib/text';
 import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 const KEYS = {
@@ -286,6 +288,8 @@ export async function saveMessages(messages: KatsuMessage[]): Promise<void> {
 function assertSavable(text: string): string {
   const trimmed = text.trim();
   if (!trimmed) throw new Error('Empty message');
+  // 入力側で切り詰め済み。ここに来たら不具合なので、黙って切らずに落とす
+  if (countChars(trimmed) > MESSAGE_MAX_LENGTH) throw new Error('Message too long');
   if (containsSelfHarmText(trimmed)) throw new SelfHarmTextError();
   return trimmed;
 }

@@ -17,6 +17,7 @@ import { ThemedView } from '@/components/themed-view';
 import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { countChars, truncateChars } from '@/lib/text';
 import {
   addMessage,
   deleteMessage,
@@ -57,7 +58,9 @@ export default function KatsuScreen() {
   };
 
   const handleChangeDraft = (next: string) => {
-    setDraft(next);
+    // TextInput の maxLength は UTF-16 単位で数えるため使わない。
+    // 絵文字が2文字扱いになり、見た目の文字数と合わなくなる
+    setDraft(truncateChars(next, MESSAGE_MAX_LENGTH));
     // 書き直し始めた時点で引っ込める。繰り返し出すと威圧になる
     if (isBlocked) setIsBlocked(false);
   };
@@ -165,7 +168,6 @@ export default function KatsuScreen() {
                 placeholder="You said you were going to change."
                 placeholderTextColor={theme.textSecondary}
                 multiline
-                maxLength={MESSAGE_MAX_LENGTH}
                 style={[
                   styles.input,
                   { color: theme.text, borderColor: theme.backgroundSelected },
@@ -173,7 +175,7 @@ export default function KatsuScreen() {
               />
               {/* 上限が短いので、黙って切られるのではなく残りが見えるようにする */}
               <ThemedText type="small" themeColor="textSecondary" style={styles.counter}>
-                {draft.length} / {MESSAGE_MAX_LENGTH}
+                {countChars(draft)} / {MESSAGE_MAX_LENGTH}
               </ThemedText>
               <View style={styles.formActions}>
                 <Pressable onPress={handleSubmit} hitSlop={Spacing.two}>
