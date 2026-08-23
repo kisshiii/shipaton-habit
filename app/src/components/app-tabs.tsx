@@ -27,6 +27,11 @@ export default function AppTabs() {
           renderingMode="template"
         />
       </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="katsu">
+        <NativeTabs.Trigger.Label>Your KATSU</NativeTabs.Trigger.Label>
+        <NativeTabs.Trigger.Icon sf="quote.bubble" />
+      </NativeTabs.Trigger>
     </NativeTabs>
   );
 }

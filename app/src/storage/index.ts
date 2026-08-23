@@ -9,6 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MAX_ROUTINES } from '@/constants/routines';
 import { normalizeTime, todayKey, toTimeKey } from '@/lib/date';
+import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 const KEYS = {
@@ -25,6 +26,17 @@ export class RoutineLimitError extends Error {
   constructor() {
     super(`Routine limit reached (${MAX_ROUTINES})`);
     this.name = 'RoutineLimitError';
+  }
+}
+
+/**
+ * Tier 1 ハードストップ。自傷・希死念慮に類する文言は保存させない(spec §2)。
+ * ⚠ 検知した事実も、弾いた文言も、記録・送信しない。message に本文を入れないこと。
+ */
+export class SelfHarmTextError extends Error {
+  constructor() {
+    super('Blocked by the Tier 1 guard');
+    this.name = 'SelfHarmTextError';
   }
 }
 
@@ -264,4 +276,36 @@ export async function getMessages(): Promise<KatsuMessage[]> {
 
 export async function saveMessages(messages: KatsuMessage[]): Promise<void> {
   await writeJson(KEYS.messages, messages);
+}
+
+/**
+ * Tier 1 の関門。保存経路をここ1本に絞っておく。
+ * ⚠ 無料/有料の件数制限はここでは見ない。課金が切れても書いたものを消さないため、
+ *   保持できる件数と、書き足せる件数は別物(spec §2 課金が切れたとき)。
+ */
+function assertSavable(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error('Empty message');
+  if (containsSelfHarmText(trimmed)) throw new SelfHarmTextError();
+  return trimmed;
+}
+
+export async function addMessage(text: string): Promise<KatsuMessage> {
+  const trimmed = assertSavable(text);
+  const message: KatsuMessage = { id: createId(), text: trimmed };
+  await saveMessages([...(await getMessages()), message]);
+  return message;
+}
+
+export async function updateMessage(id: string, text: string): Promise<void> {
+  const trimmed = assertSavable(text);
+  const messages = await getMessages();
+  await saveMessages(
+    messages.map((message) => (message.id === id ? { ...message, text: trimmed } : message)),
+  );
+}
+
+export async function deleteMessage(id: string): Promise<void> {
+  const messages = await getMessages();
+  await saveMessages(messages.filter((message) => message.id !== id));
 }
