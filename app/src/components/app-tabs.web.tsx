@@ -27,6 +27,9 @@ export default function AppTabs() {
           <TabTrigger name="routines" href="/routines" asChild>
             <TabButton>Routines</TabButton>
           </TabTrigger>
+          <TabTrigger name="katsu" href="/katsu" asChild>
+            <TabButton>Your KATSU</TabButton>
+          </TabTrigger>
         </CustomTabList>
       </TabList>
     </Tabs>

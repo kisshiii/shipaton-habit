@@ -7,8 +7,11 @@
 
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
+import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { MAX_ROUTINES } from '@/constants/routines';
 import { normalizeTime, todayKey, toTimeKey } from '@/lib/date';
+import { containsSelfHarmText } from '@/lib/self-harm-guard';
+import { countChars } from '@/lib/text';
 import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 const KEYS = {
@@ -25,6 +28,17 @@ export class RoutineLimitError extends Error {
   constructor() {
     super(`Routine limit reached (${MAX_ROUTINES})`);
     this.name = 'RoutineLimitError';
+  }
+}
+
+/**
+ * Tier 1 ハードストップ。自傷・希死念慮に類する文言は保存させない(spec §2)。
+ * ⚠ 検知した事実も、弾いた文言も、記録・送信しない。message に本文を入れないこと。
+ */
+export class SelfHarmTextError extends Error {
+  constructor() {
+    super('Blocked by the Tier 1 guard');
+    this.name = 'SelfHarmTextError';
   }
 }
 
@@ -106,8 +120,18 @@ export async function addRoutine(input: {
   };
   await saveRoutines([...routines, routine]);
 
+  const date = todayKey();
   const appState = await getAppState();
-  if (!appState.startedOn) await patchAppState({ startedOn: todayKey() });
+  const startedOn = appState.startedOn ?? date;
+  if (!appState.startedOn) await patchAppState({ startedOn: date });
+
+  // Day 1 に限り、登録した時点で既に時刻が過ぎている項目を分母から外す
+  // (22時にインストールした人の「07:00 起きる」が確実に未達成になるのを防ぐ)。
+  // ⚠ 判定はこの1回だけ。結果を DailyRecord に永続化し、以後は再計算しない。
+  //   Day 1 中に時刻を編集しても除外は覆らない(spec §2 判定の細部)。
+  if (date === startedOn && time < toTimeKey(new Date())) {
+    await excludeFromToday(routine.id);
+  }
 
   // 今日の分母を追従させる
   await getTodayRecord();
@@ -161,49 +185,58 @@ export async function deleteRoutine(id: string): Promise<void> {
 
 /**
  * その日の分母に数えるルーティンの ID。
- * Day 1 に限り、登録した時点で既に時刻が過ぎていた項目を分母から外す
- * (22時にインストールした人の「07:00 起きる」が確実に未達成になるのを防ぐ)。
+ *
+ * Day 1 に分母から外した項目でも、チェックが付いていれば数える。
+ * `[x]` が付いているのに数字が増えないのは矛盾であり、
+ * 遅れてやった人を罰しないという完了判定の思想とも合わない(spec §2 判定の細部)。
  */
-function countedIdsFor(
-  routines: RoutineItem[],
-  date: string,
-  startedOn: string | undefined,
-): string[] {
-  const counted =
-    date === startedOn
-      ? routines.filter((routine) => routine.time >= toTimeKey(new Date(routine.createdAt)))
-      : routines;
-  return counted.map((routine) => routine.id);
+function countedIdsIn(routines: RoutineItem[], record: DailyRecord): string[] {
+  const excluded = new Set(record.excludedIds ?? []);
+  return routines
+    .filter((routine) => !excluded.has(routine.id) || record.completedIds.includes(routine.id))
+    .map((routine) => routine.id);
 }
 
-/** 今日の分母に数えるルーティンの ID */
-export async function getTodayCountedIds(): Promise<string[]> {
-  const [routines, appState] = await Promise.all([getRoutines(), getAppState()]);
-  return countedIdsFor(routines, todayKey(), appState.startedOn);
+/** Day 1 の分母から外すと確定した項目を今日の記録に書き込む。判定済みなら何もしない。 */
+async function excludeFromToday(routineId: string): Promise<void> {
+  const date = todayKey();
+  const records = await readJson<RecordMap>(KEYS.records, {});
+  const current: DailyRecord = records[date] ?? {
+    date,
+    completedIds: [],
+    totalCount: 0,
+    excludedIds: [],
+  };
+  const excludedIds = current.excludedIds ?? [];
+  if (excludedIds.includes(routineId)) return;
+
+  records[date] = { ...current, excludedIds: [...excludedIds, routineId] };
+  await writeJson(KEYS.records, records);
 }
 
 /**
  * 今日の記録を返す。存在しなければ作る。
  * 呼ぶたびに今日の分母だけを現在のルーティン数に追従させる。
- * 過去日は触らない。
+ * 過去日は触らない。除外判定(`excludedIds`)はここでは作らない
+ * ── 確定するのは登録時の1回だけ(`addRoutine`)。
  */
 export async function getTodayRecord(): Promise<DailyRecord> {
   const date = todayKey();
-  const [routines, appState, records] = await Promise.all([
+  const [routines, records] = await Promise.all([
     getRoutines(),
-    getAppState(),
     readJson<RecordMap>(KEYS.records, {}),
   ]);
 
-  const totalCount = countedIdsFor(routines, date, appState.startedOn).length;
   const current = records[date];
-  const next: DailyRecord = {
+  const base: DailyRecord = {
     date,
     completedIds: current?.completedIds ?? [],
-    totalCount,
+    totalCount: current?.totalCount ?? 0,
+    excludedIds: current?.excludedIds ?? [],
   };
+  const next: DailyRecord = { ...base, totalCount: countedIdsIn(routines, base).length };
 
-  if (!current || current.totalCount !== totalCount) {
+  if (!current || current.totalCount !== next.totalCount) {
     records[date] = next;
     await writeJson(KEYS.records, records);
   }
@@ -218,16 +251,18 @@ export async function getDailyRecord(date: string): Promise<DailyRecord | undefi
 /**
  * 今日のチェックを付け外しする。
  * チェックした時刻は記録しない(spec §2: その日のうちなら何時でも達成)。
+ * 分母から外していた項目にチェックが付いたら、その項目は分母にも入る。
  */
 export async function toggleCompletion(routineId: string): Promise<DailyRecord> {
-  const today = await getTodayRecord();
+  const [today, routines] = await Promise.all([getTodayRecord(), getRoutines()]);
   const isCompleted = today.completedIds.includes(routineId);
-  const next: DailyRecord = {
+  const base: DailyRecord = {
     ...today,
     completedIds: isCompleted
       ? today.completedIds.filter((id) => id !== routineId)
       : [...today.completedIds, routineId],
   };
+  const next: DailyRecord = { ...base, totalCount: countedIdsIn(routines, base).length };
 
   const records = await readJson<RecordMap>(KEYS.records, {});
   records[next.date] = next;
@@ -243,4 +278,38 @@ export async function getMessages(): Promise<KatsuMessage[]> {
 
 export async function saveMessages(messages: KatsuMessage[]): Promise<void> {
   await writeJson(KEYS.messages, messages);
+}
+
+/**
+ * Tier 1 の関門。保存経路をここ1本に絞っておく。
+ * ⚠ 無料/有料の件数制限はここでは見ない。課金が切れても書いたものを消さないため、
+ *   保持できる件数と、書き足せる件数は別物(spec §2 課金が切れたとき)。
+ */
+function assertSavable(text: string): string {
+  const trimmed = text.trim();
+  if (!trimmed) throw new Error('Empty message');
+  // 入力側で切り詰め済み。ここに来たら不具合なので、黙って切らずに落とす
+  if (countChars(trimmed) > MESSAGE_MAX_LENGTH) throw new Error('Message too long');
+  if (containsSelfHarmText(trimmed)) throw new SelfHarmTextError();
+  return trimmed;
+}
+
+export async function addMessage(text: string): Promise<KatsuMessage> {
+  const trimmed = assertSavable(text);
+  const message: KatsuMessage = { id: createId(), text: trimmed };
+  await saveMessages([...(await getMessages()), message]);
+  return message;
+}
+
+export async function updateMessage(id: string, text: string): Promise<void> {
+  const trimmed = assertSavable(text);
+  const messages = await getMessages();
+  await saveMessages(
+    messages.map((message) => (message.id === id ? { ...message, text: trimmed } : message)),
+  );
+}
+
+export async function deleteMessage(id: string): Promise<void> {
+  const messages = await getMessages();
+  await saveMessages(messages.filter((message) => message.id !== id));
 }

@@ -13,6 +13,12 @@ export type DailyRecord = {
   date: string; // "2026-08-13"
   completedIds: string[];
   totalCount: number; // その日終了時点のルーティン数(分母を固定するため)
+  /**
+   * Day 1 で分母から外すと確定した項目(登録時に時刻が既に過ぎていたもの)。
+   * 判定は登録時の1回だけで、以後は再計算しない(spec §2 判定の細部)。
+   * Day 2 以降は常に空。
+   */
+  excludedIds?: string[];
 };
 
 export type KatsuMessage = {
