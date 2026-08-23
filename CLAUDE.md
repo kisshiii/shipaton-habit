@@ -118,6 +118,7 @@ type DailyRecord = {
   date: string;        // "2026-08-13"
   completedIds: string[];
   totalCount: number;  // その日終了時点のルーティン数(分母を固定するため)
+  excludedIds?: string[]; // Day 1で分母から外すと確定した項目。登録時に1回だけ判定し再計算しない
 };
 
 type KatsuMessage = {

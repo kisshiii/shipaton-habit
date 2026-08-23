@@ -20,25 +20,19 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { todayKey } from '@/lib/date';
-import { getRoutines, getTodayCountedIds, getTodayRecord, toggleCompletion } from '@/storage';
+import { getRoutines, getTodayRecord, toggleCompletion } from '@/storage';
 import type { DailyRecord, RoutineItem } from '@/types';
 
 export default function TodayScreen() {
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
   const [record, setRecord] = useState<DailyRecord | null>(null);
-  const [countedIds, setCountedIds] = useState<string[]>([]);
   const dateRef = useRef(todayKey());
 
   const refresh = useCallback(async () => {
-    const [nextRoutines, nextRecord, nextCountedIds] = await Promise.all([
-      getRoutines(),
-      getTodayRecord(),
-      getTodayCountedIds(),
-    ]);
+    const [nextRoutines, nextRecord] = await Promise.all([getRoutines(), getTodayRecord()]);
     dateRef.current = nextRecord.date;
     setRoutines(nextRoutines);
     setRecord(nextRecord);
-    setCountedIds(nextCountedIds);
   }, []);
 
   useFocusEffect(
@@ -59,8 +53,10 @@ export default function TodayScreen() {
     setRecord(await toggleCompletion(routineId));
   };
 
+  // チェックが付いた項目は必ず分母にも入るため、分子は completedIds の数そのもの
+  // (spec §2 判定の細部)
   const completedIds = record?.completedIds ?? [];
-  const doneCount = countedIds.filter((id) => completedIds.includes(id)).length;
+  const doneCount = completedIds.length;
 
   return (
     <ThemedView style={styles.container}>
@@ -84,7 +80,6 @@ export default function TodayScreen() {
 
           {routines.map((routine) => {
             const isDone = completedIds.includes(routine.id);
-            const isCounted = countedIds.includes(routine.id);
             return (
               <Pressable key={routine.id} onPress={() => handleToggle(routine.id)}>
                 <ThemedView
@@ -94,11 +89,6 @@ export default function TodayScreen() {
                   <ThemedText type="code">{routine.time}</ThemedText>
                   <View style={styles.rowBody}>
                     <ThemedText numberOfLines={2}>{routine.title}</ThemedText>
-                    {!isCounted && (
-                      <ThemedText type="small" themeColor="textSecondary">
-                        Not counted today
-                      </ThemedText>
-                    )}
                   </View>
                 </ThemedView>
               </Pressable>
