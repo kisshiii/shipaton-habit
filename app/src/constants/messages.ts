@@ -7,3 +7,9 @@
  */
 
 export const FREE_MESSAGE_LIMIT = 1;
+
+/**
+ * 1つの言葉の最大文字数。
+ * 通知のバナーで全文が読み切れる長さに抑える。届かなければ意味がないため。
+ */
+export const MESSAGE_MAX_LENGTH = 60;

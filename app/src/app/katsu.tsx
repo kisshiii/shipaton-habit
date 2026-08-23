@@ -14,7 +14,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { FREE_MESSAGE_LIMIT } from '@/constants/messages';
+import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import {
@@ -165,11 +165,16 @@ export default function KatsuScreen() {
                 placeholder="You said you were going to change."
                 placeholderTextColor={theme.textSecondary}
                 multiline
+                maxLength={MESSAGE_MAX_LENGTH}
                 style={[
                   styles.input,
                   { color: theme.text, borderColor: theme.backgroundSelected },
                 ]}
               />
+              {/* 上限が短いので、黙って切られるのではなく残りが見えるようにする */}
+              <ThemedText type="small" themeColor="textSecondary" style={styles.counter}>
+                {draft.length} / {MESSAGE_MAX_LENGTH}
+              </ThemedText>
               <View style={styles.formActions}>
                 <Pressable onPress={handleSubmit} hitSlop={Spacing.two}>
                   <ThemedText type="smallBold">Save</ThemedText>
@@ -240,6 +245,9 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  counter: {
+    alignSelf: 'flex-end',
   },
   formActions: {
     flexDirection: 'row',
