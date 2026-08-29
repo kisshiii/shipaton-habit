@@ -440,6 +440,12 @@ HAMMの審査軸に関わるが、**1.0の要件には含めない。**
 
 **⚠ 公開時にリポジトリへ含めてはいけないもの:** RevenueCat Secret Key(`sk_`で始まる) / App Store Connect APIキー(`.p8`) / 証明書・プロビジョニングプロファイル / `.env` / **Tier 1の判定リスト**(§2。公開すると回避方法を探す材料になる) ※RevenueCatの公開APIキー(`appl_`)はクライアント埋め込み前提のため公開して実害なし
 
+**⚠ Tier 1の判定リストをEASクラウドビルドへ届ける方法 【決定】2026-08-29(実装時に発覚):** 判定リスト(`src/config/blocklist.ts`)は上記の通りコミットしないが、 **コミットしないと EAS のクラウドビルドはクリーンな git clone からビルドするため、 このファイルを持たずに落ちる。** 実際に最初の本番ビルドで `Unable to resolve module @/config/blocklist` として発覚した。
+
+対処: ファイルの中身を **EASの file 型 secret 環境変数**(`TIER1_BLOCKLIST_TS`、`production` 環境・`scope: project`)としてアップロードし、`package.json` の `eas-build-pre-install` フック(`scripts/provision-blocklist.js`)が `npm install` 直前にこれを本来の場所へコピーする。 **Gitには一切乗らない。**ローカル開発では今まで通り手元に配置する(このフックは何もしない)。
+
+判定リストの中身を差し替えたら、EAS側の値も更新すること(手順は `src/config/README.md` に記載)。
+
 ### バックエンド **【決定】2026-08-12: バックエンドを持たない**
 
 **1.0はサーバーを一切持たない。端末内で完結させる。Supabaseも使わない。**
