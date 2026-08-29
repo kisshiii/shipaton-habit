@@ -14,13 +14,13 @@
 
 import * as Notifications from 'expo-notifications';
 
-import { SCHEDULE_DAYS_AHEAD } from '@/constants/notifications';
+import { IOS_SCHEDULED_LIMIT, SCHEDULE_DAYS_AHEAD } from '@/constants/notifications';
 import { toDateKey } from '@/lib/date';
-import { getDailyRecord, getMessages, getRoutines } from '@/storage';
+import { getDailyRecords, getMessages, getRoutines } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
 
 /** 通知に載せるデータ。**ユーザーの本文をここに入れないこと** */
-export type KatsuNotificationData = {
+type KatsuNotificationData = {
   routineId: string;
 };
 
@@ -73,19 +73,7 @@ function occurrenceAt(day: Date, time: string): Date {
   return at;
 }
 
-/**
- * 予約を丸ごと引き直す。
- *
- * 差分更新はしない。**全消し → 貼り直し**にしてある。
- * 完了・削除・時刻変更・文言変更のすべてが「予約集合が変わる」という同じ形に潰れ、
- * 「消し忘れて終わってるのに鳴る」事故が構造的に起きなくなるため。
- *
- * 次のものは予約しない:
- * - 既に過ぎた時刻(今日の分)
- * - 今日すでに完了した項目
- * - 文言が1件も無いとき(1件も予約しない)
- */
-export async function syncScheduledNotifications(): Promise<number> {
+async function runSync(): Promise<number> {
   await Notifications.cancelAllScheduledNotificationsAsync();
 
   const [routines, messages] = await Promise.all([getRoutines(), getMessages()]);
@@ -94,15 +82,15 @@ export async function syncScheduledNotifications(): Promise<number> {
   const status = await getNotificationPermission();
   if (status !== 'granted') return 0;
 
+  // 記録は1回だけ読む。日ごとに読むと同じキーを7回パースすることになる
+  const records = await getDailyRecords();
   const now = new Date();
-  let scheduled = 0;
+  const planned: Notifications.NotificationRequestInput[] = [];
 
   for (let offset = 0; offset < SCHEDULE_DAYS_AHEAD; offset += 1) {
     const day = new Date(now);
     day.setDate(day.getDate() + offset);
-    const dateKey = toDateKey(day);
-    const record = await getDailyRecord(dateKey);
-    const completedIds = record?.completedIds ?? [];
+    const completedIds = records[toDateKey(day)]?.completedIds ?? [];
 
     for (const routine of routines) {
       const at = occurrenceAt(day, routine.time);
@@ -113,21 +101,35 @@ export async function syncScheduledNotifications(): Promise<number> {
       if (!message) continue;
 
       const data: KatsuNotificationData = { routineId: routine.id };
-      await Notifications.scheduleNotificationAsync({
-        content: {
-          title: routine.title,
-          body: message.text,
-          data,
-        },
+      planned.push({
+        content: { title: routine.title, body: message.text, data },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
       });
-      scheduled += 1;
     }
   }
-  return scheduled;
+
+  // ⚠ iOS は64件を超えた分を黙って捨てる。溢れるなら**近い日から捨てずに残す**。
+  //   MAX_ROUTINES × SCHEDULE_DAYS_AHEAD は現状56件で収まるが、
+  //   どちらかを増やしたときに静かに壊れないよう、ここで頭を打っておく。
+  const capped = planned.slice(0, IOS_SCHEDULED_LIMIT);
+  await Promise.all(capped.map((request) => Notifications.scheduleNotificationAsync(request)));
+  return capped.length;
 }
 
-/** すべての予約を取り消す(通知を切ったとき、卒業したときなど) */
-export async function cancelAllNotifications(): Promise<void> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+/**
+ * 予約を丸ごと引き直す。
+ *
+ * 差分更新はしない。**全消し → 貼り直し**にしてある。
+ * 完了・削除・時刻変更・文言変更のすべてが「予約集合が変わる」という同じ形に潰れ、
+ * 「消し忘れて終わってるのに鳴る」事故が構造的に起きなくなるため。
+ *
+ * ⚠ **直列化している。** `cancelAll → 予約` は不可分ではないので、2つ同時に走ると
+ *   片方が貼った予約をもう片方の cancelAll が消したり、二重に貼られたりする。
+ *   タブ切り替えとチェックが重なると普通に起きる。
+ */
+let queue: Promise<number> = Promise.resolve(0);
+
+export function syncScheduledNotifications(): Promise<number> {
+  queue = queue.then(runSync, runSync);
+  return queue;
 }

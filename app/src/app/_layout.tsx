@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider, router } from 'expo-router';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
@@ -48,9 +48,17 @@ export default function TabLayout() {
   // 通知タップで起動・復帰したときの遷移。
   // 冷起動も含めて拾えるよう、リスナーではなくこのフックを使う。
   const lastResponse = Notifications.useLastNotificationResponse();
+  // このフックは「最後にタップした通知」を保持し続けるため、再マウントのたびに
+  // 同じ応答が返ってくる。処理済みを覚えておかないと、普通に開いただけなのに
+  // 古い項目へ飛ばされる
+  const handledResponseRef = useRef<string | null>(null);
 
   useEffect(() => {
     if (!lastResponse) return;
+    const responseId = lastResponse.notification.request.identifier;
+    if (handledResponseRef.current === responseId) return;
+    handledResponseRef.current = responseId;
+
     const routineId = routineIdFromResponse(lastResponse);
     if (!routineId) return;
     // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する

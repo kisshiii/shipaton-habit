@@ -41,6 +41,12 @@ export default function TodayScreen() {
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
   const { routineId: focusedId } = useLocalSearchParams<{ routineId?: string }>();
 
+  // 毎日ローリングで判定する。Day 30 固定ではないので「失敗した瞬間」が生まれない
+  const checkGraduation = useCallback(async () => {
+    const progress = await evaluateGraduation();
+    if (progress?.shouldOffer) setIsGraduationOpen(true);
+  }, []);
+
   const refresh = useCallback(async () => {
     const [nextRoutines, nextRecord, nextMessages, nextPermission] = await Promise.all([
       getRoutines(),
@@ -55,11 +61,8 @@ export default function TodayScreen() {
     setPermission(nextPermission);
     // 開くたびに予約を引き直す。7日開かなくても通知が尽きない
     await syncScheduledNotifications();
-
-    // 毎日ローリングで判定する。Day 30 固定ではないので「失敗した瞬間」が生まれない
-    const progress = await evaluateGraduation();
-    if (progress?.shouldOffer) setIsGraduationOpen(true);
-  }, []);
+    await checkGraduation();
+  }, [checkGraduation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -79,6 +82,9 @@ export default function TodayScreen() {
     setRecord(await toggleCompletion(routineId));
     // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
     await syncScheduledNotifications();
+    // その日の最後の1件を押した瞬間に条件を満たすことがある。
+    // 次にタブを開き直すまで待たせない
+    await checkGraduation();
   };
 
   // 閉じた時点で「表示済み」を記録する。二度と出さない(spec §2 卒業モーダル)

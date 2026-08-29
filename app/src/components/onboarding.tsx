@@ -46,6 +46,12 @@ export function Onboarding({ onFinished }: Props) {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
+  // 前のステップで出したエラーを引きずらない
+  const goTo = (next: Step) => {
+    setError(null);
+    setStep(next);
+  };
+
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
 
   const handleSaveRoutine = async () => {
@@ -60,7 +66,7 @@ export function Onboarding({ onFinished }: Props) {
     setError(null);
     // これが Day 1 の起点になる
     await addRoutine({ time, title });
-    setStep('words');
+    goTo('words');
   };
 
   const handleSaveWords = async () => {
@@ -79,12 +85,12 @@ export function Onboarding({ onFinished }: Props) {
       }
       throw caught;
     }
-    setStep('notifications');
+    goTo('notifications');
   };
 
   const handleAskNotifications = async () => {
     await requestNotificationPermission();
-    setStep('done');
+    goTo('done');
   };
 
   const handleFinish = async () => {
@@ -109,7 +115,7 @@ export function Onboarding({ onFinished }: Props) {
                 <ThemedText type="small" themeColor="textSecondary">
                   This app is designed for you to quit it. If it works, you stop needing it.
                 </ThemedText>
-                <Pressable onPress={() => setStep('routine')} hitSlop={Spacing.two}>
+                <Pressable onPress={() => goTo('routine')} hitSlop={Spacing.two}>
                   <ThemedText type="smallBold">Start</ThemedText>
                 </Pressable>
               </>
@@ -193,7 +199,7 @@ export function Onboarding({ onFinished }: Props) {
                   <Pressable onPress={handleAskNotifications} hitSlop={Spacing.two}>
                     <ThemedText type="smallBold">Allow notifications</ThemedText>
                   </Pressable>
-                  <Pressable onPress={() => setStep('done')} hitSlop={Spacing.two}>
+                  <Pressable onPress={() => goTo('done')} hitSlop={Spacing.two}>
                     <ThemedText type="smallBold" themeColor="textSecondary">
                       Not now
                     </ThemedText>
@@ -226,11 +232,9 @@ export function Onboarding({ onFinished }: Props) {
         </SafeAreaView>
 
         {/* ⚠ 閉じられること。閉じてもそのままアプリに入れる(spec §2) */}
-        <Paywall
-          visible={isPaywallOpen}
-          onClose={handleFinish}
-          onPurchased={handleFinish}
-        />
+        {/* ⚠ 閉じられること。閉じても、買っても、そのままアプリに入る。
+            onPurchased は渡さない ── 購入後は onClose も呼ばれるため二重に走る */}
+        <Paywall visible={isPaywallOpen} onClose={handleFinish} />
       </ThemedView>
     </Modal>
   );

@@ -34,8 +34,11 @@ import { getOffering, purchase, restore } from '@/lib/purchases';
 type Props = {
   visible: boolean;
   onClose: () => void;
-  /** 購入が成立したとき。呼び出し側で entitlement を読み直す */
-  onPurchased: () => void;
+  /**
+   * 購入が成立したとき。呼び出し側で entitlement を読み直す。
+   * ⚠ この後に必ず `onClose` も呼ばれる。両方に同じ関数を渡すと二重に走る。
+   */
+  onPurchased?: () => void;
 };
 
 export function Paywall({ visible, onClose, onPurchased }: Props) {
@@ -62,7 +65,7 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
     const outcome = await purchase(pkg);
     setIsBusy(false);
     if (outcome === 'purchased') {
-      onPurchased();
+      onPurchased?.();
       onClose();
     }
     // cancelled / failed では何も言わない。やめた人を追いかけない
@@ -73,7 +76,7 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
     const restored = await restore();
     setIsBusy(false);
     if (restored) {
-      onPurchased();
+      onPurchased?.();
       onClose();
     }
   };
