@@ -7,6 +7,7 @@ import { useColorScheme } from 'react-native';
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding';
 import { routineIdFromResponse } from '@/lib/notifications';
+import { configurePurchases } from '@/lib/purchases';
 import { getAppState } from '@/storage';
 
 SplashScreen.preventAutoHideAsync();
@@ -28,6 +29,11 @@ export default function TabLayout() {
   // null = 判定前。ここで false を初期値にすると、既存ユーザーに一瞬
   // オンボーディングが差し込まれる
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
+
+  // キーが無ければ何もしない。課金は後付けの層であって、起動の前提ではない
+  useEffect(() => {
+    configurePurchases();
+  }, []);
 
   // 何を出すか決まってからスプラッシュを畳む。
   // 先に畳むと、オンボーディングが要る人に一瞬タブが見える

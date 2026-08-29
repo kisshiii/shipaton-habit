@@ -10,20 +10,12 @@
  * ユーザーがいつでも降りられる。
  */
 
-import { Linking, Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
-
-/**
- * Apple の購読管理画面。
- * ⚠ 開発者側からサブスクを解約することは技術的にできない。できるのは**ここへ送ること**まで。
- *   むしろ自動でやるより、ユーザーが自分の手で解約ボタンを押すほうが儀式として強い。
- * TODO(#7): RevenueCat 導入後は Purchases.showManageSubscriptions() に寄せてもよい。
- *   今は SDK 未設定でも動くこちらを使う。
- */
-const MANAGE_SUBSCRIPTION_URL = 'https://apps.apple.com/account/subscriptions';
+import { openManageSubscriptions } from '@/lib/purchases';
 
 type Props = {
   visible: boolean;
@@ -46,7 +38,12 @@ export function GraduationModal({ visible, onClose }: Props) {
           </ThemedText>
 
           <View style={styles.actions}>
-            <Pressable onPress={() => Linking.openURL(MANAGE_SUBSCRIPTION_URL)} hitSlop={Spacing.two}>
+            {/*
+              ⚠ 開発者側からサブスクを解約することは技術的にできない。
+                できるのは Apple の管理画面へ送ることまで。
+                むしろ自動でやるより、自分の手で解約ボタンを押すほうが儀式として強い。
+            */}
+            <Pressable onPress={openManageSubscriptions} hitSlop={Spacing.two}>
               <ThemedText type="smallBold">End my subscription</ThemedText>
             </Pressable>
             <Pressable onPress={onClose} hitSlop={Spacing.two}>

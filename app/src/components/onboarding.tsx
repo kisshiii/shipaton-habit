@@ -18,6 +18,7 @@ import { useState } from 'react';
 import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Paywall } from '@/components/paywall';
 import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -43,6 +44,7 @@ export function Onboarding({ onFinished }: Props) {
   const [words, setWords] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
 
@@ -208,7 +210,8 @@ export function Onboarding({ onFinished }: Props) {
                 <ThemedText type="small" themeColor="textSecondary">
                   Nothing you write here is sent anywhere. Nobody reads it but you.
                 </ThemedText>
-                <Pressable onPress={handleFinish} hitSlop={Spacing.two}>
+                {/* ⚠ 課金機会①: オンボーディング最後。閉じられること */}
+                <Pressable onPress={() => setIsPaywallOpen(true)} hitSlop={Spacing.two}>
                   <ThemedText type="smallBold">Begin</ThemedText>
                 </Pressable>
               </>
@@ -221,6 +224,13 @@ export function Onboarding({ onFinished }: Props) {
             )}
           </ScrollView>
         </SafeAreaView>
+
+        {/* ⚠ 閉じられること。閉じてもそのままアプリに入れる(spec §2) */}
+        <Paywall
+          visible={isPaywallOpen}
+          onClose={handleFinish}
+          onPurchased={handleFinish}
+        />
       </ThemedView>
     </Modal>
   );

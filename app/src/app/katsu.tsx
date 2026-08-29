@@ -11,6 +11,7 @@ import { useFocusEffect } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Paywall } from '@/components/paywall';
 import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -18,6 +19,7 @@ import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { syncScheduledNotifications } from '@/lib/notifications';
+import { isPro } from '@/lib/purchases';
 import { countChars, truncateChars } from '@/lib/text';
 import {
   addMessage,
@@ -35,9 +37,13 @@ export default function KatsuScreen() {
   const [editingId, setEditingId] = useState<string | null>(null);
   // Tier 1 で止めたことを一度だけ伝えるための状態。draft が変われば消える
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
+  const [isPaywallOpen, setIsPaywallOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     setMessages(await getMessages());
+    // 取得に失敗してもキャッシュで通す。課金の障害でコア体験を止めない
+    setIsPaid(await isPro());
     // 文言が通知の本文そのもの。書き換えたら予約も貼り直す
     await syncScheduledNotifications();
   }, []);
@@ -108,11 +114,14 @@ export default function KatsuScreen() {
   };
 
   // ⚠ 課金機会②: 2つ目の言葉を書こうとしたとき。それ以外でペイウォールを出さない
-  const needsPaywall = !editingId && messages.length >= FREE_MESSAGE_LIMIT;
+  const needsPaywall = !editingId && !isPaid && messages.length >= FREE_MESSAGE_LIMIT;
 
-  const handlePaywall = () => {
-    Alert.alert('More than one word', 'Not built yet.');
-  };
+  /**
+   * 課金が切れているときに触れなくなる言葉。
+   * ⚠ **削除しない。**ロック表示のまま保持し、再課金で復活させる(spec §2)。
+   *   ユーザーが感情を込めて書いたものを消すのは、このアプリでは特に許されない。
+   */
+  const lockedIds = isPaid ? [] : messages.slice(FREE_MESSAGE_LIMIT).map((m) => m.id);
 
   return (
     <ThemedView style={styles.container}>
@@ -123,26 +132,39 @@ export default function KatsuScreen() {
             This is what you will hear when you skip. Write it as the person who decided to change.
           </ThemedText>
 
-          {messages.map((message) => (
-            <ThemedView key={message.id} type="backgroundElement" style={styles.row}>
-              <ThemedText style={styles.rowText}>{message.text}</ThemedText>
-              <View style={styles.rowActions}>
-                <Pressable onPress={() => handleEdit(message)} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="textSecondary">
-                    Edit
-                  </ThemedText>
-                </Pressable>
-                <Pressable onPress={() => handleDelete(message)} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="textSecondary">
-                    Delete
-                  </ThemedText>
-                </Pressable>
-              </View>
-            </ThemedView>
-          ))}
+          {messages.map((message) => {
+            const isLocked = lockedIds.includes(message.id);
+            return (
+              <ThemedView key={message.id} type="backgroundElement" style={styles.row}>
+                <ThemedText style={styles.rowText} themeColor={isLocked ? 'textSecondary' : 'text'}>
+                  {message.text}
+                </ThemedText>
+                {isLocked ? (
+                  <Pressable onPress={() => setIsPaywallOpen(true)} hitSlop={Spacing.two}>
+                    <ThemedText type="smallBold" themeColor="textSecondary">
+                      Locked ── still yours
+                    </ThemedText>
+                  </Pressable>
+                ) : (
+                  <View style={styles.rowActions}>
+                    <Pressable onPress={() => handleEdit(message)} hitSlop={Spacing.two}>
+                      <ThemedText type="smallBold" themeColor="textSecondary">
+                        Edit
+                      </ThemedText>
+                    </Pressable>
+                    <Pressable onPress={() => handleDelete(message)} hitSlop={Spacing.two}>
+                      <ThemedText type="smallBold" themeColor="textSecondary">
+                        Delete
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                )}
+              </ThemedView>
+            );
+          })}
 
           {needsPaywall ? (
-            <Pressable onPress={handlePaywall}>
+            <Pressable onPress={() => setIsPaywallOpen(true)}>
               <ThemedView type="backgroundElement" style={styles.form}>
                 <ThemedText type="smallBold">Write another one</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
@@ -197,6 +219,12 @@ export default function KatsuScreen() {
           {isBlocked && <SelfHarmNotice />}
         </ScrollView>
       </SafeAreaView>
+
+      <Paywall
+        visible={isPaywallOpen}
+        onClose={() => setIsPaywallOpen(false)}
+        onPurchased={refresh}
+      />
     </ThemedView>
   );
 }
