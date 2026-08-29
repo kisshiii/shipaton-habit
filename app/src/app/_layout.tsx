@@ -4,7 +4,6 @@ import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
 import { useColorScheme } from 'react-native';
 
-import { AnimatedSplashOverlay } from '@/components/animated-icon';
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding';
 import { routineIdFromResponse } from '@/lib/notifications';
@@ -30,8 +29,12 @@ export default function TabLayout() {
   // オンボーディングが差し込まれる
   const [needsOnboarding, setNeedsOnboarding] = useState<boolean | null>(null);
 
+  // 何を出すか決まってからスプラッシュを畳む。
+  // 先に畳むと、オンボーディングが要る人に一瞬タブが見える
   useEffect(() => {
-    getAppState().then((state) => setNeedsOnboarding(!state.onboardedAt));
+    getAppState()
+      .then((state) => setNeedsOnboarding(!state.onboardedAt))
+      .finally(() => SplashScreen.hideAsync());
   }, []);
 
   const handleOnboarded = useCallback(() => setNeedsOnboarding(false), []);
@@ -50,7 +53,6 @@ export default function TabLayout() {
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <AnimatedSplashOverlay />
       <AppTabs />
       {needsOnboarding === true && <Onboarding onFinished={handleOnboarded} />}
     </ThemeProvider>
