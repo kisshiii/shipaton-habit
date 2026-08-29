@@ -15,6 +15,7 @@ import { BottomTabInset, Spacing } from '@/constants/theme';
 import { MAX_ROUTINES } from '@/constants/routines';
 import { useTheme } from '@/hooks/use-theme';
 import { normalizeTime } from '@/lib/date';
+import { syncScheduledNotifications } from '@/lib/notifications';
 import {
   addRoutine,
   deleteRoutine,
@@ -35,6 +36,8 @@ export default function RoutinesScreen() {
 
   const refresh = useCallback(async () => {
     setRoutines(await getRoutines());
+    // 時刻・件数が変われば予約集合も変わる。引き直しは冪等なので毎回でよい
+    await syncScheduledNotifications();
   }, []);
 
   // 画面に戻るたびに読み直す(Today 画面での操作を反映するため)

@@ -17,6 +17,7 @@ import { ThemedView } from '@/components/themed-view';
 import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { syncScheduledNotifications } from '@/lib/notifications';
 import { countChars, truncateChars } from '@/lib/text';
 import {
   addMessage,
@@ -43,6 +44,8 @@ export default function KatsuScreen() {
 
   const refresh = useCallback(async () => {
     setMessages(await getMessages());
+    // 文言が通知の本文そのもの。書き換えたら予約も貼り直す
+    await syncScheduledNotifications();
   }, []);
 
   useFocusEffect(
