@@ -249,6 +249,14 @@ export async function getDailyRecord(date: string): Promise<DailyRecord | undefi
 }
 
 /**
+ * 日付キー -> 記録 の全体。
+ * 卒業判定は30日分をまとめて見るため、1日ずつ読むと同じキーを30回読むことになる。
+ */
+export async function getDailyRecords(): Promise<Record<string, DailyRecord>> {
+  return readJson<RecordMap>(KEYS.records, {});
+}
+
+/**
  * 今日のチェックを付け外しする。
  * チェックした時刻は記録しない(spec §2: その日のうちなら何時でも達成)。
  * 分母から外していた項目にチェックが付いたら、その項目は分母にも入る。

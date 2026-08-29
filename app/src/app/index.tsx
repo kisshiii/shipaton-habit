@@ -16,16 +16,18 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { todayKey } from '@/lib/date';
+import { evaluateGraduation } from '@/lib/graduation';
 import {
   getNotificationPermission,
   requestNotificationPermission,
   syncScheduledNotifications,
 } from '@/lib/notifications';
-import { getMessages, getRoutines, getTodayRecord, toggleCompletion } from '@/storage';
+import { getMessages, getRoutines, getTodayRecord, markGraduated, toggleCompletion } from '@/storage';
 import type { DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 export default function TodayScreen() {
@@ -33,6 +35,7 @@ export default function TodayScreen() {
   const [record, setRecord] = useState<DailyRecord | null>(null);
   const [messages, setMessages] = useState<KatsuMessage[]>([]);
   const [permission, setPermission] = useState<string | null>(null);
+  const [isGraduationOpen, setIsGraduationOpen] = useState(false);
   const dateRef = useRef(todayKey());
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
@@ -52,6 +55,10 @@ export default function TodayScreen() {
     setPermission(nextPermission);
     // 開くたびに予約を引き直す。7日開かなくても通知が尽きない
     await syncScheduledNotifications();
+
+    // 毎日ローリングで判定する。Day 30 固定ではないので「失敗した瞬間」が生まれない
+    const progress = await evaluateGraduation();
+    if (progress?.shouldOffer) setIsGraduationOpen(true);
   }, []);
 
   useFocusEffect(
@@ -72,6 +79,12 @@ export default function TodayScreen() {
     setRecord(await toggleCompletion(routineId));
     // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
     await syncScheduledNotifications();
+  };
+
+  // 閉じた時点で「表示済み」を記録する。二度と出さない(spec §2 卒業モーダル)
+  const handleCloseGraduation = async () => {
+    setIsGraduationOpen(false);
+    await markGraduated();
   };
 
   const handleEnableNotifications = async () => {
@@ -158,6 +171,8 @@ export default function TodayScreen() {
           })}
         </ScrollView>
       </SafeAreaView>
+
+      <GraduationModal visible={isGraduationOpen} onClose={handleCloseGraduation} />
     </ThemedView>
   );
 }

@@ -9,6 +9,7 @@ import { useFocusEffect } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
@@ -33,6 +34,7 @@ export default function RoutinesScreen() {
   const [time, setTime] = useState('');
   const [title, setTitle] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isGraduationOpen, setIsGraduationOpen] = useState(false);
 
   const refresh = useCallback(async () => {
     setRoutines(await getRoutines());
@@ -179,8 +181,24 @@ export default function RoutinesScreen() {
               </View>
             </ThemedView>
           )}
+          {/*
+            自主卒業(spec §2)。判定を待たずにいつでも降りられるようにする。
+            ⚠ 思想としてはこちらが本体。アプリが許可を出すのではなく、ユーザーが決める。
+              目立たせる必要はないが、隠さないこと。常時ここに置く。
+          */}
+          <Pressable onPress={() => setIsGraduationOpen(true)} hitSlop={Spacing.two}>
+            <ThemedText type="small" themeColor="textSecondary" style={styles.graduate}>
+              I don&apos;t need this anymore
+            </ThemedText>
+          </Pressable>
         </ScrollView>
       </SafeAreaView>
+
+      {/* 判定で出るものと同じモーダル。自分で呼んだ場合は「表示済み」にしない */}
+      <GraduationModal
+        visible={isGraduationOpen}
+        onClose={() => setIsGraduationOpen(false)}
+      />
     </ThemedView>
   );
 }
@@ -231,5 +249,9 @@ const styles = StyleSheet.create({
   },
   limitNote: {
     paddingVertical: Spacing.three,
+  },
+  graduate: {
+    paddingTop: Spacing.four,
+    textDecorationLine: 'underline',
   },
 });
