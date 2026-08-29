@@ -83,6 +83,10 @@ export async function markGraduated(dateKey: string = todayKey()): Promise<void>
   await patchAppState({ graduatedAt: dateKey });
 }
 
+export async function markOnboarded(dateKey: string = todayKey()): Promise<void> {
+  await patchAppState({ onboardedAt: dateKey });
+}
+
 // --- Routines ---------------------------------------------------------------
 
 /** 時刻順に並べて返す */

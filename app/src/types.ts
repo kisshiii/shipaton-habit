@@ -30,4 +30,10 @@ export type KatsuMessage = {
 export type AppState = {
   startedOn?: string; // 最初のルーティンを保存した日 = Day 1
   graduatedAt?: string; // 卒業モーダルを表示済みなら記録(再表示しない)
+  /**
+   * オンボーディングを終えた日。
+   * ⚠ `startedOn` で代用しないこと。全ルーティンを消した人にオンボーディングを
+   *   やり直させることになる。
+   */
+  onboardedAt?: string;
 };

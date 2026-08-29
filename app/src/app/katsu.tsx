@@ -11,7 +11,7 @@ import { useFocusEffect } from 'expo-router';
 import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { ExternalLink } from '@/components/external-link';
+import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
@@ -27,12 +27,6 @@ import {
   updateMessage,
 } from '@/storage';
 import type { KatsuMessage } from '@/types';
-
-/**
- * 国別の番号は持たない。更新できず、古い番号を出し続けるリスクがある。
- * 国際的なディレクトリ1つに統一する(spec §2 ヘルプライン提示の設計-5)。
- */
-const HELPLINE_URL = 'https://findahelpline.com';
 
 export default function KatsuScreen() {
   const theme = useTheme();
@@ -200,22 +194,7 @@ export default function KatsuScreen() {
             ⚠ 「危機を検知した」と読める書き方をしないこと。静的判定であり見逃しは大量にある。
               責めない・驚かせない・説教しない。モーダルで閉じ込めない(spec §2)。
           */}
-          {isBlocked && (
-            <ThemedView type="backgroundElement" style={styles.guard}>
-              <ThemedText type="small">
-                This one can&apos;t be saved as a notification.
-              </ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                It might be worth saying to someone directly, rather than to yourself at 7am.
-              </ThemedText>
-              <ExternalLink href={HELPLINE_URL}>
-                <ThemedText type="smallBold">Find a helpline</ThemedText>
-              </ExternalLink>
-              <ThemedText type="small" themeColor="textSecondary">
-                In an emergency, call your local emergency number.
-              </ThemedText>
-            </ThemedView>
-          )}
+          {isBlocked && <SelfHarmNotice />}
         </ScrollView>
       </SafeAreaView>
     </ThemedView>
@@ -267,10 +246,5 @@ const styles = StyleSheet.create({
     fontSize: 16,
     minHeight: 96,
     textAlignVertical: 'top',
-  },
-  guard: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
   },
 });
