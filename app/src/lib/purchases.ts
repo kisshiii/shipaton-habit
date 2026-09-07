@@ -105,18 +105,26 @@ export async function purchase(pkg: PurchasesPackage): Promise<PurchaseOutcome> 
   }
 }
 
-/** 復元。機種変更やアプリ削除からの復帰で使う */
-export async function restore(): Promise<boolean> {
+export type RestoreOutcome = 'restored' | 'nothing' | 'failed';
+
+/**
+ * 復元。機種変更やアプリ削除からの復帰で使う。
+ *
+ * ⚠ 「復元するものが無かった」と「通信に失敗した」を同じ結果に潰さないこと。
+ *   購入と違い、復元は**ユーザーが自分の意思で押したボタン**なので、
+ *   黙って何も起きないと壊れているのと区別がつかない。呼び出し側で必ず結果を伝える。
+ */
+export async function restore(): Promise<RestoreOutcome> {
   configurePurchases();
-  if (!isConfigured) return false;
+  if (!isConfigured) return 'failed';
 
   try {
     const info = await Purchases.restorePurchases();
     const active = hasEntitlement(info);
     await writeCachedEntitlement(active);
-    return active;
+    return active ? 'restored' : 'nothing';
   } catch {
-    return false;
+    return 'failed';
   }
 }
 

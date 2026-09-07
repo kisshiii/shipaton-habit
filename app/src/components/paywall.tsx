@@ -45,10 +45,13 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
   const [packages, setPackages] = useState<PurchasesPackage[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
+  /** 操作の結果を伝える一行。⚠ ユーザーが「やめた」ときだけは何も出さない */
+  const [notice, setNotice] = useState<string | null>(null);
 
   useEffect(() => {
     if (!visible) return;
     let cancelled = false;
+    setNotice(null);
     setIsLoading(true);
     getOffering().then((offering) => {
       if (cancelled) return;
@@ -61,24 +64,40 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
   }, [visible]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
+    setNotice(null);
     setIsBusy(true);
     const outcome = await purchase(pkg);
     setIsBusy(false);
     if (outcome === 'purchased') {
       onPurchased?.();
       onClose();
+      return;
     }
-    // cancelled / failed では何も言わない。やめた人を追いかけない
+    // ⚠ 「やめた」は黙って受け入れる。追いかけない
+    if (outcome === 'cancelled') return;
+    // ⚠ ただし本当に失敗したときは伝える。黙るとボタンが壊れて見える
+    setNotice('That did not go through. Nothing was charged.');
   };
 
+  /**
+   * ⚠ 復元は結果を必ず返すこと。成立しなかったときに黙ると、ボタンが死んで見える。
+   *   ここは「追いかけない」の対象外 ── ユーザーが自分から押した操作なので、答える義務がある。
+   */
   const handleRestore = async () => {
+    setNotice(null);
     setIsBusy(true);
-    const restored = await restore();
+    const outcome = await restore();
     setIsBusy(false);
-    if (restored) {
+    if (outcome === 'restored') {
       onPurchased?.();
       onClose();
+      return;
     }
+    setNotice(
+      outcome === 'nothing'
+        ? 'Nothing to restore for this Apple ID.'
+        : 'Could not reach the store. Try again later.',
+    );
   };
 
   return (
@@ -114,6 +133,14 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
                 </ThemedView>
               </Pressable>
             ))}
+
+            {isBusy && <ActivityIndicator />}
+
+            {notice && (
+              <ThemedText type="small" themeColor="textSecondary">
+                {notice}
+              </ThemedText>
+            )}
 
             <View style={styles.actions}>
               <Pressable onPress={onClose} hitSlop={Spacing.two} disabled={isBusy}>
