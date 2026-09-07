@@ -83,6 +83,10 @@ export async function markGraduated(dateKey: string = todayKey()): Promise<void>
   await patchAppState({ graduatedAt: dateKey });
 }
 
+export async function markOnboarded(dateKey: string = todayKey()): Promise<void> {
+  await patchAppState({ onboardedAt: dateKey });
+}
+
 // --- Routines ---------------------------------------------------------------
 
 /** 時刻順に並べて返す */
@@ -243,9 +247,15 @@ export async function getTodayRecord(): Promise<DailyRecord> {
   return next;
 }
 
-export async function getDailyRecord(date: string): Promise<DailyRecord | undefined> {
-  const records = await readJson<RecordMap>(KEYS.records, {});
-  return records[date];
+/**
+ * 日付キー -> 記録 の全体。
+ *
+ * ⚠ 1日ずつ読む API は置かない。記録は1つのキーにまとまって入っているので、
+ *   日付ごとに呼ぶと同じ JSON を何度もパースすることになる。
+ *   卒業判定は30日分、通知の予約は7日分をまとめて見る。
+ */
+export async function getDailyRecords(): Promise<Record<string, DailyRecord>> {
+  return readJson<RecordMap>(KEYS.records, {});
 }
 
 /**
@@ -276,7 +286,7 @@ export async function getMessages(): Promise<KatsuMessage[]> {
   return readJson<KatsuMessage[]>(KEYS.messages, []);
 }
 
-export async function saveMessages(messages: KatsuMessage[]): Promise<void> {
+async function saveMessages(messages: KatsuMessage[]): Promise<void> {
   await writeJson(KEYS.messages, messages);
 }
 

@@ -23,6 +23,20 @@ export function toTimeKey(date: Date): string {
   return `${hours}:${minutes}`;
 }
 
+/**
+ * 今日を末尾とする直近 `days` 日分の日付キー(古い順)。
+ * 卒業判定のローリング窓に使う。
+ */
+export function recentDateKeys(days: number, endingOn: Date = new Date()): string[] {
+  const keys: string[] = [];
+  for (let back = days - 1; back >= 0; back -= 1) {
+    const day = new Date(endingOn);
+    day.setDate(day.getDate() - back);
+    keys.push(toDateKey(day));
+  }
+  return keys;
+}
+
 /** "7:5" のような入力を "07:05" に正規化する。不正な値は null */
 export function normalizeTime(input: string): string | null {
   const match = input.trim().match(/^(\d{1,2}):(\d{1,2})$/);

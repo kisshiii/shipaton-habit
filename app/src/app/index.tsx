@@ -5,7 +5,7 @@
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import {
   AppState as RNAppState,
   type AppStateStatus,
@@ -16,24 +16,53 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { todayKey } from '@/lib/date';
-import { getRoutines, getTodayRecord, toggleCompletion } from '@/storage';
-import type { DailyRecord, RoutineItem } from '@/types';
+import { evaluateGraduation } from '@/lib/graduation';
+import {
+  getNotificationPermission,
+  requestNotificationPermission,
+  syncScheduledNotifications,
+} from '@/lib/notifications';
+import { getMessages, getRoutines, getTodayRecord, markGraduated, toggleCompletion } from '@/storage';
+import type { DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 export default function TodayScreen() {
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
   const [record, setRecord] = useState<DailyRecord | null>(null);
+  const [messages, setMessages] = useState<KatsuMessage[]>([]);
+  const [permission, setPermission] = useState<string | null>(null);
+  const [isGraduationOpen, setIsGraduationOpen] = useState(false);
   const dateRef = useRef(todayKey());
 
+  // 通知から開かれたとき、どの項目の話だったかを見失わせない
+  const { routineId: focusedId } = useLocalSearchParams<{ routineId?: string }>();
+
+  // 毎日ローリングで判定する。Day 30 固定ではないので「失敗した瞬間」が生まれない
+  const checkGraduation = useCallback(async () => {
+    const progress = await evaluateGraduation();
+    if (progress?.shouldOffer) setIsGraduationOpen(true);
+  }, []);
+
   const refresh = useCallback(async () => {
-    const [nextRoutines, nextRecord] = await Promise.all([getRoutines(), getTodayRecord()]);
+    const [nextRoutines, nextRecord, nextMessages, nextPermission] = await Promise.all([
+      getRoutines(),
+      getTodayRecord(),
+      getMessages(),
+      getNotificationPermission(),
+    ]);
     dateRef.current = nextRecord.date;
     setRoutines(nextRoutines);
     setRecord(nextRecord);
-  }, []);
+    setMessages(nextMessages);
+    setPermission(nextPermission);
+    // 開くたびに予約を引き直す。7日開かなくても通知が尽きない
+    await syncScheduledNotifications();
+    await checkGraduation();
+  }, [checkGraduation]);
 
   useFocusEffect(
     useCallback(() => {
@@ -51,12 +80,35 @@ export default function TodayScreen() {
 
   const handleToggle = async (routineId: string) => {
     setRecord(await toggleCompletion(routineId));
+    // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
+    await syncScheduledNotifications();
+    // その日の最後の1件を押した瞬間に条件を満たすことがある。
+    // 次にタブを開き直すまで待たせない
+    await checkGraduation();
+  };
+
+  // 閉じた時点で「表示済み」を記録する。二度と出さない(spec §2 卒業モーダル)
+  const handleCloseGraduation = async () => {
+    setIsGraduationOpen(false);
+    await markGraduated();
+  };
+
+  const handleEnableNotifications = async () => {
+    const next = await requestNotificationPermission();
+    setPermission(next);
+    await syncScheduledNotifications();
   };
 
   // チェックが付いた項目は必ず分母にも入るため、分子は completedIds の数そのもの
   // (spec §2 判定の細部)
   const completedIds = record?.completedIds ?? [];
   const doneCount = completedIds.length;
+
+  const hasWords = messages.length > 0;
+  const isBlocked = permission !== null && permission !== 'granted';
+  // 通知を切っている人にも同じ言葉が届くようにする(spec §4 通知実装の制約-1)。
+  // 文言が無いときはアプリ側の定型文で埋めない
+  const fallbackWord = isBlocked ? messages[0]?.text : undefined;
 
   return (
     <ThemedView style={styles.container}>
@@ -72,6 +124,34 @@ export default function TodayScreen() {
             {record?.date ?? todayKey()}
           </ThemedText>
 
+          {fallbackWord && (
+            <ThemedView type="backgroundSelected" style={styles.word}>
+              <ThemedText>{fallbackWord}</ThemedText>
+            </ThemedView>
+          )}
+
+          {isBlocked && hasWords && (
+            <Pressable onPress={handleEnableNotifications}>
+              <ThemedView type="backgroundElement" style={styles.notice}>
+                <ThemedText type="smallBold">Let your words reach you</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Without notifications you have to remember to open this app. That is the one
+                  thing it was built to spare you.
+                </ThemedText>
+                <ThemedText type="smallBold">Turn on notifications</ThemedText>
+              </ThemedView>
+            </Pressable>
+          )}
+
+          {routines.length > 0 && !hasWords && (
+            <ThemedView type="backgroundElement" style={styles.notice}>
+              <ThemedText type="smallBold">Nothing to say yet</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Notifications stay quiet until you write your own words in Your KATSU.
+              </ThemedText>
+            </ThemedView>
+          )}
+
           {routines.length === 0 && (
             <ThemedText type="small" themeColor="textSecondary">
               No routines yet. Add one in the Routines tab.
@@ -80,11 +160,12 @@ export default function TodayScreen() {
 
           {routines.map((routine) => {
             const isDone = completedIds.includes(routine.id);
+            const isFocused = routine.id === focusedId;
             return (
               <Pressable key={routine.id} onPress={() => handleToggle(routine.id)}>
                 <ThemedView
                   type={isDone ? 'backgroundSelected' : 'backgroundElement'}
-                  style={styles.row}>
+                  style={[styles.row, isFocused && styles.rowFocused]}>
                   <ThemedText type="code">{isDone ? '[x]' : '[ ]'}</ThemedText>
                   <ThemedText type="code">{routine.time}</ThemedText>
                   <View style={styles.rowBody}>
@@ -96,6 +177,8 @@ export default function TodayScreen() {
           })}
         </ScrollView>
       </SafeAreaView>
+
+      <GraduationModal visible={isGraduationOpen} onClose={handleCloseGraduation} />
     </ThemedView>
   );
 }
@@ -117,12 +200,24 @@ const styles = StyleSheet.create({
     alignItems: 'baseline',
     justifyContent: 'space-between',
   },
+  word: {
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+  },
+  notice: {
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+  },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
     padding: Spacing.three,
     borderRadius: Spacing.two,
+  },
+  rowFocused: {
+    borderWidth: 2,
   },
   rowBody: {
     flex: 1,
