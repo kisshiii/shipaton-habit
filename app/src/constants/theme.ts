@@ -1,6 +1,12 @@
 /**
- * Below are the colors that are used in the app. The colors are defined in the light and dark mode.
- * There are many other ways to style your app. For example, [Nativewind](https://www.nativewind.dev/), [Tamagui](https://tamagui.dev/), [unistyles](https://reactnativeunistyles.vercel.app), etc.
+ * 配色・余白・文字サイズ。
+ *
+ * ⚠ `accent` はアイコンの紺 `#0F1B61` と生成り。**アプリとアイコンを地続きにするための色**で、
+ *   押せるもの・選ばれたものにだけ使う。装飾で撒かないこと。
+ *   暗い側では紺が沈んで読めないため、役割を反転させて生なりを accent に置く。
+ *
+ * ⚠ 背景は純白・純黒にしない。`#ffffff` / `#000000` は「まだ設定していない」に見え、
+ *   自分の言葉を置く場所としても硬すぎる。
  */
 
 import '@/global.css';
@@ -9,18 +15,23 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#000000',
-    background: '#ffffff',
-    backgroundElement: '#F0F0F3',
-    backgroundSelected: '#E0E1E6',
-    textSecondary: '#60646C',
+    text: '#14151A',
+    background: '#FBFAF7',
+    backgroundElement: '#F1EFE9',
+    backgroundSelected: '#E5E1D6',
+    textSecondary: '#5F6470',
+    accent: '#0F1B61',
+    /** accent の上に載せる文字・記号の色 */
+    accentText: '#FAF3E6',
   },
   dark: {
-    text: '#ffffff',
-    background: '#000000',
-    backgroundElement: '#212225',
-    backgroundSelected: '#2E3135',
-    textSecondary: '#B0B4BA',
+    text: '#F4F1E8',
+    background: '#0A0C14',
+    backgroundElement: '#171A26',
+    backgroundSelected: '#232838',
+    textSecondary: '#A6ACBB',
+    accent: '#EFE1C6',
+    accentText: '#0F1B61',
   },
 } as const;
 

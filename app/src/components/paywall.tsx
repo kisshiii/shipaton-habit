@@ -13,6 +13,9 @@
  *   **仕様にしないこと。演出としても、事実と異なる説明はしない。**
  *
  * ⚠ Offerings が取れなくてもコア体験を止めない。ここだけ「後で再試行」にする。
+ *
+ * ⚠ **Guideline 3.1.2: 商品名・期間・価格と、規約・プライバシーポリシーへのリンクを
+ *   この画面に出すこと。** 消すと審査で落ちる。見た目の都合で畳まないこと。
  */
 
 import { useEffect, useState } from 'react';
@@ -26,8 +29,10 @@ import {
 } from 'react-native';
 import type { PurchasesPackage } from 'react-native-purchases';
 
+import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { PRIVACY_URL, TERMS_URL } from '@/constants/legal';
 import { Spacing } from '@/constants/theme';
 import { getOffering, purchase, restore } from '@/lib/purchases';
 
@@ -147,10 +152,33 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
                 <ThemedText type="smallBold">Not now</ThemedText>
               </Pressable>
               <Pressable onPress={handleRestore} hitSlop={Spacing.two} disabled={isBusy}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
+                <ThemedText type="smallBold" themeColor="accent">
                   Restore
                 </ThemedText>
               </Pressable>
+            </View>
+
+            {/*
+              ⚠ Guideline 3.1.2 の必須表示。更新条件の一文と、規約・プライバシーの
+                動くリンクをここから外さないこと。
+            */}
+            <View style={styles.legal}>
+              <ThemedText type="small" themeColor="textSecondary">
+                Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings
+                at any time.
+              </ThemedText>
+              <View style={styles.legalLinks}>
+                <ExternalLink href={TERMS_URL}>
+                  <ThemedText type="small" themeColor="accent">
+                    Terms of Use
+                  </ThemedText>
+                </ExternalLink>
+                <ExternalLink href={PRIVACY_URL}>
+                  <ThemedText type="small" themeColor="accent">
+                    Privacy Policy
+                  </ThemedText>
+                </ExternalLink>
+              </View>
             </View>
           </ScrollView>
         </ThemedView>
@@ -183,5 +211,13 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: Spacing.four,
     paddingTop: Spacing.one,
+  },
+  legal: {
+    gap: Spacing.two,
+    paddingTop: Spacing.two,
+  },
+  legalLinks: {
+    flexDirection: 'row',
+    gap: Spacing.four,
   },
 });
