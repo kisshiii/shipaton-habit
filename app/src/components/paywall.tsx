@@ -34,6 +34,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PRIVACY_URL, TERMS_URL } from '@/constants/legal';
 import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 import { getOffering, purchase, restore } from '@/lib/purchases';
 
 type Props = {
@@ -47,6 +48,7 @@ type Props = {
 };
 
 export function Paywall({ visible, onClose, onPurchased }: Props) {
+  const theme = useTheme();
   const [packages, setPackages] = useState<PurchasesPackage[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
@@ -130,8 +132,13 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
 
             {packages?.map((pkg) => (
               <Pressable key={pkg.identifier} onPress={() => handlePurchase(pkg)} disabled={isBusy}>
-                <ThemedView type="backgroundElement" style={styles.tier}>
-                  <ThemedText type="smallBold">{pkg.product.priceString} / month</ThemedText>
+                <ThemedView
+                  type="backgroundElement"
+                  style={[styles.tier, { borderColor: theme.accent }]}>
+                  {/* ⚠ 3.1.2: 価格と期間をここに出し続けること */}
+                  <ThemedText type="smallBold" themeColor="accent" style={styles.tierPrice}>
+                    {pkg.product.priceString} / month
+                  </ThemedText>
                   <ThemedText type="small" themeColor="textSecondary">
                     {pkg.product.description || 'Everything unlocked'}
                   </ThemedText>
@@ -206,6 +213,11 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     padding: Spacing.three,
     borderRadius: Spacing.two,
+    borderWidth: 1,
+  },
+  tierPrice: {
+    fontSize: 20,
+    lineHeight: 26,
   },
   actions: {
     flexDirection: 'row',

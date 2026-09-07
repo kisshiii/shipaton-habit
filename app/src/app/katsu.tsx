@@ -1,8 +1,6 @@
 /**
  * Your KATSU 画面。
  * サボっているときに自分へ届ける言葉を書く。ここがこのアプリの核。
- * ⚠ 見た目は後回し。動くことを優先している。
- *
  * ⚠ ここで扱う文字列は端末外に出さない。ログにも出さない(CLAUDE.md プライバシー)。
  */
 
@@ -172,12 +170,12 @@ export default function KatsuScreen() {
                   <View style={styles.rowActions}>
                     {/* ⚠ 課金機会③ の入口。押した先で無料なら Paywall、有料ならピッカー */}
                     <Pressable onPress={() => handlePickRoutine(message)} hitSlop={Spacing.two}>
-                      <ThemedText type="smallBold" themeColor="textSecondary">
+                      <ThemedText type="smallBold" themeColor="accent">
                         For: {routineLabel(message)} ▾
                       </ThemedText>
                     </Pressable>
                     <Pressable onPress={() => handleEdit(message)} hitSlop={Spacing.two}>
-                      <ThemedText type="smallBold" themeColor="textSecondary">
+                      <ThemedText type="smallBold" themeColor="accent">
                         Edit
                       </ThemedText>
                     </Pressable>
@@ -227,7 +225,9 @@ export default function KatsuScreen() {
               </ThemedText>
               <View style={styles.formActions}>
                 <Pressable onPress={handleSubmit} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold">Save</ThemedText>
+                  <ThemedText type="smallBold" themeColor="accent">
+                    Save
+                  </ThemedText>
                 </Pressable>
                 {editingId && (
                   <Pressable onPress={resetForm} hitSlop={Spacing.two}>

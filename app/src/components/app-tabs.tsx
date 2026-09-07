@@ -1,3 +1,10 @@
+/**
+ * タブバー。
+ *
+ * ⚠ アイコンは3つとも SF Symbol にすること。1つだけ画像にすると、
+ *   太さも光学サイズも揃わず、並べた瞬間に分かる。
+ */
+
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import { useColorScheme } from 'react-native';
 
@@ -11,21 +18,16 @@ export default function AppTabs() {
     <NativeTabs
       backgroundColor={colors.background}
       indicatorColor={colors.backgroundElement}
-      labelStyle={{ selected: { color: colors.text } }}>
+      tintColor={colors.accent}
+      labelStyle={{ selected: { color: colors.accent } }}>
       <NativeTabs.Trigger name="index">
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/home.png')}
-          renderingMode="template"
-        />
+        <NativeTabs.Trigger.Icon sf="checklist" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="routines">
         <NativeTabs.Trigger.Label>Routines</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          src={require('@/assets/images/tabIcons/explore.png')}
-          renderingMode="template"
-        />
+        <NativeTabs.Trigger.Icon sf="clock" />
       </NativeTabs.Trigger>
 
       <NativeTabs.Trigger name="katsu">

@@ -1,7 +1,8 @@
 /**
  * Routine setup 画面。
  * 毎日同じ時刻に繰り返す行動を登録・編集・削除する。上限 8 件。
- * ⚠ 見た目は後回し。動くことを優先している。
+ *
+ * ⚠ 上限に達したときの文言を警告にしないこと。制限そのものがメッセージ(spec §2 登録上限)。
  */
 
 import { useCallback, useState } from 'react';
@@ -124,12 +125,16 @@ export default function RoutinesScreen() {
 
           {routines.map((routine) => (
             <ThemedView key={routine.id} type="backgroundElement" style={styles.row}>
-              <ThemedText type="code">{routine.time}</ThemedText>
+              <View style={[styles.timeBadge, { backgroundColor: theme.accent }]}>
+                <ThemedText type="smallBold" themeColor="accentText">
+                  {routine.time}
+                </ThemedText>
+              </View>
               <ThemedText style={styles.rowTitle} numberOfLines={2}>
                 {routine.title}
               </ThemedText>
               <Pressable onPress={() => handleEdit(routine)} hitSlop={Spacing.two}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
+                <ThemedText type="smallBold" themeColor="accent">
                   Edit
                 </ThemedText>
               </Pressable>
@@ -169,7 +174,9 @@ export default function RoutinesScreen() {
               />
               <View style={styles.formActions}>
                 <Pressable onPress={handleSubmit} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold">{editingId ? 'Save' : 'Add'}</ThemedText>
+                  <ThemedText type="smallBold" themeColor="accent">
+                    {editingId ? 'Save' : 'Add'}
+                  </ThemedText>
                 </Pressable>
                 {editingId && (
                   <Pressable onPress={resetForm} hitSlop={Spacing.two}>
@@ -229,6 +236,11 @@ const styles = StyleSheet.create({
   },
   rowTitle: {
     flex: 1,
+  },
+  timeBadge: {
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.one,
+    borderRadius: Spacing.one,
   },
   form: {
     gap: Spacing.two,

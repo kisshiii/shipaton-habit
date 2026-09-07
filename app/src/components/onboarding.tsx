@@ -116,7 +116,7 @@ export function Onboarding({ onFinished }: Props) {
                   This app is designed for you to quit it. If it works, you stop needing it.
                 </ThemedText>
                 <Pressable onPress={() => goTo('routine')} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold">Start</ThemedText>
+                  <ThemedText type="smallBold" themeColor="accent">Start</ThemedText>
                 </Pressable>
               </>
             )}
@@ -146,7 +146,7 @@ export function Onboarding({ onFinished }: Props) {
                   style={inputStyle}
                 />
                 <Pressable onPress={handleSaveRoutine} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold">Next</ThemedText>
+                  <ThemedText type="smallBold" themeColor="accent">Next</ThemedText>
                 </Pressable>
               </>
             )}
@@ -177,7 +177,7 @@ export function Onboarding({ onFinished }: Props) {
                   {countChars(words)} / {MESSAGE_MAX_LENGTH}
                 </ThemedText>
                 <Pressable onPress={handleSaveWords} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold">Next</ThemedText>
+                  <ThemedText type="smallBold" themeColor="accent">Next</ThemedText>
                 </Pressable>
                 {isBlocked && <SelfHarmNotice />}
               </>
@@ -197,7 +197,7 @@ export function Onboarding({ onFinished }: Props) {
                 </ThemedText>
                 <View style={styles.actions}>
                   <Pressable onPress={handleAskNotifications} hitSlop={Spacing.two}>
-                    <ThemedText type="smallBold">Allow notifications</ThemedText>
+                    <ThemedText type="smallBold" themeColor="accent">Allow notifications</ThemedText>
                   </Pressable>
                   <Pressable onPress={() => goTo('done')} hitSlop={Spacing.two}>
                     <ThemedText type="smallBold" themeColor="textSecondary">
@@ -218,7 +218,7 @@ export function Onboarding({ onFinished }: Props) {
                 </ThemedText>
                 {/* ⚠ 課金機会①: オンボーディング最後。閉じられること */}
                 <Pressable onPress={() => setIsPaywallOpen(true)} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold">Begin</ThemedText>
+                  <ThemedText type="smallBold" themeColor="accent">Begin</ThemedText>
                 </Pressable>
               </>
             )}

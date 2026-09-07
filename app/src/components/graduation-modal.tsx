@@ -44,7 +44,9 @@ export function GraduationModal({ visible, onClose }: Props) {
                 むしろ自動でやるより、自分の手で解約ボタンを押すほうが儀式として強い。
             */}
             <Pressable onPress={openManageSubscriptions} hitSlop={Spacing.two}>
-              <ThemedText type="smallBold">End my subscription</ThemedText>
+              <ThemedText type="smallBold" themeColor="accent">
+                End my subscription
+              </ThemedText>
             </Pressable>
             <Pressable onPress={onClose} hitSlop={Spacing.two}>
               <ThemedText type="smallBold" themeColor="textSecondary">

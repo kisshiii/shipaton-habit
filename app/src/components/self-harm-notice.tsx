@@ -34,7 +34,9 @@ export function SelfHarmNotice() {
         It might be worth saying to someone directly, rather than to yourself at 7am.
       </ThemedText>
       <ExternalLink href={HELPLINE_URL}>
-        <ThemedText type="smallBold">Find a helpline</ThemedText>
+        <ThemedText type="smallBold" themeColor="accent">
+          Find a helpline
+        </ThemedText>
       </ExternalLink>
       <ThemedText type="small" themeColor="textSecondary">
         In an emergency, call your local emergency number.

@@ -37,6 +37,22 @@ export function recentDateKeys(days: number, endingOn: Date = new Date()): strin
   return keys;
 }
 
+/**
+ * 日付キーを読める形にする。`2026-09-07` -> `Monday, 7 September`。
+ *
+ * ⚠ 保存キーをそのまま画面に出さないこと。開発中の画面に見える。
+ * ⚠ 年を出さない。今日のことしか扱わない画面に西暦は要らない。
+ */
+export function formatDateKey(key: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+  if (!year || !month || !day) return key;
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    weekday: 'long',
+    day: 'numeric',
+    month: 'long',
+  });
+}
+
 /** "7:5" のような入力を "07:05" に正規化する。不正な値は null */
 export function normalizeTime(input: string): string | null {
   const match = input.trim().match(/^(\d{1,2}):(\d{1,2})$/);

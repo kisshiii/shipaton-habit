@@ -1,7 +1,9 @@
 /**
  * Today 画面。
  * 今日のルーティンを時刻順に並べ、タップでチェックする。
- * ⚠ 見た目は後回し。動くことを優先している。
+ *
+ * ⚠ 未完了を失敗として見せないこと。赤字・警告・残り件数の煽りを置かない。
+ *   進捗は出すが、足りないことを責める形にしない(UX禁止事項)。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
@@ -16,11 +18,13 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { CheckMark } from '@/components/check-mark';
 import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
-import { todayKey } from '@/lib/date';
+import { useTheme } from '@/hooks/use-theme';
+import { formatDateKey, todayKey } from '@/lib/date';
 import { evaluateGraduation } from '@/lib/graduation';
 import {
   getNotificationPermission,
@@ -31,6 +35,7 @@ import { getMessages, getRoutines, getTodayRecord, markGraduated, toggleCompleti
 import type { DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 export default function TodayScreen() {
+  const theme = useTheme();
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
   const [record, setRecord] = useState<DailyRecord | null>(null);
   const [messages, setMessages] = useState<KatsuMessage[]>([]);
@@ -115,14 +120,17 @@ export default function TodayScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top']}>
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
-            <ThemedText type="subtitle">Today</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
+            <View style={styles.headerText}>
+              <ThemedText type="subtitle">Today</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                {formatDateKey(record?.date ?? todayKey())}
+              </ThemedText>
+            </View>
+            {/* ⚠ 分母を煽りに使わない。数字を置くだけで、色も強調も付けない */}
+            <ThemedText type="smallBold" themeColor="textSecondary">
               {doneCount} / {record?.totalCount ?? 0}
             </ThemedText>
           </View>
-          <ThemedText type="small" themeColor="textSecondary">
-            {record?.date ?? todayKey()}
-          </ThemedText>
 
           {fallbackWord && (
             <ThemedView type="backgroundSelected" style={styles.word}>
@@ -138,7 +146,9 @@ export default function TodayScreen() {
                   Without notifications you have to remember to open this app. That is the one
                   thing it was built to spare you.
                 </ThemedText>
-                <ThemedText type="smallBold">Turn on notifications</ThemedText>
+                <ThemedText type="smallBold" themeColor="accent">
+                  Turn on notifications
+                </ThemedText>
               </ThemedView>
             </Pressable>
           )}
@@ -165,11 +175,18 @@ export default function TodayScreen() {
               <Pressable key={routine.id} onPress={() => handleToggle(routine.id)}>
                 <ThemedView
                   type={isDone ? 'backgroundSelected' : 'backgroundElement'}
-                  style={[styles.row, isFocused && styles.rowFocused]}>
-                  <ThemedText type="code">{isDone ? '[x]' : '[ ]'}</ThemedText>
-                  <ThemedText type="code">{routine.time}</ThemedText>
+                  style={[
+                    styles.row,
+                    isFocused && [styles.rowFocused, { borderColor: theme.accent }],
+                  ]}>
+                  <CheckMark isChecked={isDone} />
                   <View style={styles.rowBody}>
-                    <ThemedText numberOfLines={2}>{routine.title}</ThemedText>
+                    <ThemedText numberOfLines={2} themeColor={isDone ? 'textSecondary' : 'text'}>
+                      {routine.title}
+                    </ThemedText>
+                    <ThemedText type="small" themeColor="textSecondary">
+                      {routine.time}
+                    </ThemedText>
                   </View>
                 </ThemedView>
               </Pressable>
@@ -197,8 +214,12 @@ const styles = StyleSheet.create({
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
+    gap: Spacing.three,
+  },
+  headerText: {
+    gap: Spacing.half,
   },
   word: {
     padding: Spacing.three,
@@ -221,5 +242,6 @@ const styles = StyleSheet.create({
   },
   rowBody: {
     flex: 1,
+    gap: Spacing.half,
   },
 });

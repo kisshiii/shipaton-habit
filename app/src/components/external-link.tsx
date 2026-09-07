@@ -1,3 +1,10 @@
+/**
+ * 外部リンクをアプリ内ブラウザで開く。
+ *
+ * ⚠ テンプレ由来だが**残すこと。**相談先(`self-harm-notice`)と、
+ *   Guideline 3.1.2 が要求する規約・プライバシーのリンクがこれを使っている。
+ */
+
 import { Href, Link } from 'expo-router';
 import { openBrowserAsync, WebBrowserPresentationStyle } from 'expo-web-browser';
 import { type ComponentProps } from 'react';
