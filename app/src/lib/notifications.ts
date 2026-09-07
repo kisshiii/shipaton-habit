@@ -16,6 +16,7 @@ import * as Notifications from 'expo-notifications';
 
 import { IOS_SCHEDULED_LIMIT, SCHEDULE_DAYS_AHEAD } from '@/constants/notifications';
 import { toDateKey } from '@/lib/date';
+import { isProCached } from '@/lib/purchases';
 import { getDailyRecords, getMessages, getRoutines } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
 
@@ -55,10 +56,19 @@ export async function requestNotificationPermission(): Promise<Notifications.Per
 
 /**
  * そのルーティンに使う文言を選ぶ。
- * 項目ごとの出し分けは有料。無料は routineId を持たない1件を全ルーティンで共有する
- * (spec §2 無料版の通知文言)。
+ *
+ * 項目ごとの出し分けは有料(課金機会③)。
+ * ⚠ **無料のときは先頭1件を全ルーティン共通で使う。**
+ *   画面側は2つ目以降を「Locked ── still yours」と表示して触らせないのに、
+ *   通知だけがそれを鳴らしていると、ロックが嘘になり ②③ が課金機会として成立しない。
+ *   ロック済みの言葉は**消さない**(spec §2)。使わないだけで、再課金すれば戻る。
  */
-function messageFor(messages: KatsuMessage[], routine: RoutineItem): KatsuMessage | undefined {
+function messageFor(
+  messages: KatsuMessage[],
+  routine: RoutineItem,
+  isPaid: boolean,
+): KatsuMessage | undefined {
+  if (!isPaid) return messages[0];
   return (
     messages.find((message) => message.routineId === routine.id) ??
     messages.find((message) => message.routineId === undefined)
@@ -82,6 +92,9 @@ async function runSync(): Promise<number> {
   const status = await getNotificationPermission();
   if (status !== 'granted') return 0;
 
+  // ⚠ ここで通信しない。画面側が更新したキャッシュを読むだけ(課金の障害で通知を止めない)
+  const isPaid = await isProCached();
+
   // 記録は1回だけ読む。日ごとに読むと同じキーを7回パースすることになる
   const records = await getDailyRecords();
   const now = new Date();
@@ -97,7 +110,7 @@ async function runSync(): Promise<number> {
       if (at.getTime() <= now.getTime()) continue;
       if (completedIds.includes(routine.id)) continue;
 
-      const message = messageFor(messages, routine);
+      const message = messageFor(messages, routine, isPaid);
       if (!message) continue;
 
       const data: KatsuNotificationData = { routineId: routine.id };

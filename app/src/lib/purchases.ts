@@ -42,6 +42,16 @@ async function readCachedEntitlement(): Promise<boolean> {
   return (await AsyncStorage.getItem(CACHE_KEY)) === 'true';
 }
 
+/**
+ * 通信せずに entitlement を読む。
+ *
+ * ⚠ 通知の予約は画面を開くたびに走るため、そのたびに RevenueCat を叩かせない。
+ *   画面側が `isPro()` を呼んだ時点でキャッシュは更新されているので、ここは読むだけでよい。
+ */
+export async function isProCached(): Promise<boolean> {
+  return readCachedEntitlement();
+}
+
 async function writeCachedEntitlement(isActive: boolean): Promise<void> {
   await AsyncStorage.setItem(CACHE_KEY, isActive ? 'true' : 'false');
 }

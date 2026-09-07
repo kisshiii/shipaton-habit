@@ -172,6 +172,18 @@ export async function deleteRoutine(id: string): Promise<void> {
   const routines = await getRoutines();
   await saveRoutines(routines.filter((routine) => routine.id !== id));
 
+  // ⚠ そのルーティン専用にしていた言葉を消さない。全ルーティン共通に戻すだけ。
+  //   消すと「書いた言葉を消さない」(spec §2 課金が切れたとき)と同じ一線を越える。
+  //   放置すると届く先を失ったまま残るので、戻すのが正しい。
+  const messages = await getMessages();
+  if (messages.some((message) => message.routineId === id)) {
+    await saveMessages(
+      messages.map((message) =>
+        message.routineId === id ? { ...message, routineId: undefined } : message,
+      ),
+    );
+  }
+
   const date = todayKey();
   const records = await readJson<RecordMap>(KEYS.records, {});
   const today = records[date];
@@ -309,6 +321,19 @@ export async function addMessage(text: string): Promise<KatsuMessage> {
   const message: KatsuMessage = { id: createId(), text: trimmed };
   await saveMessages([...(await getMessages()), message]);
   return message;
+}
+
+/**
+ * 言葉を出すルーティンを決める(課金機会③)。`undefined` で全ルーティン共通に戻す。
+ *
+ * ⚠ 本文を触らないので Tier 1 の再検査は走らせない。
+ *   保存済みの本文は入力時に一度通っている(spec §4「再検査は入力時のみで足りる」)。
+ */
+export async function setMessageRoutine(id: string, routineId?: string): Promise<void> {
+  const messages = await getMessages();
+  await saveMessages(
+    messages.map((message) => (message.id === id ? { ...message, routineId } : message)),
+  );
 }
 
 export async function updateMessage(id: string, text: string): Promise<void> {

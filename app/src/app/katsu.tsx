@@ -12,6 +12,7 @@ import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Paywall } from '@/components/paywall';
+import { RoutinePicker } from '@/components/routine-picker';
 import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -25,10 +26,12 @@ import {
   addMessage,
   deleteMessage,
   getMessages,
+  getRoutines,
   SelfHarmTextError,
+  setMessageRoutine,
   updateMessage,
 } from '@/storage';
-import type { KatsuMessage } from '@/types';
+import type { KatsuMessage, RoutineItem } from '@/types';
 
 export default function KatsuScreen() {
   const theme = useTheme();
@@ -39,9 +42,13 @@ export default function KatsuScreen() {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isPaid, setIsPaid] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  const [routines, setRoutines] = useState<RoutineItem[]>([]);
+  /** ピッカーを開いている言葉。null なら閉じている(課金機会③) */
+  const [pickingId, setPickingId] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setMessages(await getMessages());
+    setRoutines(await getRoutines());
     // 取得に失敗してもキャッシュで通す。課金の障害でコア体験を止めない
     setIsPaid(await isPro());
     // 文言が通知の本文そのもの。書き換えたら予約も貼り直す
@@ -113,6 +120,22 @@ export default function KatsuScreen() {
     ]);
   };
 
+  /**
+   * ⚠ 課金機会③: 項目ごとに言葉を出し分けようとしたとき。それ以外でペイウォールを出さない。
+   *   無料の人にも行は見せる ── 隠すと存在に気づけず、③ が課金機会として成立しない。
+   */
+  const handlePickRoutine = (message: KatsuMessage) => {
+    if (!isPaid) {
+      setIsPaywallOpen(true);
+      return;
+    }
+    setPickingId(message.id);
+  };
+
+  /** 割り当て先の表示名。ルーティンが消えていれば共通扱いに落ちる */
+  const routineLabel = (message: KatsuMessage) =>
+    routines.find((routine) => routine.id === message.routineId)?.title ?? 'All routines';
+
   // ⚠ 課金機会②: 2つ目の言葉を書こうとしたとき。それ以外でペイウォールを出さない
   const needsPaywall = !editingId && !isPaid && messages.length >= FREE_MESSAGE_LIMIT;
 
@@ -147,6 +170,12 @@ export default function KatsuScreen() {
                   </Pressable>
                 ) : (
                   <View style={styles.rowActions}>
+                    {/* ⚠ 課金機会③ の入口。押した先で無料なら Paywall、有料ならピッカー */}
+                    <Pressable onPress={() => handlePickRoutine(message)} hitSlop={Spacing.two}>
+                      <ThemedText type="smallBold" themeColor="textSecondary">
+                        For: {routineLabel(message)} ▾
+                      </ThemedText>
+                    </Pressable>
                     <Pressable onPress={() => handleEdit(message)} hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="textSecondary">
                         Edit
@@ -225,6 +254,20 @@ export default function KatsuScreen() {
         onClose={() => setIsPaywallOpen(false)}
         onPurchased={refresh}
       />
+
+      {pickingId && (
+        <RoutinePicker
+          visible
+          routines={routines}
+          selectedId={messages.find((message) => message.id === pickingId)?.routineId}
+          onSelect={async (routineId) => {
+            await setMessageRoutine(pickingId, routineId);
+            // 予約済みの通知の本文が変わるので貼り直す
+            await refresh();
+          }}
+          onClose={() => setPickingId(null)}
+        />
+      )}
     </ThemedView>
   );
 }
@@ -251,6 +294,7 @@ const styles = StyleSheet.create({
   },
   rowActions: {
     flexDirection: 'row',
+    flexWrap: 'wrap',
     gap: Spacing.four,
   },
   form: {
