@@ -6,9 +6,19 @@
 
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { Paywall } from '@/components/paywall';
 import { RoutinePicker } from '@/components/routine-picker';
 import { SelfHarmNotice } from '@/components/self-harm-notice';
@@ -147,6 +157,9 @@ export default function KatsuScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
+        <KeyboardAvoidingView
+          style={styles.safeArea}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <ThemedText type="subtitle">Your KATSU</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
@@ -161,7 +174,10 @@ export default function KatsuScreen() {
                   {message.text}
                 </ThemedText>
                 {isLocked ? (
-                  <Pressable onPress={() => setIsPaywallOpen(true)} hitSlop={Spacing.two}>
+                  <Pressable
+                    onPress={() => setIsPaywallOpen(true)}
+                    style={styles.hit}
+                    hitSlop={Spacing.two}>
                     <ThemedText type="smallBold" themeColor="textSecondary">
                       Locked ── still yours
                     </ThemedText>
@@ -169,17 +185,26 @@ export default function KatsuScreen() {
                 ) : (
                   <View style={styles.rowActions}>
                     {/* ⚠ 課金機会③ の入口。押した先で無料なら Paywall、有料ならピッカー */}
-                    <Pressable onPress={() => handlePickRoutine(message)} hitSlop={Spacing.two}>
+                    <Pressable
+                      onPress={() => handlePickRoutine(message)}
+                      style={styles.hit}
+                      hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="accent">
                         For: {routineLabel(message)} ▾
                       </ThemedText>
                     </Pressable>
-                    <Pressable onPress={() => handleEdit(message)} hitSlop={Spacing.two}>
+                    <Pressable
+                      onPress={() => handleEdit(message)}
+                      style={styles.hit}
+                      hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="accent">
                         Edit
                       </ThemedText>
                     </Pressable>
-                    <Pressable onPress={() => handleDelete(message)} hitSlop={Spacing.two}>
+                    <Pressable
+                      onPress={() => handleDelete(message)}
+                      style={styles.hit}
+                      hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="textSecondary">
                         Delete
                       </ThemedText>
@@ -191,14 +216,13 @@ export default function KatsuScreen() {
           })}
 
           {needsPaywall ? (
-            <Pressable onPress={() => setIsPaywallOpen(true)}>
-              <ThemedView type="backgroundElement" style={styles.form}>
-                <ThemedText type="smallBold">Write another one</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  One word is free. More than one is part of the paid plan.
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
+            <ThemedView type="backgroundElement" style={styles.form}>
+              <ThemedText type="smallBold">Write another one</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                One set of words is free. More than one is part of the paid plan.
+              </ThemedText>
+              <Button label="See the plans" onPress={() => setIsPaywallOpen(true)} />
+            </ThemedView>
           ) : (
             <ThemedView type="backgroundElement" style={styles.form}>
               <ThemedText type="smallBold">
@@ -224,18 +248,8 @@ export default function KatsuScreen() {
                 {countChars(draft)} / {MESSAGE_MAX_LENGTH}
               </ThemedText>
               <View style={styles.formActions}>
-                <Pressable onPress={handleSubmit} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="accent">
-                    Save
-                  </ThemedText>
-                </Pressable>
-                {editingId && (
-                  <Pressable onPress={resetForm} hitSlop={Spacing.two}>
-                    <ThemedText type="smallBold" themeColor="textSecondary">
-                      Cancel
-                    </ThemedText>
-                  </Pressable>
-                )}
+                <Button label={editingId ? 'Save' : 'Save these words'} onPress={handleSubmit} />
+                {editingId && <Button label="Cancel" variant="plain" onPress={resetForm} />}
               </View>
             </ThemedView>
           )}
@@ -247,6 +261,7 @@ export default function KatsuScreen() {
           */}
           {isBlocked && <SelfHarmNotice />}
         </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       <Paywall
@@ -282,7 +297,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.four,
+    paddingBottom: BottomTabInset + Spacing.six,
   },
   row: {
     gap: Spacing.two,
@@ -295,7 +310,12 @@ const styles = StyleSheet.create({
   rowActions: {
     flexDirection: 'row',
     flexWrap: 'wrap',
-    gap: Spacing.four,
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
+  hit: {
+    minHeight: 44,
+    justifyContent: 'center',
   },
   form: {
     gap: Spacing.two,
@@ -306,8 +326,7 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   formActions: {
-    flexDirection: 'row',
-    gap: Spacing.four,
+    gap: Spacing.two,
     paddingTop: Spacing.one,
   },
   input: {

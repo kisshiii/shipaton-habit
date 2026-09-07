@@ -10,8 +10,10 @@
  * ユーザーがいつでも降りられる。
  */
 
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { Modal, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -25,6 +27,8 @@ type Props = {
 export function GraduationModal({ visible, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* ⚠ Modal の中は別のビュー階層。provider が無いと inset が 0 になる */}
+      <SafeAreaProvider>
       <View style={styles.backdrop}>
         <ThemedView style={styles.sheet}>
           <ThemedText type="subtitle">You might not need this anymore.</ThemedText>
@@ -43,16 +47,8 @@ export function GraduationModal({ visible, onClose }: Props) {
                 できるのは Apple の管理画面へ送ることまで。
                 むしろ自動でやるより、自分の手で解約ボタンを押すほうが儀式として強い。
             */}
-            <Pressable onPress={openManageSubscriptions} hitSlop={Spacing.two}>
-              <ThemedText type="smallBold" themeColor="accent">
-                End my subscription
-              </ThemedText>
-            </Pressable>
-            <Pressable onPress={onClose} hitSlop={Spacing.two}>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                Not yet
-              </ThemedText>
-            </Pressable>
+            <Button label="End my subscription" onPress={openManageSubscriptions} />
+            <Button label="Not yet" variant="plain" onPress={onClose} />
           </View>
 
           <ThemedText type="small" themeColor="textSecondary">
@@ -60,6 +56,7 @@ export function GraduationModal({ visible, onClose }: Props) {
           </ThemedText>
         </ThemedView>
       </View>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -77,8 +74,7 @@ const styles = StyleSheet.create({
     borderRadius: Spacing.three,
   },
   actions: {
-    flexDirection: 'row',
-    gap: Spacing.four,
+    gap: Spacing.two,
     paddingTop: Spacing.one,
   },
 });

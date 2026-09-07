@@ -3,20 +3,31 @@
  * 毎日同じ時刻に繰り返す行動を登録・編集・削除する。上限 8 件。
  *
  * ⚠ 上限に達したときの文言を警告にしないこと。制限そのものがメッセージ(spec §2 登録上限)。
+ * ⚠ 時刻はホイールで選ばせる。手で打たせない(`time-field.tsx`)。
  */
 
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { TimeField } from '@/components/time-field';
 import { MAX_ROUTINES } from '@/constants/routines';
+import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { normalizeTime } from '@/lib/date';
 import { syncScheduledNotifications } from '@/lib/notifications';
 import {
   addRoutine,
@@ -28,11 +39,12 @@ import {
 import type { RoutineItem } from '@/types';
 
 const TITLE_MAX_LENGTH = 40;
+const DEFAULT_TIME = '07:00';
 
 export default function RoutinesScreen() {
   const theme = useTheme();
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
-  const [time, setTime] = useState('');
+  const [time, setTime] = useState(DEFAULT_TIME);
   const [title, setTitle] = useState('');
   const [editingId, setEditingId] = useState<string | null>(null);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
@@ -52,15 +64,12 @@ export default function RoutinesScreen() {
 
   const resetForm = () => {
     setEditingId(null);
-    setTime('');
+    setTime(DEFAULT_TIME);
     setTitle('');
   };
 
   const handleSubmit = async () => {
-    if (normalizeTime(time) === null) {
-      Alert.alert('Check the time', 'Use 24-hour format, like 07:00.');
-      return;
-    }
+    // ⚠ 時刻はピッカーから来るので不正な値が入らない。検証が要るのは題名だけ
     if (!title.trim()) {
       Alert.alert('Add a title', 'Write what you will do at that time.');
       return;
@@ -109,103 +118,112 @@ export default function RoutinesScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <View style={styles.header}>
-            <ThemedText type="subtitle">Routines</ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {routines.length} / {MAX_ROUTINES}
-            </ThemedText>
-          </View>
-
-          {routines.length === 0 && (
-            <ThemedText type="small" themeColor="textSecondary">
-              Nothing yet. Add something you will do every day at the same time.
-            </ThemedText>
-          )}
-
-          {routines.map((routine) => (
-            <ThemedView key={routine.id} type="backgroundElement" style={styles.row}>
-              <View style={[styles.timeBadge, { backgroundColor: theme.accent }]}>
-                <ThemedText type="smallBold" themeColor="accentText">
-                  {routine.time}
-                </ThemedText>
-              </View>
-              <ThemedText style={styles.rowTitle} numberOfLines={2}>
-                {routine.title}
+        <KeyboardAvoidingView
+          style={styles.safeArea}
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+            <View style={styles.header}>
+              <ThemedText type="subtitle">Routines</ThemedText>
+              <ThemedText type="smallBold" themeColor="textSecondary">
+                {routines.length} / {MAX_ROUTINES}
               </ThemedText>
-              <Pressable onPress={() => handleEdit(routine)} hitSlop={Spacing.two}>
-                <ThemedText type="smallBold" themeColor="accent">
-                  Edit
-                </ThemedText>
-              </Pressable>
-              <Pressable onPress={() => handleDelete(routine)} hitSlop={Spacing.two}>
-                <ThemedText type="smallBold" themeColor="textSecondary">
-                  Delete
-                </ThemedText>
-              </Pressable>
-            </ThemedView>
-          ))}
+            </View>
 
-          {isFull ? (
-            <ThemedText type="small" themeColor="textSecondary" style={styles.limitNote}>
-              Start with a few. You can add more after you graduate.
-            </ThemedText>
-          ) : (
-            <ThemedView type="backgroundElement" style={styles.form}>
-              <ThemedText type="smallBold">
-                {editingId ? 'Edit routine' : 'Add a routine'}
-              </ThemedText>
-              <TextInput
-                value={time}
-                onChangeText={setTime}
-                placeholder="07:00"
-                placeholderTextColor={theme.textSecondary}
-                keyboardType="numbers-and-punctuation"
-                maxLength={5}
-                style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-              />
-              <TextInput
-                value={title}
-                onChangeText={setTitle}
-                placeholder="Drink a glass of water"
-                placeholderTextColor={theme.textSecondary}
-                maxLength={TITLE_MAX_LENGTH}
-                style={[styles.input, { color: theme.text, borderColor: theme.backgroundSelected }]}
-              />
-              <View style={styles.formActions}>
-                <Pressable onPress={handleSubmit} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="accent">
-                    {editingId ? 'Save' : 'Add'}
-                  </ThemedText>
-                </Pressable>
-                {editingId && (
-                  <Pressable onPress={resetForm} hitSlop={Spacing.two}>
-                    <ThemedText type="smallBold" themeColor="textSecondary">
-                      Cancel
+            {routines.length === 0 && (
+              <ThemedView type="backgroundElement" style={styles.empty}>
+                <ThemedText type="smallBold">Nothing yet</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  Add something you will do every day at the same time. One is enough to start.
+                </ThemedText>
+              </ThemedView>
+            )}
+
+            {routines.map((routine) => {
+              const isEditing = routine.id === editingId;
+              return (
+                <ThemedView
+                  key={routine.id}
+                  type={isEditing ? 'backgroundSelected' : 'backgroundElement'}
+                  style={styles.row}>
+                  <View style={styles.rowMain}>
+                    <View style={[styles.timeBadge, { backgroundColor: theme.accent }]}>
+                      <ThemedText type="smallBold" themeColor="accentText">
+                        {routine.time}
+                      </ThemedText>
+                    </View>
+                    <ThemedText style={styles.rowTitle} numberOfLines={2}>
+                      {routine.title}
                     </ThemedText>
-                  </Pressable>
-                )}
-              </View>
-            </ThemedView>
-          )}
-          {/*
-            自主卒業(spec §2)。判定を待たずにいつでも降りられるようにする。
-            ⚠ 思想としてはこちらが本体。アプリが許可を出すのではなく、ユーザーが決める。
-              目立たせる必要はないが、隠さないこと。常時ここに置く。
-          */}
-          <Pressable onPress={() => setIsGraduationOpen(true)} hitSlop={Spacing.two}>
-            <ThemedText type="small" themeColor="textSecondary" style={styles.graduate}>
-              I don&apos;t need this anymore
-            </ThemedText>
-          </Pressable>
-        </ScrollView>
+                  </View>
+                  {/* ⚠ 文字リンクにしない。44pt を確保して押せるものだと分かる形にする */}
+                  <View style={styles.rowActions}>
+                    <Button label="Edit" variant="plain" onPress={() => handleEdit(routine)} />
+                    <Pressable
+                      onPress={() => handleDelete(routine)}
+                      style={styles.deleteHit}
+                      hitSlop={Spacing.two}>
+                      <ThemedText type="smallBold" themeColor="textSecondary">
+                        Delete
+                      </ThemedText>
+                    </Pressable>
+                  </View>
+                </ThemedView>
+              );
+            })}
+
+            {isFull ? (
+              <ThemedView type="backgroundElement" style={styles.empty}>
+                <ThemedText type="smallBold">Start with a few</ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  You can add more after you graduate.
+                </ThemedText>
+              </ThemedView>
+            ) : (
+              <ThemedView type="backgroundElement" style={styles.form}>
+                <ThemedText type="smallBold">
+                  {editingId ? 'Edit routine' : 'Add a routine'}
+                </ThemedText>
+
+                <TimeField value={time} onChange={setTime} />
+
+                <TextInput
+                  value={title}
+                  onChangeText={setTitle}
+                  placeholder="Drink a glass of water"
+                  placeholderTextColor={theme.textSecondary}
+                  maxLength={TITLE_MAX_LENGTH}
+                  returnKeyType="done"
+                  onSubmitEditing={handleSubmit}
+                  style={[
+                    styles.input,
+                    { color: theme.text, borderColor: theme.backgroundSelected },
+                  ]}
+                />
+
+                <Button label={editingId ? 'Save' : 'Add routine'} onPress={handleSubmit} />
+                {editingId && <Button label="Cancel" variant="plain" onPress={resetForm} />}
+              </ThemedView>
+            )}
+
+            {/*
+              自主卒業(spec §2)。判定を待たずにいつでも降りられるようにする。
+              ⚠ 思想としてはこちらが本体。アプリが許可を出すのではなく、ユーザーが決める。
+                目立たせる必要はないが、隠さないこと。常時ここに置く。
+            */}
+            <Pressable
+              onPress={() => setIsGraduationOpen(true)}
+              style={styles.graduate}
+              hitSlop={Spacing.two}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.graduateText}>
+                I don&apos;t need this anymore
+              </ThemedText>
+            </Pressable>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </SafeAreaView>
 
       {/* 判定で出るものと同じモーダル。自分で呼んだ場合は「表示済み」にしない */}
-      <GraduationModal
-        visible={isGraduationOpen}
-        onClose={() => setIsGraduationOpen(false)}
-      />
+      <GraduationModal visible={isGraduationOpen} onClose={() => setIsGraduationOpen(false)} />
     </ThemedView>
   );
 }
@@ -220,50 +238,65 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.four,
+    paddingBottom: BottomTabInset + Spacing.six,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'baseline',
+    alignItems: 'center',
     justifyContent: 'space-between',
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
+  empty: {
+    gap: Spacing.two,
     padding: Spacing.three,
     borderRadius: Spacing.two,
   },
+  row: {
+    gap: Spacing.two,
+    padding: Spacing.three,
+    borderRadius: Spacing.two,
+  },
+  rowMain: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+  },
   rowTitle: {
     flex: 1,
+  },
+  rowActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
   },
   timeBadge: {
     paddingHorizontal: Spacing.two,
     paddingVertical: Spacing.one,
     borderRadius: Spacing.one,
   },
+  deleteHit: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.two,
+  },
   form: {
-    gap: Spacing.two,
+    gap: Spacing.three,
     padding: Spacing.three,
     borderRadius: Spacing.two,
-  },
-  formActions: {
-    flexDirection: 'row',
-    gap: Spacing.four,
-    paddingTop: Spacing.one,
   },
   input: {
     borderWidth: 1,
     borderRadius: Spacing.two,
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    minHeight: 48,
     fontSize: 16,
   },
-  limitNote: {
-    paddingVertical: Spacing.three,
-  },
   graduate: {
-    paddingTop: Spacing.four,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingTop: Spacing.three,
+  },
+  graduateText: {
     textDecorationLine: 'underline',
   },
 });

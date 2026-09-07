@@ -12,20 +12,33 @@
  *
  * ⚠ ルーティンの入力欄には例文を置くこと。ユーザーは最初の1件で使い方を理解するため、
  *   **この例文が実質的なチュートリアル**になる(spec §2)。
+ *
+ * ⚠ **`Modal` の中には専用の `SafeAreaProvider` が要る。** 外側の provider は root の
+ *   ビューを測っているため、Modal 内では inset が 0 になり、**先頭の文字がノッチに潜って
+ *   読めなくなる**(実機で発覚 2026-09-07)。`SafeAreaView` を置くだけでは足りない。
  */
 
 import { useState } from 'react';
-import { Modal, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { Paywall } from '@/components/paywall';
 import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { Spacing } from '@/constants/theme';
+import { TimeField } from '@/components/time-field';
 import { useTheme } from '@/hooks/use-theme';
-import { normalizeTime } from '@/lib/date';
 import { requestNotificationPermission, syncScheduledNotifications } from '@/lib/notifications';
 import { countChars, truncateChars } from '@/lib/text';
 import { addMessage, addRoutine, markOnboarded, SelfHarmTextError } from '@/storage';
@@ -39,7 +52,7 @@ type Props = {
 export function Onboarding({ onFinished }: Props) {
   const theme = useTheme();
   const [step, setStep] = useState<Step>('intro');
-  const [time, setTime] = useState('');
+  const [time, setTime] = useState('07:00');
   const [title, setTitle] = useState('');
   const [words, setWords] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -55,10 +68,7 @@ export function Onboarding({ onFinished }: Props) {
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.backgroundSelected }];
 
   const handleSaveRoutine = async () => {
-    if (normalizeTime(time) === null) {
-      setError('Use 24-hour format, like 07:00.');
-      return;
-    }
+    // ⚠ 時刻はピッカーから来るので不正な値が入らない。検証が要るのは題名だけ
     if (!title.trim()) {
       setError('Write what you will do at that time.');
       return;
@@ -101,8 +111,13 @@ export function Onboarding({ onFinished }: Props) {
 
   return (
     <Modal visible animationType="fade" presentationStyle="fullScreen">
-      <ThemedView style={styles.container}>
+      {/* ⚠ この provider を外すと先頭の文字がノッチに潜る。上のコメントを読むこと */}
+      <SafeAreaProvider>
+        <ThemedView style={styles.container}>
         <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+          <KeyboardAvoidingView
+            style={styles.safeArea}
+            behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {step === 'intro' && (
               <>
@@ -115,9 +130,7 @@ export function Onboarding({ onFinished }: Props) {
                 <ThemedText type="small" themeColor="textSecondary">
                   This app is designed for you to quit it. If it works, you stop needing it.
                 </ThemedText>
-                <Pressable onPress={() => goTo('routine')} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="accent">Start</ThemedText>
-                </Pressable>
+                <Button label="Start" onPress={() => goTo('routine')} />
               </>
             )}
 
@@ -127,16 +140,8 @@ export function Onboarding({ onFinished }: Props) {
                 <ThemedText type="small" themeColor="textSecondary">
                   Something with a time on it, that repeats. Five minutes to an hour.
                 </ThemedText>
+                <TimeField value={time} onChange={setTime} />
                 {/* ⚠ この例文が実質的なチュートリアル。消さないこと */}
-                <TextInput
-                  value={time}
-                  onChangeText={setTime}
-                  placeholder="07:00"
-                  placeholderTextColor={theme.textSecondary}
-                  keyboardType="numbers-and-punctuation"
-                  maxLength={5}
-                  style={inputStyle}
-                />
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
@@ -145,9 +150,7 @@ export function Onboarding({ onFinished }: Props) {
                   maxLength={40}
                   style={inputStyle}
                 />
-                <Pressable onPress={handleSaveRoutine} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="accent">Next</ThemedText>
-                </Pressable>
+                <Button label="Next" onPress={handleSaveRoutine} />
               </>
             )}
 
@@ -176,9 +179,7 @@ export function Onboarding({ onFinished }: Props) {
                 <ThemedText type="small" themeColor="textSecondary" style={styles.counter}>
                   {countChars(words)} / {MESSAGE_MAX_LENGTH}
                 </ThemedText>
-                <Pressable onPress={handleSaveWords} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="accent">Next</ThemedText>
-                </Pressable>
+                <Button label="Next" onPress={handleSaveWords} />
                 {isBlocked && <SelfHarmNotice />}
               </>
             )}
@@ -196,14 +197,8 @@ export function Onboarding({ onFinished }: Props) {
                   this was built to spare you.
                 </ThemedText>
                 <View style={styles.actions}>
-                  <Pressable onPress={handleAskNotifications} hitSlop={Spacing.two}>
-                    <ThemedText type="smallBold" themeColor="accent">Allow notifications</ThemedText>
-                  </Pressable>
-                  <Pressable onPress={() => goTo('done')} hitSlop={Spacing.two}>
-                    <ThemedText type="smallBold" themeColor="textSecondary">
-                      Not now
-                    </ThemedText>
-                  </Pressable>
+                  <Button label="Allow notifications" onPress={handleAskNotifications} />
+                  <Button label="Not now" variant="plain" onPress={() => goTo('done')} />
                 </View>
               </>
             )}
@@ -217,9 +212,7 @@ export function Onboarding({ onFinished }: Props) {
                   Nothing you write here is sent anywhere. Nobody reads it but you.
                 </ThemedText>
                 {/* ⚠ 課金機会①: オンボーディング最後。閉じられること */}
-                <Pressable onPress={() => setIsPaywallOpen(true)} hitSlop={Spacing.two}>
-                  <ThemedText type="smallBold" themeColor="accent">Begin</ThemedText>
-                </Pressable>
+                <Button label="Begin" onPress={() => setIsPaywallOpen(true)} />
               </>
             )}
 
@@ -229,13 +222,14 @@ export function Onboarding({ onFinished }: Props) {
               </ThemedText>
             )}
           </ScrollView>
+          </KeyboardAvoidingView>
         </SafeAreaView>
 
-        {/* ⚠ 閉じられること。閉じてもそのままアプリに入れる(spec §2) */}
         {/* ⚠ 閉じられること。閉じても、買っても、そのままアプリに入る。
             onPurchased は渡さない ── 購入後は onClose も呼ばれるため二重に走る */}
         <Paywall visible={isPaywallOpen} onClose={handleFinish} />
-      </ThemedView>
+        </ThemedView>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -266,7 +260,6 @@ const styles = StyleSheet.create({
     alignSelf: 'flex-end',
   },
   actions: {
-    flexDirection: 'row',
-    gap: Spacing.four,
+    gap: Spacing.two,
   },
 });

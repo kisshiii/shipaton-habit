@@ -18,6 +18,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { CheckMark } from '@/components/check-mark';
 import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
@@ -139,18 +140,14 @@ export default function TodayScreen() {
           )}
 
           {isBlocked && hasWords && (
-            <Pressable onPress={handleEnableNotifications}>
-              <ThemedView type="backgroundElement" style={styles.notice}>
-                <ThemedText type="smallBold">Let your words reach you</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  Without notifications you have to remember to open this app. That is the one
-                  thing it was built to spare you.
-                </ThemedText>
-                <ThemedText type="smallBold" themeColor="accent">
-                  Turn on notifications
-                </ThemedText>
-              </ThemedView>
-            </Pressable>
+            <ThemedView type="backgroundElement" style={styles.notice}>
+              <ThemedText type="smallBold">Let your words reach you</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Without notifications you have to remember to open this app. That is the one thing
+                it was built to spare you.
+              </ThemedText>
+              <Button label="Turn on notifications" onPress={handleEnableNotifications} />
+            </ThemedView>
           )}
 
           {routines.length > 0 && !hasWords && (
@@ -163,16 +160,22 @@ export default function TodayScreen() {
           )}
 
           {routines.length === 0 && (
-            <ThemedText type="small" themeColor="textSecondary">
-              No routines yet. Add one in the Routines tab.
-            </ThemedText>
+            <ThemedView type="backgroundElement" style={styles.notice}>
+              <ThemedText type="smallBold">Nothing scheduled</ThemedText>
+              <ThemedText type="small" themeColor="textSecondary">
+                Add your first routine in the Routines tab. Today fills itself in from there.
+              </ThemedText>
+            </ThemedView>
           )}
 
           {routines.map((routine) => {
             const isDone = completedIds.includes(routine.id);
             const isFocused = routine.id === focusedId;
             return (
-              <Pressable key={routine.id} onPress={() => handleToggle(routine.id)}>
+              <Pressable
+                key={routine.id}
+                onPress={() => handleToggle(routine.id)}
+                style={({ pressed }) => [pressed && styles.pressed]}>
                 <ThemedView
                   type={isDone ? 'backgroundSelected' : 'backgroundElement'}
                   style={[
@@ -210,7 +213,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.four,
+    paddingBottom: BottomTabInset + Spacing.six,
   },
   header: {
     flexDirection: 'row',
@@ -234,11 +237,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: Spacing.three,
+    // ⚠ 行そのものがチェックのタップ領域。小さくしないこと
+    minHeight: 64,
     padding: Spacing.three,
     borderRadius: Spacing.two,
   },
   rowFocused: {
     borderWidth: 2,
+  },
+  pressed: {
+    opacity: 0.7,
   },
   rowBody: {
     flex: 1,

@@ -9,7 +9,9 @@
  */
 
 import { Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
+import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
@@ -32,6 +34,8 @@ export function RoutinePicker({ visible, routines, selectedId, onSelect, onClose
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* ⚠ Modal の中は別のビュー階層。provider が無いと inset が 0 になる */}
+      <SafeAreaProvider>
       <View style={styles.backdrop}>
         <ThemedView style={styles.sheet}>
           <ThemedText type="subtitle">When should this one show up?</ThemedText>
@@ -52,13 +56,10 @@ export function RoutinePicker({ visible, routines, selectedId, onSelect, onClose
             ))}
           </ScrollView>
 
-          <Pressable onPress={onClose} hitSlop={Spacing.two}>
-            <ThemedText type="smallBold" themeColor="textSecondary">
-              Cancel
-            </ThemedText>
-          </Pressable>
+          <Button label="Cancel" variant="plain" onPress={onClose} />
         </ThemedView>
       </View>
+      </SafeAreaProvider>
     </Modal>
   );
 }
@@ -76,8 +77,7 @@ function Option({
     <Pressable onPress={onPress}>
       <ThemedView
         type={isSelected ? 'backgroundSelected' : 'backgroundElement'}
-        style={styles.option}
-      >
+        style={styles.option}>
         <ThemedText type={isSelected ? 'smallBold' : 'small'}>{label}</ThemedText>
       </ThemedView>
     </Pressable>

@@ -16,19 +16,18 @@
  *
  * ⚠ **Guideline 3.1.2: 商品名・期間・価格と、規約・プライバシーポリシーへのリンクを
  *   この画面に出すこと。** 消すと審査で落ちる。見た目の都合で畳まないこと。
+ *
+ * ⚠ **`Modal` の中には専用の `SafeAreaProvider` が要る。** 外側の provider は
+ *   root のビューを測っているため、Modal 内では inset が 0 になり、
+ *   下端がホームインジケータに潜る。
  */
 
 import { useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  Modal,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import type { PurchasesPackage } from 'react-native-purchases';
 
+import { Button } from '@/components/button';
 import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -48,7 +47,18 @@ type Props = {
 };
 
 export function Paywall({ visible, onClose, onPurchased }: Props) {
+  return (
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
+      <SafeAreaProvider>
+        <Sheet onClose={onClose} onPurchased={onPurchased} visible={visible} />
+      </SafeAreaProvider>
+    </Modal>
+  );
+}
+
+function Sheet({ visible, onClose, onPurchased }: Props) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const [packages, setPackages] = useState<PurchasesPackage[] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
@@ -108,89 +118,96 @@ export function Paywall({ visible, onClose, onPurchased }: Props) {
   };
 
   return (
-    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <View style={styles.backdrop}>
-        <ThemedView style={styles.sheet}>
-          <ScrollView contentContainerStyle={styles.content}>
-            <ThemedText type="subtitle">What is this worth to you?</ThemedText>
+    <View style={styles.backdrop}>
+      {/* 背景を押しても閉じられるようにする。閉じ方が1つしかないと閉じ込められた感じになる */}
+      <Pressable style={styles.dismissArea} onPress={onClose} accessibilityLabel="Close" />
+
+      <ThemedView style={styles.sheet}>
+        {/* つまみ。下から出てきたものだと一目で分かる */}
+        <View style={[styles.grabber, { backgroundColor: theme.backgroundSelected }]} />
+
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={[
+            styles.content,
+            { paddingBottom: Spacing.four + insets.bottom },
+          ]}>
+          <ThemedText type="subtitle">What is this worth to you?</ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            Every option unlocks the same thing: more than one set of words, and different words
+            for different routines. You pick the price.
+          </ThemedText>
+          <ThemedText type="small" themeColor="textSecondary">
+            This app is designed for you to quit it. When you do, cancel and the charges stop.
+          </ThemedText>
+
+          {isLoading && <ActivityIndicator />}
+
+          {/* ⚠ 取得に失敗してもここだけを諦める。閉じれば通常どおり使える */}
+          {!isLoading && !packages && (
             <ThemedText type="small" themeColor="textSecondary">
-              Every option unlocks the same thing: more than one set of words, and different
-              words for different routines. You pick the price.
+              Could not reach the store. Try again later ── nothing else is affected.
             </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              This app is designed for you to quit it. When you do, cancel and the charges stop.
-            </ThemedText>
+          )}
 
-            {isLoading && <ActivityIndicator />}
-
-            {/* ⚠ 取得に失敗してもここだけを諦める。閉じれば通常どおり使える */}
-            {!isLoading && !packages && (
-              <ThemedText type="small" themeColor="textSecondary">
-                Could not reach the store. Try again later ── nothing else is affected.
-              </ThemedText>
-            )}
-
-            {packages?.map((pkg) => (
-              <Pressable key={pkg.identifier} onPress={() => handlePurchase(pkg)} disabled={isBusy}>
-                <ThemedView
-                  type="backgroundElement"
-                  style={[styles.tier, { borderColor: theme.accent }]}>
-                  {/* ⚠ 3.1.2: 価格と期間をここに出し続けること */}
-                  <ThemedText type="smallBold" themeColor="accent" style={styles.tierPrice}>
-                    {pkg.product.priceString} / month
-                  </ThemedText>
-                  <ThemedText type="small" themeColor="textSecondary">
-                    {pkg.product.description || 'Everything unlocked'}
-                  </ThemedText>
-                </ThemedView>
-              </Pressable>
-            ))}
-
-            {isBusy && <ActivityIndicator />}
-
-            {notice && (
-              <ThemedText type="small" themeColor="textSecondary">
-                {notice}
-              </ThemedText>
-            )}
-
-            <View style={styles.actions}>
-              <Pressable onPress={onClose} hitSlop={Spacing.two} disabled={isBusy}>
-                <ThemedText type="smallBold">Not now</ThemedText>
-              </Pressable>
-              <Pressable onPress={handleRestore} hitSlop={Spacing.two} disabled={isBusy}>
-                <ThemedText type="smallBold" themeColor="accent">
-                  Restore
+          {packages?.map((pkg) => (
+            <Pressable
+              key={pkg.identifier}
+              onPress={() => handlePurchase(pkg)}
+              disabled={isBusy}
+              style={({ pressed }) => [pressed && styles.pressed]}>
+              <ThemedView
+                type="backgroundElement"
+                style={[styles.tier, { borderColor: theme.accent }]}>
+                {/* ⚠ 3.1.2: 価格と期間をここに出し続けること */}
+                <ThemedText type="smallBold" themeColor="accent" style={styles.tierPrice}>
+                  {pkg.product.priceString} / month
                 </ThemedText>
-              </Pressable>
-            </View>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {pkg.product.description || 'Everything unlocked'}
+                </ThemedText>
+              </ThemedView>
+            </Pressable>
+          ))}
 
-            {/*
-              ⚠ Guideline 3.1.2 の必須表示。更新条件の一文と、規約・プライバシーの
-                動くリンクをここから外さないこと。
-            */}
-            <View style={styles.legal}>
-              <ThemedText type="small" themeColor="textSecondary">
-                Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings
-                at any time.
-              </ThemedText>
-              <View style={styles.legalLinks}>
-                <ExternalLink href={TERMS_URL}>
-                  <ThemedText type="small" themeColor="accent">
-                    Terms of Use
-                  </ThemedText>
-                </ExternalLink>
-                <ExternalLink href={PRIVACY_URL}>
-                  <ThemedText type="small" themeColor="accent">
-                    Privacy Policy
-                  </ThemedText>
-                </ExternalLink>
-              </View>
+          {isBusy && <ActivityIndicator />}
+
+          {notice && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {notice}
+            </ThemedText>
+          )}
+
+          <View style={styles.actions}>
+            <Button label="Not now" variant="secondary" onPress={onClose} disabled={isBusy} />
+            <Button label="Restore" variant="plain" onPress={handleRestore} disabled={isBusy} />
+          </View>
+
+          {/*
+            ⚠ Guideline 3.1.2 の必須表示。更新条件の一文と、規約・プライバシーの
+              動くリンクをここから外さないこと。
+          */}
+          <View style={styles.legal}>
+            <ThemedText type="small" themeColor="textSecondary">
+              Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings at
+              any time.
+            </ThemedText>
+            <View style={styles.legalLinks}>
+              <ExternalLink href={TERMS_URL}>
+                <ThemedText type="small" themeColor="accent">
+                  Terms of Use
+                </ThemedText>
+              </ExternalLink>
+              <ExternalLink href={PRIVACY_URL}>
+                <ThemedText type="small" themeColor="accent">
+                  Privacy Policy
+                </ThemedText>
+              </ExternalLink>
             </View>
-          </ScrollView>
-        </ThemedView>
-      </View>
-    </Modal>
+          </View>
+        </ScrollView>
+      </ThemedView>
+    </View>
   );
 }
 
@@ -200,14 +217,32 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
     backgroundColor: 'rgba(0,0,0,0.5)',
   },
+  dismissArea: {
+    flex: 1,
+    // ⚠ 上を必ず余らせる。全画面を覆うと下から出てきたことが伝わらない
+    minHeight: Spacing.six,
+  },
   sheet: {
-    maxHeight: '85%',
+    // ⚠ flexShrink が無いと、中身が伸びたときに画面外へはみ出して読めなくなる
+    flexShrink: 1,
     borderTopLeftRadius: Spacing.four,
     borderTopRightRadius: Spacing.four,
+    paddingTop: Spacing.two,
+  },
+  grabber: {
+    alignSelf: 'center',
+    width: 36,
+    height: 4,
+    borderRadius: 2,
+    marginBottom: Spacing.two,
+  },
+  scroll: {
+    flexGrow: 0,
   },
   content: {
     gap: Spacing.three,
-    padding: Spacing.four,
+    paddingHorizontal: Spacing.four,
+    paddingTop: Spacing.two,
   },
   tier: {
     gap: Spacing.one,
@@ -219,14 +254,15 @@ const styles = StyleSheet.create({
     fontSize: 20,
     lineHeight: 26,
   },
+  pressed: {
+    opacity: 0.7,
+  },
   actions: {
-    flexDirection: 'row',
-    gap: Spacing.four,
+    gap: Spacing.two,
     paddingTop: Spacing.one,
   },
   legal: {
     gap: Spacing.two,
-    paddingTop: Spacing.two,
   },
   legalLinks: {
     flexDirection: 'row',
