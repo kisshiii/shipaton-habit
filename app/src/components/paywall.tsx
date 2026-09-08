@@ -166,13 +166,23 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
               <ThemedView
                 type="backgroundElement"
                 style={[styles.tier, { borderColor: theme.accent }]}>
+                {/*
+                  ⚠ 商品名を出すこと。3つの違いは中身ではなく**本人の覚悟の度合い**で
+                    (`まず一歩` / `本気で` / `オールイン`)、それを名乗るのが名前しかない。
+                    Apple の購入シートと iOS の設定にしか出ないままだと、
+                    **選ぶ瞬間に問いへの答えが見えない。**
+                */}
+                {!!pkg.product.title && (
+                  <ThemedText type="smallBold">{pkg.product.title}</ThemedText>
+                )}
                 {/* ⚠ 3.1.2: 価格と期間をここに出し続けること */}
                 <ThemedText type="smallBold" themeColor="accent" style={styles.tierPrice}>
                   {pkg.product.priceString} {t.paywall.perMonth}
                 </ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {pkg.product.description || t.paywall.everything}
-                </ThemedText>
+                {/*
+                  ⚠ 商品ごとの説明は出さない。3つとも中身が同じなので同じ文が3回並ぶだけ。
+                    何が解放されるかは見出しの下で一度言ってある。
+                */}
               </ThemedView>
             </Pressable>
           ))}

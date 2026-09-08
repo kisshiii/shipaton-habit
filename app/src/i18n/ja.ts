@@ -93,7 +93,6 @@ export const ja: Copy = {
     unreachable: 'ストアに届きませんでした。あとでもう一度お試しください ── ほかの機能に影響はありません。',
     noOffering: 'プランがまだ用意されていません。ほかの機能に影響はありません。',
     noProducts: 'プランをストアから取得できませんでした。ほかの機能に影響はありません。',
-    everything: 'すべて使えます',
     perMonth: '／月',
     notNow: '今はしない',
     restore: '購入を復元',

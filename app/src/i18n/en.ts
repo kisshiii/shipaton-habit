@@ -91,7 +91,6 @@ export const en = {
     noOffering: 'No plans are set up yet. Nothing else is affected.',
     /** ⚠ Offering はあるが商品が降りてこない。App Store Connect 側の状態 */
     noProducts: 'The plans are not available from the store yet. Nothing else is affected.',
-    everything: 'Everything unlocked',
     perMonth: '/ month',
     notNow: 'Not now',
     restore: 'Restore',
