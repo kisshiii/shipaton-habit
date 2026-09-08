@@ -96,7 +96,14 @@ export const en = {
     restore: 'Restore',
     restoreNothing: 'Nothing to restore for this Apple ID.',
     restoreFailed: 'Could not reach the store. Try again later.',
-    purchaseFailed: 'That did not go through. Nothing was charged.',
+    /**
+     * ⚠ 課金されたかどうかを断定しないこと。例外の中身までは分からない。
+     *   復元という手を示すほうが誠実で、実際に役に立つ。
+     */
+    purchaseFailed: 'That did not go through. If you were charged, try Restore.',
+    /** ⚠ 支払いは済んでいる。謝るのはこちら側で、ユーザーの操作は間違っていない */
+    purchaseUnconfirmed:
+      'Payment went through, but we could not unlock it yet. Try Restore in a moment.',
     renewal:
       'Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings at any time.',
     terms: 'Terms of Use',

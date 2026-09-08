@@ -98,7 +98,8 @@ export const ja: Copy = {
     restore: '購入を復元',
     restoreNothing: 'この Apple ID に復元できる購入はありません。',
     restoreFailed: 'ストアに届きませんでした。あとでもう一度お試しください。',
-    purchaseFailed: '購入は完了しませんでした。請求は発生していません。',
+    purchaseFailed: '購入を完了できませんでした。請求されていた場合は「購入を復元」をお試しください。',
+    purchaseUnconfirmed: 'お支払いは完了しましたが、まだ反映できていません。少ししてから「購入を復元」をお試しください。',
     renewal:
       '月額・自動更新です。解約するまで継続します。Apple ID の設定からいつでも管理・解約できます。',
     terms: '利用規約',

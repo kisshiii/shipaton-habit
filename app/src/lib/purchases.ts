@@ -130,7 +130,20 @@ export async function getOffering(): Promise<OfferingResult> {
   }
 }
 
-export type PurchaseOutcome = 'purchased' | 'cancelled' | 'failed';
+export type PurchaseOutcome =
+  | 'purchased'
+  /** ユーザーが自分でやめた。追いかけない */
+  | 'cancelled'
+  /**
+   * ⚠ **Apple の購入は通ったのに entitlement が有効にならなかった。**
+   *   `purchasePackage` が例外を投げていない以上、**課金は成立している。**
+   *   原因はこちら側の設定(RevenueCat の Entitlement に商品が紐づいていない等)。
+   *   これを 'failed' に混ぜて「請求は発生していません」と言うと、
+   *   **課金された人に嘘をつくことになる**(実機で実際に踏んだ 2026-09-08)。
+   */
+  | 'unconfirmed'
+  /** 購入そのものが成立しなかった */
+  | 'failed';
 
 /** 購入する。ユーザーによるキャンセルは失敗として扱わない */
 export async function purchase(pkg: PurchasesPackage): Promise<PurchaseOutcome> {
@@ -141,7 +154,8 @@ export async function purchase(pkg: PurchasesPackage): Promise<PurchaseOutcome> 
     const { customerInfo } = await Purchases.purchasePackage(pkg);
     const active = hasEntitlement(customerInfo);
     await writeCachedEntitlement(active);
-    return active ? 'purchased' : 'failed';
+    // ⚠ ここで false でも「失敗」ではない。金は動いている
+    return active ? 'purchased' : 'unconfirmed';
   } catch (error) {
     // ⚠ 「やめた」を失敗扱いにしてエラーを出さない。ペイウォールをしつこくしない
     if ((error as { userCancelled?: boolean })?.userCancelled) return 'cancelled';

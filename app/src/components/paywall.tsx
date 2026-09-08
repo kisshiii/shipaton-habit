@@ -96,8 +96,8 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
     }
     // ⚠ 「やめた」は黙って受け入れる。追いかけない
     if (outcome === 'cancelled') return;
-    // ⚠ ただし本当に失敗したときは伝える。黙るとボタンが壊れて見える
-    setNotice(t.paywall.purchaseFailed);
+    // ⚠ 課金が成立したのに解放できなかった場合、**請求されていないと言わないこと**
+    setNotice(outcome === 'unconfirmed' ? t.paywall.purchaseUnconfirmed : t.paywall.purchaseFailed);
   };
 
   /**
