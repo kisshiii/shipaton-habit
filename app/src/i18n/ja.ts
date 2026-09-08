@@ -23,6 +23,10 @@ export const ja: Copy = {
 
   today: {
     title: '今日',
+    doneHint: '完了',
+    notDoneHint: 'まだ',
+    toggleHint: 'ダブルタップで完了と未完了を切り替えます',
+    progress: '件完了',
     emptyTitle: 'まだ何もありません',
     emptyBody: '「ルーティン」タブで最初のひとつを登録してください。この画面はそこから埋まります。',
     noWordsTitle: 'まだ言葉がありません',

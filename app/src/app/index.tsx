@@ -129,7 +129,10 @@ export default function TodayScreen() {
               </ThemedText>
             </View>
             {/* ⚠ 分母を煽りに使わない。数字を置くだけで、色も強調も付けない */}
-            <ThemedText type="smallBold" themeColor="textSecondary">
+            <ThemedText
+              type="smallBold"
+              themeColor="textSecondary"
+              accessibilityLabel={`${doneCount} / ${record?.totalCount ?? 0} ${t.today.progress}`}>
               {doneCount} / {record?.totalCount ?? 0}
             </ThemedText>
           </View>
@@ -175,6 +178,14 @@ export default function TodayScreen() {
               <Pressable
                 key={routine.id}
                 onPress={() => handleToggle(routine.id)}
+                // ⚠ VoiceOver では丸印が見えない。行が「何時の何を、済ませたか」を
+                //   自分で名乗ること。記号側は読み上げから外してある
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: isDone }}
+                accessibilityLabel={`${routine.time} ${routine.title}, ${
+                  isDone ? t.today.doneHint : t.today.notDoneHint
+                }`}
+                accessibilityHint={t.today.toggleHint}
                 style={({ pressed }) => [pressed && styles.pressed]}>
                 <ThemedView
                   type={isDone ? 'backgroundSelected' : 'backgroundElement'}

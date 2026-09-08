@@ -13,6 +13,9 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
 
   return (
     <Text
+      // ⚠ 本文は端末の文字サイズ設定に従わせる。見出しだけは上限を置かないと
+      //   1行が画面幅を超えて折り返し地獄になる
+      maxFontSizeMultiplier={type === 'title' || type === 'subtitle' ? 1.4 : undefined}
       style={[
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,

@@ -54,6 +54,10 @@ export function Button({
     <Pressable
       onPress={onPress}
       disabled={isOff}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      // ⚠ 押せない理由を伝える。無反応との区別がつかないのは画面上と同じ問題
+      accessibilityState={{ disabled: isOff, busy }}
       style={({ pressed }) => [
         styles.base,
         variant === 'plain' && styles.plain,

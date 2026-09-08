@@ -20,6 +20,9 @@ export function CheckMark({ isChecked }: { isChecked: boolean }) {
 
   return (
     <SymbolView
+      // ⚠ 行そのものが読み上げラベルを持つ。記号を個別に読ませると二重になる
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
       name={isChecked ? 'checkmark.circle.fill' : 'circle'}
       size={SIZE}
       tintColor={isChecked ? theme.accent : theme.textSecondary}

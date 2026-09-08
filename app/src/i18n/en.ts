@@ -17,6 +17,11 @@ export const en = {
 
   today: {
     title: 'Today',
+    /** ⚠ VoiceOver 用。画面には出ない */
+    doneHint: 'Done',
+    notDoneHint: 'Not done yet',
+    toggleHint: 'Double tap to mark it done or undone',
+    progress: 'done',
     emptyTitle: 'Nothing scheduled',
     emptyBody: 'Add your first routine in the Routines tab. Today fills itself in from there.',
     noWordsTitle: 'Nothing to say yet',
