@@ -161,11 +161,22 @@ export default function KatsuScreen() {
         <KeyboardAvoidingView
           style={styles.safeArea}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          // ⚠ 閉じる手段を用意すること。多行入力は Return が改行になるため、
+          //   スワイプで閉じられないとキーボードが画面を覆ったままになる
+          keyboardDismissMode="on-drag">
           <ThemedText type="subtitle">{t.katsu.title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
             {t.katsu.intro}
           </ThemedText>
+          {/* ⚠ 同じ対象に複数あると日替わりになる。黙っていると不具合に見える */}
+          {messages.length > 1 && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.katsu.rotation}
+            </ThemedText>
+          )}
 
           {messages.map((message) => {
             const isLocked = lockedIds.includes(message.id);
@@ -239,6 +250,9 @@ export default function KatsuScreen() {
                 placeholder={t.katsu.placeholder}
                 placeholderTextColor={theme.textSecondary}
                 multiline
+                // ⚠ 通知の本文に改行は要らない。Return は閉じる動作に使う
+                blurOnSubmit
+                returnKeyType="done"
                 style={[
                   styles.input,
                   { color: theme.text, borderColor: theme.backgroundSelected },

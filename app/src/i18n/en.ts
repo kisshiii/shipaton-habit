@@ -80,6 +80,8 @@ export const en = {
     deleteTitle: 'Delete this?',
     deleteBody: 'You wrote it. You can write it again.',
     pickerTitle: 'When should this one show up?',
+    /** ⚠ 日替わりで選ばれることを伝える。黙っていると届かない言葉があるように見える */
+    rotation: 'When several sets of words share a routine, one of them arrives each day.',
   },
 
   paywall: {

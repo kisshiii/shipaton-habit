@@ -67,12 +67,34 @@ function messageFor(
   messages: KatsuMessage[],
   routine: RoutineItem,
   isPaid: boolean,
+  dayKey: string,
 ): KatsuMessage | undefined {
   if (!isPaid) return messages[0];
-  return (
-    messages.find((message) => message.routineId === routine.id) ??
-    messages.find((message) => message.routineId === undefined)
-  );
+
+  // そのルーティン専用があればその中から。無ければ共通の中から
+  const mine = messages.filter((message) => message.routineId === routine.id);
+  const pool = mine.length ? mine : messages.filter((message) => message.routineId === undefined);
+  if (pool.length === 0) return undefined;
+  if (pool.length === 1) return pool[0];
+
+  // ⚠ **`find` で先頭だけを使わないこと。**書いたのに一度も届かない言葉が生まれる。
+  //   同じ対象に複数あるなら日替わりで回す(spec §2 複数の言葉の扱い)。
+  return pool[pickIndex(`${dayKey}:${routine.id}`, pool.length)];
+}
+
+/**
+ * 日付とルーティンから決まる添字。
+ *
+ * ⚠ **`Math.random` を使わないこと。**予約は画面を開くたびに全消し→貼り直しする。
+ *   毎回引き直すと、同じ日の通知がアプリを開くたびに別の言葉に化ける。
+ *   同じ日・同じ項目なら必ず同じ結果になる必要がある。
+ */
+function pickIndex(seed: string, count: number): number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i += 1) {
+    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
+  }
+  return Math.abs(hash) % count;
 }
 
 /** その日のその時刻を表す Date を作る */
@@ -110,7 +132,7 @@ async function runSync(): Promise<number> {
       if (at.getTime() <= now.getTime()) continue;
       if (completedIds.includes(routine.id)) continue;
 
-      const message = messageFor(messages, routine, isPaid);
+      const message = messageFor(messages, routine, isPaid, toDateKey(day));
       if (!message) continue;
 
       const data: KatsuNotificationData = { routineId: routine.id };

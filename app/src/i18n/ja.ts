@@ -84,6 +84,7 @@ export const ja: Copy = {
     deleteTitle: 'これを削除しますか？',
     deleteBody: '自分で書いたものです。また書けます。',
     pickerTitle: 'この言葉を、いつ出しますか？',
+    rotation: '同じ対象の言葉が複数あるときは、その日ごとにどれかが届きます。',
   },
 
   paywall: {

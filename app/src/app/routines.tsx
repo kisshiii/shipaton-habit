@@ -122,7 +122,12 @@ export default function RoutinesScreen() {
         <KeyboardAvoidingView
           style={styles.safeArea}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+          contentContainerStyle={styles.content}
+          keyboardShouldPersistTaps="handled"
+          // ⚠ 閉じる手段を用意すること。多行入力は Return が改行になるため、
+          //   スワイプで閉じられないとキーボードが画面を覆ったままになる
+          keyboardDismissMode="on-drag">
             <View style={styles.header}>
               <ThemedText type="subtitle">{t.routines.title}</ThemedText>
               <ThemedText type="smallBold" themeColor="textSecondary">

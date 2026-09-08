@@ -119,7 +119,10 @@ export function Onboarding({ onFinished }: Props) {
           <KeyboardAvoidingView
             style={styles.safeArea}
             behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <ScrollView
+            contentContainerStyle={styles.content}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag">
             {step === 'intro' && (
               <>
                 <ThemedText type="title">{t.onboarding.appName}</ThemedText>
@@ -173,6 +176,9 @@ export function Onboarding({ onFinished }: Props) {
                   placeholder={t.katsu.placeholder}
                   placeholderTextColor={theme.textSecondary}
                   multiline
+                  // ⚠ 通知の本文に改行は要らない。Return は閉じる動作に使う
+                  blurOnSubmit
+                  returnKeyType="done"
                   style={[...inputStyle, styles.multiline]}
                 />
                 <ThemedText type="small" themeColor="textSecondary" style={styles.counter}>
