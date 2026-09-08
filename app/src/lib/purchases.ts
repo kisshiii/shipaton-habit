@@ -83,7 +83,16 @@ export async function isPro(): Promise<boolean> {
 export type OfferingResult =
   /** 出せる商品がある */
   | { kind: 'ok'; offering: PurchasesOffering }
-  /** RevenueCat に「現在の Offering」が無い(Make Current を忘れている) */
+  /**
+   * 現在の Offering が取れない。
+   *
+   * ⚠ **RevenueCat の設定漏れとは限らない。**RevenueCat は構成だけを返し、
+   *   価格は端末の StoreKit から取る。商品が降りてこないと Package から落とされ、
+   *   結果として Offering ごと消える。**つまりダッシュボードが正しくてもここに来る。**
+   *   実際 2026-09-08 に詰まったときは、REST API で
+   *   `current_offering_id: "default"` と3 Package を確認できたのに端末では出なかった。
+   *   疑う順は **App Store Connect が先**(有料App契約 → 商品の状態)。
+   */
   | { kind: 'noOffering' }
   /** Offering はあるが商品が1つも降りてこない(App Store Connect 側の状態) */
   | { kind: 'noProducts' }
@@ -97,6 +106,11 @@ export type OfferingResult =
  *   「通信できない」は直す場所がまったく違う。同じ文言にすると実機で切り分けられず、
  *   ダッシュボードとストアと通信を総当たりする羽目になる
  *   (実機で実際に詰まった 2026-09-08)。Restore で同じ間違いを一度している。
+ *
+ * ⚠ **RevenueCat の構成は公開キーだけで確認できる。**秘密鍵は要らない:
+ *     curl https://api.revenuecat.com/v1/subscribers/<任意のid>/offerings \
+ *       -H "Authorization: Bearer <appl_ で始まる公開キー>" -H "X-Platform: ios"
+ *   端末が見るのと同じものが返る。ダッシュボードを目視するより速く確実。
  *
  * ⚠ 呼び出し側はどの失敗でもコア体験を止めないこと。諦めるのはこの画面だけ。
  */
