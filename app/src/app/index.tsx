@@ -195,11 +195,19 @@ export default function TodayScreen() {
                   ]}>
                   <CheckMark isChecked={isDone} />
                   <View style={styles.rowBody}>
+                    {/*
+                      ⚠ 時刻を先に、はっきり出すこと。時刻が決まっていることがこのアプリの
+                        前提で、仕様の書き方も `06:30 起きる` の順(spec §2 何を登録するのか)。
+                        Routines 画面では紺のバッジで出しているので、ここだけ小さいグレーだと
+                        画面間で扱いがずれる。
+                    */}
+                    <ThemedText
+                      type="smallBold"
+                      themeColor={isDone ? 'textSecondary' : 'accent'}>
+                      {routine.time}
+                    </ThemedText>
                     <ThemedText numberOfLines={2} themeColor={isDone ? 'textSecondary' : 'text'}>
                       {routine.title}
-                    </ThemedText>
-                    <ThemedText type="small" themeColor="textSecondary">
-                      {routine.time}
                     </ThemedText>
                   </View>
                 </ThemedView>
