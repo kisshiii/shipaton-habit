@@ -11,7 +11,12 @@
       "bundleIdentifier": "com.kisshi.gradhabit",
       "supportsTablet": false,
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "CFBundleLocalizations": [
+          "en",
+          "ja"
+        ],
+        "CFBundleDevelopmentRegion": "en"
       }
     },
     "android": {

@@ -15,6 +15,7 @@ import { Button } from '@/components/button';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import type { RoutineItem } from '@/types';
 
 type Props = {
@@ -38,11 +39,11 @@ export function RoutinePicker({ visible, routines, selectedId, onSelect, onClose
       <SafeAreaProvider>
       <View style={styles.backdrop}>
         <ThemedView style={styles.sheet}>
-          <ThemedText type="subtitle">When should this one show up?</ThemedText>
+          <ThemedText type="subtitle">{t.katsu.pickerTitle}</ThemedText>
 
           <ScrollView contentContainerStyle={styles.list}>
             <Option
-              label="All routines"
+              label={t.katsu.allRoutines}
               isSelected={selectedId === undefined}
               onPress={() => choose(undefined)}
             />
@@ -56,7 +57,7 @@ export function RoutinePicker({ visible, routines, selectedId, onSelect, onClose
             ))}
           </ScrollView>
 
-          <Button label="Cancel" variant="plain" onPress={onClose} />
+          <Button label={t.katsu.cancel} variant="plain" onPress={onClose} />
         </ThemedView>
       </View>
       </SafeAreaProvider>

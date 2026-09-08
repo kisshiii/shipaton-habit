@@ -12,6 +12,7 @@ import { ThemedText } from './themed-text';
 import { ThemedView } from './themed-view';
 
 import { MaxContentWidth, Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 
 export default function AppTabs() {
   return (
@@ -20,13 +21,13 @@ export default function AppTabs() {
       <TabList asChild>
         <CustomTabList>
           <TabTrigger name="home" href="/" asChild>
-            <TabButton>Today</TabButton>
+            <TabButton>{t.tabs.today}</TabButton>
           </TabTrigger>
           <TabTrigger name="routines" href="/routines" asChild>
-            <TabButton>Routines</TabButton>
+            <TabButton>{t.tabs.routines}</TabButton>
           </TabTrigger>
           <TabTrigger name="katsu" href="/katsu" asChild>
-            <TabButton>Your KATSU</TabButton>
+            <TabButton>{t.tabs.katsu}</TabButton>
           </TabTrigger>
         </CustomTabList>
       </TabList>

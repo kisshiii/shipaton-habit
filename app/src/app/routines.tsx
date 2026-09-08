@@ -28,6 +28,7 @@ import { TimeField } from '@/components/time-field';
 import { MAX_ROUTINES } from '@/constants/routines';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
 import {
   addRoutine,
@@ -71,7 +72,7 @@ export default function RoutinesScreen() {
   const handleSubmit = async () => {
     // ⚠ 時刻はピッカーから来るので不正な値が入らない。検証が要るのは題名だけ
     if (!title.trim()) {
-      Alert.alert('Add a title', 'Write what you will do at that time.');
+      Alert.alert(t.routines.missingTitle, t.routines.missingTitleBody);
       return;
     }
 
@@ -85,7 +86,7 @@ export default function RoutinesScreen() {
       await refresh();
     } catch (error) {
       if (error instanceof RoutineLimitError) {
-        Alert.alert('Start with a few', 'You can add more after you graduate.');
+        Alert.alert(t.routines.limitTitle, t.routines.limitBody);
         return;
       }
       throw error;
@@ -99,10 +100,10 @@ export default function RoutinesScreen() {
   };
 
   const handleDelete = (routine: RoutineItem) => {
-    Alert.alert('Remove this routine?', `${routine.time}  ${routine.title}`, [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t.routines.removeTitle, `${routine.time}  ${routine.title}`, [
+      { text: t.routines.cancel, style: 'cancel' },
       {
-        text: 'Remove',
+        text: t.routines.remove,
         style: 'destructive',
         onPress: async () => {
           await deleteRoutine(routine.id);
@@ -123,7 +124,7 @@ export default function RoutinesScreen() {
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <View style={styles.header}>
-              <ThemedText type="subtitle">Routines</ThemedText>
+              <ThemedText type="subtitle">{t.routines.title}</ThemedText>
               <ThemedText type="smallBold" themeColor="textSecondary">
                 {routines.length} / {MAX_ROUTINES}
               </ThemedText>
@@ -131,9 +132,9 @@ export default function RoutinesScreen() {
 
             {routines.length === 0 && (
               <ThemedView type="backgroundElement" style={styles.empty}>
-                <ThemedText type="smallBold">Nothing yet</ThemedText>
+                <ThemedText type="smallBold">{t.routines.emptyTitle}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Add something you will do every day at the same time. One is enough to start.
+                  {t.routines.emptyBody}
                 </ThemedText>
               </ThemedView>
             )}
@@ -157,13 +158,13 @@ export default function RoutinesScreen() {
                   </View>
                   {/* ⚠ 文字リンクにしない。44pt を確保して押せるものだと分かる形にする */}
                   <View style={styles.rowActions}>
-                    <Button label="Edit" variant="plain" onPress={() => handleEdit(routine)} />
+                    <Button label={t.routines.edit} variant="plain" onPress={() => handleEdit(routine)} />
                     <Pressable
                       onPress={() => handleDelete(routine)}
                       style={styles.deleteHit}
                       hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="textSecondary">
-                        Delete
+                        {t.routines.delete}
                       </ThemedText>
                     </Pressable>
                   </View>
@@ -173,23 +174,23 @@ export default function RoutinesScreen() {
 
             {isFull ? (
               <ThemedView type="backgroundElement" style={styles.empty}>
-                <ThemedText type="smallBold">Start with a few</ThemedText>
+                <ThemedText type="smallBold">{t.routines.fullTitle}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  You can add more after you graduate.
+                  {t.routines.fullBody}
                 </ThemedText>
               </ThemedView>
             ) : (
               <ThemedView type="backgroundElement" style={styles.form}>
                 <ThemedText type="smallBold">
-                  {editingId ? 'Edit routine' : 'Add a routine'}
+                  {editingId ? t.routines.editTitle : t.routines.addTitle}
                 </ThemedText>
 
-                <TimeField value={time} onChange={setTime} />
+                <TimeField value={time} onChange={setTime} label={t.routines.time} />
 
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="Drink a glass of water"
+                  placeholder={t.routines.titlePlaceholder}
                   placeholderTextColor={theme.textSecondary}
                   maxLength={TITLE_MAX_LENGTH}
                   returnKeyType="done"
@@ -200,8 +201,13 @@ export default function RoutinesScreen() {
                   ]}
                 />
 
-                <Button label={editingId ? 'Save' : 'Add routine'} onPress={handleSubmit} />
-                {editingId && <Button label="Cancel" variant="plain" onPress={resetForm} />}
+                <Button
+                  label={editingId ? t.routines.save : t.routines.add}
+                  onPress={handleSubmit}
+                />
+                {editingId && (
+                  <Button label={t.routines.cancel} variant="plain" onPress={resetForm} />
+                )}
               </ThemedView>
             )}
 
@@ -215,7 +221,7 @@ export default function RoutinesScreen() {
               style={styles.graduate}
               hitSlop={Spacing.two}>
               <ThemedText type="small" themeColor="textSecondary" style={styles.graduateText}>
-                I don&apos;t need this anymore
+                {t.routines.graduate}
               </ThemedText>
             </Pressable>
           </ScrollView>

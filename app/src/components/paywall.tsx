@@ -33,6 +33,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { PRIVACY_URL, TERMS_URL } from '@/constants/legal';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
 import { getOffering, purchase, restore } from '@/lib/purchases';
 
@@ -93,7 +94,7 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
     // ⚠ 「やめた」は黙って受け入れる。追いかけない
     if (outcome === 'cancelled') return;
     // ⚠ ただし本当に失敗したときは伝える。黙るとボタンが壊れて見える
-    setNotice('That did not go through. Nothing was charged.');
+    setNotice(t.paywall.purchaseFailed);
   };
 
   /**
@@ -110,11 +111,7 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
       onClose();
       return;
     }
-    setNotice(
-      outcome === 'nothing'
-        ? 'Nothing to restore for this Apple ID.'
-        : 'Could not reach the store. Try again later.',
-    );
+    setNotice(outcome === 'nothing' ? t.paywall.restoreNothing : t.paywall.restoreFailed);
   };
 
   return (
@@ -132,13 +129,12 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
             styles.content,
             { paddingBottom: Spacing.four + insets.bottom },
           ]}>
-          <ThemedText type="subtitle">What is this worth to you?</ThemedText>
+          <ThemedText type="subtitle">{t.paywall.title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            Every option unlocks the same thing: more than one set of words, and different words
-            for different routines. You pick the price.
+            {t.paywall.body}
           </ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            This app is designed for you to quit it. When you do, cancel and the charges stop.
+            {t.paywall.quit}
           </ThemedText>
 
           {isLoading && <ActivityIndicator />}
@@ -146,7 +142,7 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
           {/* ⚠ 取得に失敗してもここだけを諦める。閉じれば通常どおり使える */}
           {!isLoading && !packages && (
             <ThemedText type="small" themeColor="textSecondary">
-              Could not reach the store. Try again later ── nothing else is affected.
+              {t.paywall.unreachable}
             </ThemedText>
           )}
 
@@ -161,10 +157,10 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
                 style={[styles.tier, { borderColor: theme.accent }]}>
                 {/* ⚠ 3.1.2: 価格と期間をここに出し続けること */}
                 <ThemedText type="smallBold" themeColor="accent" style={styles.tierPrice}>
-                  {pkg.product.priceString} / month
+                  {pkg.product.priceString} {t.paywall.perMonth}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  {pkg.product.description || 'Everything unlocked'}
+                  {pkg.product.description || t.paywall.everything}
                 </ThemedText>
               </ThemedView>
             </Pressable>
@@ -179,8 +175,8 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
           )}
 
           <View style={styles.actions}>
-            <Button label="Not now" variant="secondary" onPress={onClose} disabled={isBusy} />
-            <Button label="Restore" variant="plain" onPress={handleRestore} disabled={isBusy} />
+            <Button label={t.paywall.notNow} variant="secondary" onPress={onClose} disabled={isBusy} />
+            <Button label={t.paywall.restore} variant="plain" onPress={handleRestore} disabled={isBusy} />
           </View>
 
           {/*
@@ -189,18 +185,17 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
           */}
           <View style={styles.legal}>
             <ThemedText type="small" themeColor="textSecondary">
-              Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings at
-              any time.
+              {t.paywall.renewal}
             </ThemedText>
             <View style={styles.legalLinks}>
               <ExternalLink href={TERMS_URL}>
                 <ThemedText type="small" themeColor="accent">
-                  Terms of Use
+                  {t.paywall.terms}
                 </ThemedText>
               </ExternalLink>
               <ExternalLink href={PRIVACY_URL}>
                 <ThemedText type="small" themeColor="accent">
-                  Privacy Policy
+                  {t.paywall.privacy}
                 </ThemedText>
               </ExternalLink>
             </View>

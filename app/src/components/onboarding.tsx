@@ -39,6 +39,7 @@ import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { Spacing } from '@/constants/theme';
 import { TimeField } from '@/components/time-field';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { requestNotificationPermission, syncScheduledNotifications } from '@/lib/notifications';
 import { countChars, truncateChars } from '@/lib/text';
 import { addMessage, addRoutine, markOnboarded, SelfHarmTextError } from '@/storage';
@@ -70,7 +71,7 @@ export function Onboarding({ onFinished }: Props) {
   const handleSaveRoutine = async () => {
     // ⚠ 時刻はピッカーから来るので不正な値が入らない。検証が要るのは題名だけ
     if (!title.trim()) {
-      setError('Write what you will do at that time.');
+      setError(t.onboarding.titleRequired);
       return;
     }
     setError(null);
@@ -81,7 +82,7 @@ export function Onboarding({ onFinished }: Props) {
 
   const handleSaveWords = async () => {
     if (!words.trim()) {
-      setError('Write something. This is the whole point.');
+      setError(t.onboarding.wordsRequired);
       return;
     }
     setError(null);
@@ -121,49 +122,47 @@ export function Onboarding({ onFinished }: Props) {
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             {step === 'intro' && (
               <>
-                <ThemedText type="title">KATSU</ThemedText>
-                <ThemedText type="subtitle">A voice from the you who believed.</ThemedText>
+                <ThemedText type="title">{t.onboarding.appName}</ThemedText>
+                <ThemedText type="subtitle">{t.onboarding.tagline}</ThemedText>
                 <ThemedText>
-                  You are about to write down what you want said to you on the days you would
-                  rather not show up.
+                  {t.onboarding.intro}
                 </ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  This app is designed for you to quit it. If it works, you stop needing it.
+                  {t.onboarding.introNote}
                 </ThemedText>
-                <Button label="Start" onPress={() => goTo('routine')} />
+                <Button label={t.onboarding.start} onPress={() => goTo('routine')} />
               </>
             )}
 
             {step === 'routine' && (
               <>
-                <ThemedText type="subtitle">One thing, every day</ThemedText>
+                <ThemedText type="subtitle">{t.onboarding.routineTitle}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Something with a time on it, that repeats. Five minutes to an hour.
+                  {t.onboarding.routineBody}
                 </ThemedText>
-                <TimeField value={time} onChange={setTime} />
+                <TimeField value={time} onChange={setTime} label={t.routines.time} />
                 {/* ⚠ この例文が実質的なチュートリアル。消さないこと */}
                 <TextInput
                   value={title}
                   onChangeText={setTitle}
-                  placeholder="Drink a glass of water"
+                  placeholder={t.routines.titlePlaceholder}
                   placeholderTextColor={theme.textSecondary}
                   maxLength={40}
                   style={inputStyle}
                 />
-                <Button label="Next" onPress={handleSaveRoutine} />
+                <Button label={t.onboarding.next} onPress={handleSaveRoutine} />
               </>
             )}
 
             {step === 'words' && (
               <>
-                <ThemedText type="subtitle">Now write the hard part</ThemedText>
+                <ThemedText type="subtitle">{t.onboarding.wordsTitle}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  This is what arrives when the time passes and you have not done it. Not our
-                  words. Yours.
+                  {t.onboarding.wordsBody}
                 </ThemedText>
                 {/* ⚠ この一行を消さないこと。厳しさと有害さの境目を先に示す(spec §2) */}
                 <ThemedText type="small" themeColor="textSecondary">
-                  It&apos;s okay to challenge an action. Don&apos;t attack the person.
+                  {t.katsu.guardrail}
                 </ThemedText>
                 <TextInput
                   value={words}
@@ -171,7 +170,7 @@ export function Onboarding({ onFinished }: Props) {
                     setWords(truncateChars(next, MESSAGE_MAX_LENGTH));
                     if (isBlocked) setIsBlocked(false);
                   }}
-                  placeholder="You said you were going to change."
+                  placeholder={t.katsu.placeholder}
                   placeholderTextColor={theme.textSecondary}
                   multiline
                   style={[...inputStyle, styles.multiline]}
@@ -179,40 +178,38 @@ export function Onboarding({ onFinished }: Props) {
                 <ThemedText type="small" themeColor="textSecondary" style={styles.counter}>
                   {countChars(words)} / {MESSAGE_MAX_LENGTH}
                 </ThemedText>
-                <Button label="Next" onPress={handleSaveWords} />
+                <Button label={t.onboarding.next} onPress={handleSaveWords} />
                 {isBlocked && <SelfHarmNotice />}
               </>
             )}
 
             {step === 'notifications' && (
               <>
-                <ThemedText type="subtitle">How it reaches you</ThemedText>
+                <ThemedText type="subtitle">{t.onboarding.notificationsTitle}</ThemedText>
                 <ThemedText>
-                  When the time passes and the box is still empty, your words arrive as a
-                  notification. Check it off and that one goes quiet.
+                  {t.onboarding.notificationsBody}
                 </ThemedText>
                 {/* ⚠ 理由を説明してから許可を求める。先にダイアログを出さない */}
                 <ThemedText type="small" themeColor="textSecondary">
-                  Without this you would have to remember to open the app, which is the one thing
-                  this was built to spare you.
+                  {t.onboarding.notificationsNote}
                 </ThemedText>
                 <View style={styles.actions}>
-                  <Button label="Allow notifications" onPress={handleAskNotifications} />
-                  <Button label="Not now" variant="plain" onPress={() => goTo('done')} />
+                  <Button label={t.onboarding.allow} onPress={handleAskNotifications} />
+                  <Button label={t.onboarding.notNow} variant="plain" onPress={() => goTo('done')} />
                 </View>
               </>
             )}
 
             {step === 'done' && (
               <>
-                <ThemedText type="subtitle">That is the whole app</ThemedText>
+                <ThemedText type="subtitle">{t.onboarding.doneTitle}</ThemedText>
                 {/* ⚠ 端末内で完結することを1行で伝える。欠点を隠さず強みとして出す(spec §4) */}
-                <ThemedText>Your words stay on this device.</ThemedText>
+                <ThemedText>{t.onboarding.doneBody}</ThemedText>
                 <ThemedText type="small" themeColor="textSecondary">
-                  Nothing you write here is sent anywhere. Nobody reads it but you.
+                  {t.onboarding.doneNote}
                 </ThemedText>
                 {/* ⚠ 課金機会①: オンボーディング最後。閉じられること */}
-                <Button label="Begin" onPress={() => setIsPaywallOpen(true)} />
+                <Button label={t.onboarding.begin} onPress={() => setIsPaywallOpen(true)} />
               </>
             )}
 

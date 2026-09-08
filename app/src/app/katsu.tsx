@@ -27,6 +27,7 @@ import { ThemedView } from '@/components/themed-view';
 import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
 import { isPro } from '@/lib/purchases';
 import { countChars, truncateChars } from '@/lib/text';
@@ -85,7 +86,7 @@ export default function KatsuScreen() {
 
   const handleSubmit = async () => {
     if (!draft.trim()) {
-      Alert.alert('Write something', 'What would you say to yourself at that moment?');
+      Alert.alert(t.katsu.emptyTitle, t.katsu.emptyBody);
       return;
     }
 
@@ -114,10 +115,10 @@ export default function KatsuScreen() {
   };
 
   const handleDelete = (message: KatsuMessage) => {
-    Alert.alert('Delete this?', 'You wrote it. You can write it again.', [
-      { text: 'Cancel', style: 'cancel' },
+    Alert.alert(t.katsu.deleteTitle, t.katsu.deleteBody, [
+      { text: t.katsu.cancel, style: 'cancel' },
       {
-        text: 'Delete',
+        text: t.katsu.delete,
         style: 'destructive',
         onPress: async () => {
           await deleteMessage(message.id);
@@ -142,7 +143,7 @@ export default function KatsuScreen() {
 
   /** 割り当て先の表示名。ルーティンが消えていれば共通扱いに落ちる */
   const routineLabel = (message: KatsuMessage) =>
-    routines.find((routine) => routine.id === message.routineId)?.title ?? 'All routines';
+    routines.find((routine) => routine.id === message.routineId)?.title ?? t.katsu.allRoutines;
 
   // ⚠ 課金機会②: 2つ目の言葉を書こうとしたとき。それ以外でペイウォールを出さない
   const needsPaywall = !editingId && !isPaid && messages.length >= FREE_MESSAGE_LIMIT;
@@ -161,9 +162,9 @@ export default function KatsuScreen() {
           style={styles.safeArea}
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-          <ThemedText type="subtitle">Your KATSU</ThemedText>
+          <ThemedText type="subtitle">{t.katsu.title}</ThemedText>
           <ThemedText type="small" themeColor="textSecondary">
-            This is what you will hear when you skip. Write it as the person who decided to change.
+            {t.katsu.intro}
           </ThemedText>
 
           {messages.map((message) => {
@@ -179,7 +180,7 @@ export default function KatsuScreen() {
                     style={styles.hit}
                     hitSlop={Spacing.two}>
                     <ThemedText type="smallBold" themeColor="textSecondary">
-                      Locked ── still yours
+                      {t.katsu.locked}
                     </ThemedText>
                   </Pressable>
                 ) : (
@@ -190,7 +191,7 @@ export default function KatsuScreen() {
                       style={styles.hit}
                       hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="accent">
-                        For: {routineLabel(message)} ▾
+                        {t.katsu.forPrefix} {routineLabel(message)} ▾
                       </ThemedText>
                     </Pressable>
                     <Pressable
@@ -198,7 +199,7 @@ export default function KatsuScreen() {
                       style={styles.hit}
                       hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="accent">
-                        Edit
+                        {t.katsu.edit}
                       </ThemedText>
                     </Pressable>
                     <Pressable
@@ -206,7 +207,7 @@ export default function KatsuScreen() {
                       style={styles.hit}
                       hitSlop={Spacing.two}>
                       <ThemedText type="smallBold" themeColor="textSecondary">
-                        Delete
+                        {t.katsu.delete}
                       </ThemedText>
                     </Pressable>
                   </View>
@@ -217,25 +218,25 @@ export default function KatsuScreen() {
 
           {needsPaywall ? (
             <ThemedView type="backgroundElement" style={styles.form}>
-              <ThemedText type="smallBold">Write another one</ThemedText>
+              <ThemedText type="smallBold">{t.katsu.anotherTitle}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                One set of words is free. More than one is part of the paid plan.
+                {t.katsu.anotherBody}
               </ThemedText>
-              <Button label="See the plans" onPress={() => setIsPaywallOpen(true)} />
+              <Button label={t.katsu.anotherAction} onPress={() => setIsPaywallOpen(true)} />
             </ThemedView>
           ) : (
             <ThemedView type="backgroundElement" style={styles.form}>
               <ThemedText type="smallBold">
-                {editingId ? 'Edit your words' : 'Write your words'}
+                {editingId ? t.katsu.editTitle : t.katsu.writeTitle}
               </ThemedText>
               {/* ⚠ この一行を消さないこと。厳しさと有害さの境目を先に示す(spec §2) */}
               <ThemedText type="small" themeColor="textSecondary">
-                It&apos;s okay to challenge an action. Don&apos;t attack the person.
+                {t.katsu.guardrail}
               </ThemedText>
               <TextInput
                 value={draft}
                 onChangeText={handleChangeDraft}
-                placeholder="You said you were going to change."
+                placeholder={t.katsu.placeholder}
                 placeholderTextColor={theme.textSecondary}
                 multiline
                 style={[
@@ -248,8 +249,13 @@ export default function KatsuScreen() {
                 {countChars(draft)} / {MESSAGE_MAX_LENGTH}
               </ThemedText>
               <View style={styles.formActions}>
-                <Button label={editingId ? 'Save' : 'Save these words'} onPress={handleSubmit} />
-                {editingId && <Button label="Cancel" variant="plain" onPress={resetForm} />}
+                <Button
+                  label={editingId ? t.katsu.saveEdit : t.katsu.save}
+                  onPress={handleSubmit}
+                />
+                {editingId && (
+                  <Button label={t.katsu.cancel} variant="plain" onPress={resetForm} />
+                )}
               </View>
             </ThemedView>
           )}

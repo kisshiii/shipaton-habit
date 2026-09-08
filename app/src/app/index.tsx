@@ -25,6 +25,7 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { BottomTabInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
+import { t } from '@/i18n';
 import { formatDateKey, todayKey } from '@/lib/date';
 import { evaluateGraduation } from '@/lib/graduation';
 import {
@@ -122,7 +123,7 @@ export default function TodayScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
             <View style={styles.headerText}>
-              <ThemedText type="subtitle">Today</ThemedText>
+              <ThemedText type="subtitle">{t.today.title}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
                 {formatDateKey(record?.date ?? todayKey())}
               </ThemedText>
@@ -141,29 +142,28 @@ export default function TodayScreen() {
 
           {isBlocked && hasWords && (
             <ThemedView type="backgroundElement" style={styles.notice}>
-              <ThemedText type="smallBold">Let your words reach you</ThemedText>
+              <ThemedText type="smallBold">{t.today.notificationsTitle}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Without notifications you have to remember to open this app. That is the one thing
-                it was built to spare you.
+                {t.today.notificationsBody}
               </ThemedText>
-              <Button label="Turn on notifications" onPress={handleEnableNotifications} />
+              <Button label={t.today.notificationsAction} onPress={handleEnableNotifications} />
             </ThemedView>
           )}
 
           {routines.length > 0 && !hasWords && (
             <ThemedView type="backgroundElement" style={styles.notice}>
-              <ThemedText type="smallBold">Nothing to say yet</ThemedText>
+              <ThemedText type="smallBold">{t.today.noWordsTitle}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Notifications stay quiet until you write your own words in Your KATSU.
+                {t.today.noWordsBody}
               </ThemedText>
             </ThemedView>
           )}
 
           {routines.length === 0 && (
             <ThemedView type="backgroundElement" style={styles.notice}>
-              <ThemedText type="smallBold">Nothing scheduled</ThemedText>
+              <ThemedText type="smallBold">{t.today.emptyTitle}</ThemedText>
               <ThemedText type="small" themeColor="textSecondary">
-                Add your first routine in the Routines tab. Today fills itself in from there.
+                {t.today.emptyBody}
               </ThemedText>
             </ThemedView>
           )}

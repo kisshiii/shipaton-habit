@@ -19,6 +19,7 @@ import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Spacing } from '@/constants/theme';
+import { t } from '@/i18n';
 
 /**
  * 国別の番号表を持たない。更新できず、古い番号を出し続けるリスクがあるため、
@@ -29,17 +30,17 @@ const HELPLINE_URL = 'https://findahelpline.com';
 export function SelfHarmNotice() {
   return (
     <ThemedView type="backgroundElement" style={styles.notice}>
-      <ThemedText type="small">This one can&apos;t be saved as a notification.</ThemedText>
+      <ThemedText type="small">{t.selfHarm.blocked}</ThemedText>
       <ThemedText type="small" themeColor="textSecondary">
-        It might be worth saying to someone directly, rather than to yourself at 7am.
+        {t.selfHarm.suggestion}
       </ThemedText>
       <ExternalLink href={HELPLINE_URL}>
         <ThemedText type="smallBold" themeColor="accent">
-          Find a helpline
+          {t.selfHarm.helpline}
         </ThemedText>
       </ExternalLink>
       <ThemedText type="small" themeColor="textSecondary">
-        In an emergency, call your local emergency number.
+        {t.selfHarm.emergency}
       </ThemedText>
     </ThemedView>
   );
