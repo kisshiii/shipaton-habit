@@ -35,7 +35,7 @@ import { PRIVACY_URL, TERMS_URL } from '@/constants/legal';
 import { Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
-import { getOffering, purchase, restore } from '@/lib/purchases';
+import { getOffering, purchase, restore, type OfferingResult } from '@/lib/purchases';
 
 type Props = {
   visible: boolean;
@@ -61,6 +61,8 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [packages, setPackages] = useState<PurchasesPackage[] | null>(null);
+  /** 商品が出せなかった理由。⚠ 種類ごとに直す場所が違うので潰さない */
+  const [problem, setProblem] = useState<OfferingResult['kind'] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isBusy, setIsBusy] = useState(false);
   /** 操作の結果を伝える一行。⚠ ユーザーが「やめた」ときだけは何も出さない */
@@ -71,9 +73,10 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
     let cancelled = false;
     setNotice(null);
     setIsLoading(true);
-    getOffering().then((offering) => {
+    getOffering().then((result) => {
       if (cancelled) return;
-      setPackages(offering?.availablePackages ?? null);
+      setPackages(result.kind === 'ok' ? result.offering.availablePackages : null);
+      setProblem(result.kind === 'ok' ? null : result.kind);
       setIsLoading(false);
     });
     return () => {
@@ -139,10 +142,18 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
 
           {isLoading && <ActivityIndicator />}
 
-          {/* ⚠ 取得に失敗してもここだけを諦める。閉じれば通常どおり使える */}
-          {!isLoading && !packages && (
+          {/*
+            ⚠ 取得に失敗してもここだけを諦める。閉じれば通常どおり使える。
+            ⚠ 文面は3種類に分ける。ユーザーには同じ「今は出せない」でも、
+              直す側にとってはまったく別の事故。
+          */}
+          {!isLoading && problem && (
             <ThemedText type="small" themeColor="textSecondary">
-              {t.paywall.unreachable}
+              {problem === 'noOffering'
+                ? t.paywall.noOffering
+                : problem === 'noProducts'
+                  ? t.paywall.noProducts
+                  : t.paywall.unreachable}
             </ThemedText>
           )}
 

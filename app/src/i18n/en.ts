@@ -87,6 +87,10 @@ export const en = {
     body: 'Every option unlocks the same thing: more than one set of words, and different words for different routines. You pick the price.',
     quit: 'This app is designed for you to quit it. When you do, cancel and the charges stop.',
     unreachable: 'Could not reach the store. Try again later ── nothing else is affected.',
+    /** ⚠ RevenueCat に current の Offering が無い。ダッシュボード側の設定漏れ */
+    noOffering: 'No plans are set up yet. Nothing else is affected.',
+    /** ⚠ Offering はあるが商品が降りてこない。App Store Connect 側の状態 */
+    noProducts: 'The plans are not available from the store yet. Nothing else is affected.',
     everything: 'Everything unlocked',
     perMonth: '/ month',
     notNow: 'Not now',

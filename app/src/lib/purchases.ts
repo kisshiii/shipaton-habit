@@ -80,19 +80,39 @@ export async function isPro(): Promise<boolean> {
   }
 }
 
+export type OfferingResult =
+  /** 出せる商品がある */
+  | { kind: 'ok'; offering: PurchasesOffering }
+  /** RevenueCat に「現在の Offering」が無い(Make Current を忘れている) */
+  | { kind: 'noOffering' }
+  /** Offering はあるが商品が1つも降りてこない(App Store Connect 側の状態) */
+  | { kind: 'noProducts' }
+  /** 通信・SDK の失敗。キー未設定もここ */
+  | { kind: 'failed' };
+
 /**
- * ペイウォールに出す商品。取得できなければ null を返す。
- * ⚠ 呼び出し側は null を「後で再試行」として扱い、コア体験は止めないこと。
+ * ペイウォールに出す商品。
+ *
+ * ⚠ **失敗の種類を1つに潰さないこと。**「Offering が無い」「商品が降りてこない」
+ *   「通信できない」は直す場所がまったく違う。同じ文言にすると実機で切り分けられず、
+ *   ダッシュボードとストアと通信を総当たりする羽目になる
+ *   (実機で実際に詰まった 2026-09-08)。Restore で同じ間違いを一度している。
+ *
+ * ⚠ 呼び出し側はどの失敗でもコア体験を止めないこと。諦めるのはこの画面だけ。
  */
-export async function getOffering(): Promise<PurchasesOffering | null> {
+export async function getOffering(): Promise<OfferingResult> {
   configurePurchases();
-  if (!isConfigured) return null;
+  if (!isConfigured) return { kind: 'failed' };
 
   try {
     const offerings = await Purchases.getOfferings();
-    return offerings.current ?? null;
+    const current = offerings.current;
+    if (!current) return { kind: 'noOffering' };
+    // Offering はあるのに空 = StoreKit が商品を返していない。原因は ASC 側にある
+    if (current.availablePackages.length === 0) return { kind: 'noProducts' };
+    return { kind: 'ok', offering: current };
   } catch {
-    return null;
+    return { kind: 'failed' };
   }
 }
 
