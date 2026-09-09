@@ -69,7 +69,7 @@ export const en = {
     cancel: 'Cancel',
     edit: 'Edit',
     delete: 'Delete',
-    locked: 'Locked ── still yours',
+    locked: 'Locked, still yours',
     forPrefix: 'For:',
     allRoutines: 'All routines',
     anotherTitle: 'Write another one',
@@ -88,7 +88,7 @@ export const en = {
     title: 'What is this worth to you?',
     body: 'Every option unlocks the same thing: more than one set of words, and different words for different routines. You pick the price.',
     quit: 'This app is designed for you to quit it. When you do, cancel and the charges stop.',
-    unreachable: 'Could not reach the store. Try again later ── nothing else is affected.',
+    unreachable: 'Could not reach the store. Try again later. Nothing else is affected.',
     /** ⚠ RevenueCat に current の Offering が無い。ダッシュボード側の設定漏れ */
     noOffering: 'No plans are set up yet. Nothing else is affected.',
     /** ⚠ Offering はあるが商品が降りてこない。App Store Connect 側の状態 */
@@ -115,7 +115,7 @@ export const en = {
   graduation: {
     title: 'You might not need this anymore.',
     body: 'You have been doing this on your own for a while now. That was the point.',
-    note: 'This app was designed for you to quit it. Nobody here is going to tell you whether you are ready ── you are the only one who knows that.',
+    note: 'This app was designed for you to quit it. Nobody here is going to tell you whether you are ready. You are the only one who knows that.',
     end: 'End my subscription',
     notYet: 'Not yet',
     close: 'Close',

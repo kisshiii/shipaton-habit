@@ -69,7 +69,13 @@ function messageFor(
   isPaid: boolean,
   dayKey: string,
 ): KatsuMessage | undefined {
-  if (!isPaid) return messages[0];
+  // ⚠ 無料に戻ったとき、**割り当ての無い言葉を先に探す。**
+  //   有料中に1件目へルーティンを割り当てていると、`messages[0]` を素で返した場合に
+  //   「特定のルーティン用に書いた言葉が全ルーティンで鳴る」ことになる。
+  //   共通のものが1つも無ければ先頭に落とす(鳴らさないよりは本人の言葉を届ける)。
+  if (!isPaid) {
+    return messages.find((message) => message.routineId === undefined) ?? messages[0];
+  }
 
   // そのルーティン専用があればその中から。無ければ共通の中から
   const mine = messages.filter((message) => message.routineId === routine.id);
@@ -144,7 +150,7 @@ async function runSync(): Promise<number> {
   }
 
   // ⚠ iOS は64件を超えた分を黙って捨てる。溢れるなら**近い日から捨てずに残す**。
-  //   MAX_ROUTINES × SCHEDULE_DAYS_AHEAD は現状56件で収まるが、
+  //   MAX_ROUTINES × SCHEDULE_DAYS_AHEAD は現状21件で収まるが、
   //   どちらかを増やしたときに静かに壊れないよう、ここで頭を打っておく。
   const capped = planned.slice(0, IOS_SCHEDULED_LIMIT);
   await Promise.all(capped.map((request) => Notifications.scheduleNotificationAsync(request)));
