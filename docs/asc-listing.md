@@ -84,7 +84,11 @@ words for different routines.
 
 You choose the price. The plans are identical — the question is what this is
 worth to you. Cancel any time from Settings, and if you graduate, you should.
+
+Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
+
+**⚠ 説明文の末尾の EULA リンクを消さないこと 【必須】2026-09-12(リジェクトで判明):** Guideline 3.1.2(c) は**アプリ内とストアのメタデータの両方**に規約リンクを求める。 アプリ内(ペイウォール)だけでは足りず、**App Store の説明文にも要る。** Apple 標準 EULA を使う場合は説明文に、独自 EULA なら ASC の EULA 欄に。
 
 ## Review Notes(審査ノート)
 
@@ -189,6 +193,8 @@ KATSU は逆側に賭けています。自分の力で続けられる日が十�
 値段はあなたが決めます。3つのプランは中身が同じで、違うのは金額だけ。
 問いは「これにいくらの価値があるか」です。解約はいつでも設定から。
 そして卒業したなら、解約すべきです。
+
+利用規約(EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
 
 ### Review Notes(日本語ロケールでも英語で提出してよい)
