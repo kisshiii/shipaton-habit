@@ -73,7 +73,17 @@ export function GraduationModal({ visible, onClose }: Props) {
                       できるのは Apple の管理画面へ送ることまで。
                       むしろ自動でやるより、自分の手で解約ボタンを押すほうが儀式として強い。
                   */}
-                  <Button label={t.graduation.end} onPress={openManageSubscriptions} />
+                  {/*
+                    ⚠ 管理画面から戻ってきたとき、モーダルを開いたままにしないこと。
+                      解約を済ませて戻った人に同じ問いを出し続けることになる(実機で発覚 2026-09-13)。
+                  */}
+                  <Button
+                    label={t.graduation.end}
+                    onPress={async () => {
+                      await openManageSubscriptions();
+                      onClose();
+                    }}
+                  />
                   <Button label={t.graduation.notYet} variant="plain" onPress={onClose} />
                 </>
               ) : (
