@@ -53,6 +53,32 @@ export function formatDateKey(key: string): string {
   });
 }
 
+/**
+ * 日付キーを年まで含めて読める形にする。`2026-09-15` -> `2026年9月15日` / `September 15, 2026`。
+ * 卒業証書のように、後から見返す・人に見せるものに使う。
+ */
+export function formatFullDateKey(key: string): string {
+  const [year, month, day] = key.split('-').map(Number);
+  if (!year || !month || !day) return key;
+  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
+/**
+ * 2つの日付キーの間の日数。両端を含む(同じ日なら 1)。
+ * ⚠ UTC で数える。ローカル時刻で引くと夏時間の切り替え日に1時間ずれて日数が狂う
+ */
+export function countDaysInclusive(fromKey: string, toKey: string): number {
+  const toUtc = (key: string) => {
+    const [year, month, day] = key.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  return Math.round((toUtc(toKey) - toUtc(fromKey)) / 86_400_000) + 1;
+}
+
 /** "7:5" のような入力を "07:05" に正規化する。不正な値は null */
 export function normalizeTime(input: string): string | null {
   const match = input.trim().match(/^(\d{1,2}):(\d{1,2})$/);

@@ -116,6 +116,22 @@ export const ja: Copy = {
     close: '閉じる',
     stillWorks: 'どちらを選んでも、ここにあるものは動き続けます。',
     freeNote: '引き止めるものは何もありません。役目が終わったと思ったら、いつでも消してください。',
+    certificate: '卒業証書を見る',
+  },
+
+  certificate: {
+    eyebrow: '卒業証書',
+    headline: 'これはもう、あなたの習慣です。',
+    habitsLabel: '身につけたこと',
+    started: '始めた日',
+    graduated: '卒業した日',
+    days: '続けた日数',
+    daysValue: (count: number) => `${count}日`,
+    achieved: (done: number, window: number) => `直近${window}日のうち${done}日、やり切りました。`,
+    footer: 'KATSU ~自分に喝~',
+    share: '画像で共有',
+    close: '閉じる',
+    note: '画像はこの端末の中で作られます。あなたの言葉は載りません。共有しない限り、どこにも送られません。',
   },
 
   onboarding: {

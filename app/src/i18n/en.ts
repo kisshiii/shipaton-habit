@@ -127,6 +127,26 @@ export const en = {
     close: 'Close',
     stillWorks: 'Either way, nothing here stops working.',
     freeNote: 'Nothing is holding you here. Delete the app whenever it has done its job.',
+    certificate: 'See your certificate',
+  },
+
+  /**
+   * ⚠ 祝福するが、可愛くしない。感嘆符・絵文字・「Congratulations!」を入れない。
+   * ⚠ 採点に見える語(score / rank / streak)を入れない。
+   */
+  certificate: {
+    eyebrow: 'Certificate of graduation',
+    headline: 'This one is yours now.',
+    habitsLabel: 'What you made yours',
+    started: 'Started',
+    graduated: 'Graduated',
+    days: 'Days',
+    daysValue: (count: number) => `${count} ${count === 1 ? 'day' : 'days'}`,
+    achieved: (done: number, window: number) => `Done on ${done} of the last ${window} days.`,
+    footer: 'KATSU — Habits that end',
+    share: 'Share as image',
+    close: 'Close',
+    note: 'The image is made on this device. Your words are not on it, and nothing leaves unless you share it.',
   },
 
   onboarding: {
