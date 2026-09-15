@@ -177,6 +177,18 @@ export default function RoutinesScreen() {
               );
             })}
 
+            {/*
+              自主卒業(spec §2)。判定を待たずにいつでも降りられるようにする。
+              ⚠ 思想としてはこちらが本体。アプリが許可を出すのではなく、ユーザーが決める。
+              ⚠ 一覧の直下に置くこと。追加フォームの下だとスクロールしないと見えず、
+                注釈のような薄い文字では押せるものに見えなかった(2026-09-15)。
+            */}
+            <Button
+              label={t.routines.graduate}
+              variant="secondary"
+              onPress={() => setIsGraduationOpen(true)}
+            />
+
             {isFull ? (
               <ThemedView type="backgroundElement" style={styles.empty}>
                 <ThemedText type="smallBold">{t.routines.fullTitle}</ThemedText>
@@ -215,20 +227,6 @@ export default function RoutinesScreen() {
                 )}
               </ThemedView>
             )}
-
-            {/*
-              自主卒業(spec §2)。判定を待たずにいつでも降りられるようにする。
-              ⚠ 思想としてはこちらが本体。アプリが許可を出すのではなく、ユーザーが決める。
-                目立たせる必要はないが、隠さないこと。常時ここに置く。
-            */}
-            <Pressable
-              onPress={() => setIsGraduationOpen(true)}
-              style={styles.graduate}
-              hitSlop={Spacing.two}>
-              <ThemedText type="small" themeColor="textSecondary" style={styles.graduateText}>
-                {t.routines.graduate}
-              </ThemedText>
-            </Pressable>
           </ScrollView>
         </KeyboardAvoidingView>
       </SafeAreaView>
@@ -300,14 +298,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     minHeight: 48,
     fontSize: 16,
-  },
-  graduate: {
-    minHeight: 44,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingTop: Spacing.three,
-  },
-  graduateText: {
-    textDecorationLine: 'underline',
   },
 });

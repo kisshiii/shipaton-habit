@@ -85,9 +85,11 @@ export const en = {
   },
 
   paywall: {
-    title: 'What is this worth to you?',
-    body: 'Every option unlocks the same thing: more than one set of words, and different words for different routines. You pick the price.',
-    quit: 'This app is designed for you to quit it. When you do, cancel and the charges stop.',
+    /** ⚠ 答えるのはユーザー。主語を「あなた」、単位を「月」にして値札の質問に見せない */
+    title: 'What is this app worth to you, each month?',
+    /** ⚠ 価格の上に一度だけ言う。これが無いと3つの価格が松竹梅に見える */
+    sameTitle: 'All three unlock the same things',
+    sameItems: ['More than one set of words', 'Different words for different routines'],
     unreachable: 'Could not reach the store. Try again later. Nothing else is affected.',
     /** ⚠ RevenueCat に current の Offering が無い。ダッシュボード側の設定漏れ */
     noOffering: 'No plans are set up yet. Nothing else is affected.',
@@ -106,8 +108,12 @@ export const en = {
     /** ⚠ 支払いは済んでいる。謝るのはこちら側で、ユーザーの操作は間違っていない */
     purchaseUnconfirmed:
       'Payment went through, but we could not unlock it yet. Try Restore in a moment.',
+    /**
+     * ⚠ 3.1.2 の必須表示。解約の場所と期限を具体的に書く。
+     *   「言葉は消えない」は spec §2(課金が切れても書いた言葉を消さない)の事実どおり。
+     */
     renewal:
-      'Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings at any time.',
+      'Renews monthly until you cancel. To cancel, go to Settings → Apple ID → Subscriptions at least 24 hours before it renews. Your words stay even if you cancel.',
     terms: 'Terms of Use',
     privacy: 'Privacy Policy',
   },
