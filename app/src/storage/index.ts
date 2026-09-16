@@ -87,6 +87,23 @@ export async function markOnboarded(dateKey: string = todayKey()): Promise<void>
   await patchAppState({ onboardedAt: dateKey });
 }
 
+/**
+ * ⚠ **開発ビルド専用。**卒業画面を確かめる・デモを撮るために、保存内容を丸ごと差し替える。
+ *   呼び出し側は `if (__DEV__)` の中からしか呼ばない。ここでも本番では拒否する。
+ */
+export async function replaceAllForDevelopment(snapshot: {
+  routines: RoutineItem[];
+  records: RecordMap;
+  messages: KatsuMessage[];
+  appState: AppState;
+}): Promise<void> {
+  if (!__DEV__) throw new Error('replaceAllForDevelopment is development only');
+  await writeJson(KEYS.routines, snapshot.routines);
+  await writeJson(KEYS.records, snapshot.records);
+  await writeJson(KEYS.messages, snapshot.messages);
+  await writeJson(KEYS.appState, snapshot.appState);
+}
+
 // --- Routines ---------------------------------------------------------------
 
 /** 時刻順に並べて返す */
