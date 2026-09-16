@@ -4,29 +4,26 @@
  *
  * ⚠ 上限に達したときの文言を警告にしないこと。制限そのものがメッセージ(spec §2 登録上限)。
  * ⚠ 時刻はホイールで選ばせる。手で打たせない(`time-field.tsx`)。
+ * ⚠ 一覧と編集を分ける。入力欄を一覧の下に常に出しておかない。
+ *   行を押すと編集シート、追加も同じシートから(2026-09-16 デザイン方針)。
  */
 
 import { useCallback, useState } from 'react';
 import { useFocusEffect } from 'expo-router';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  TextInput,
-  View,
-} from 'react-native';
+import { SymbolView } from 'expo-symbols';
+import { Alert, Pressable, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { EmptyState } from '@/components/empty-state';
 import { GraduationModal } from '@/components/graduation-modal';
+import { Sheet } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimeField } from '@/components/time-field';
+import { TimetableList, TimetableRow } from '@/components/timetable-row';
 import { MAX_ROUTINES } from '@/constants/routines';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
@@ -42,12 +39,13 @@ import type { RoutineItem } from '@/types';
 const TITLE_MAX_LENGTH = 40;
 const DEFAULT_TIME = '07:00';
 
+/** シートの中身。null なら閉じている */
+type SheetTarget = { mode: 'add' } | { mode: 'edit'; routine: RoutineItem };
+
 export default function RoutinesScreen() {
   const theme = useTheme();
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
-  const [time, setTime] = useState(DEFAULT_TIME);
-  const [title, setTitle] = useState('');
-  const [editingId, setEditingId] = useState<string | null>(null);
+  const [sheet, setSheet] = useState<SheetTarget | null>(null);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
 
   const refresh = useCallback(async () => {
@@ -63,11 +61,111 @@ export default function RoutinesScreen() {
     }, [refresh]),
   );
 
-  const resetForm = () => {
-    setEditingId(null);
-    setTime(DEFAULT_TIME);
-    setTitle('');
-  };
+  const isFull = routines.length >= MAX_ROUTINES;
+
+  return (
+    <ThemedView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.content}>
+          <View style={styles.header}>
+            <ThemedText type="display">{t.routines.title}</ThemedText>
+            <ThemedText type="time" themeColor="textSecondary">
+              {routines.length} / {MAX_ROUTINES}
+            </ThemedText>
+          </View>
+
+          {routines.length === 0 ? (
+            <EmptyState symbol="clock" title={t.routines.emptyTitle} body={t.routines.emptyBody} />
+          ) : (
+            <TimetableList>
+              {routines.map((routine) => (
+                <TimetableRow
+                  key={routine.id}
+                  time={routine.time}
+                  title={routine.title}
+                  onPress={() => setSheet({ mode: 'edit', routine })}
+                  trailing={
+                    <SymbolView
+                      name="chevron.right"
+                      size={14}
+                      tintColor={theme.textSecondary}
+                      accessibilityElementsHidden
+                    />
+                  }
+                  accessibilityRole="button"
+                  accessibilityLabel={`${routine.time} ${routine.title}`}
+                  accessibilityHint={t.routines.editTitle}
+                />
+              ))}
+            </TimetableList>
+          )}
+
+          {isFull ? (
+            // ⚠ 警告にしない。制限そのものがメッセージ
+            <ThemedText type="small" themeColor="textSecondary" style={styles.full}>
+              {t.routines.fullBody}
+            </ThemedText>
+          ) : (
+            <Pressable
+              onPress={() => setSheet({ mode: 'add' })}
+              accessibilityRole="button"
+              accessibilityLabel={t.routines.addTitle}
+              style={({ pressed }) => [
+                styles.add,
+                { borderColor: theme.line },
+                pressed && styles.pressed,
+              ]}>
+              <SymbolView name="plus" size={15} tintColor={theme.accent} accessibilityElementsHidden />
+              <ThemedText type="smallBold" themeColor="accent">
+                {t.routines.addTitle}
+              </ThemedText>
+            </Pressable>
+          )}
+        </ScrollView>
+
+        {/*
+          自主的にやめる入口(spec §2)。
+          ⚠ 画面の下に固定する。一覧の長さにかかわらず、スクロールせずに必ず見えること。
+          ⚠ 66日に届く前は「卒業」ではない。押した先のモーダルがそれを伝える。
+        */}
+        <View style={styles.footer}>
+          <Button
+            label={t.routines.graduate}
+            variant="secondary"
+            onPress={() => setIsGraduationOpen(true)}
+          />
+        </View>
+      </SafeAreaView>
+
+      {/* ⚠ key で開くたびに作り直す。前回の入力を持ち越さない */}
+      {sheet && (
+        <RoutineSheet
+          key={sheet.mode === 'edit' ? sheet.routine.id : 'add'}
+          target={sheet}
+          onClose={() => setSheet(null)}
+          onChanged={refresh}
+        />
+      )}
+
+      {/* 判定で出るものと同じモーダル。自分で呼んだ場合は「表示済み」にしない */}
+      <GraduationModal visible={isGraduationOpen} onClose={() => setIsGraduationOpen(false)} />
+    </ThemedView>
+  );
+}
+
+function RoutineSheet({
+  target,
+  onClose,
+  onChanged,
+}: {
+  target: SheetTarget;
+  onClose: () => void;
+  onChanged: () => Promise<void>;
+}) {
+  const theme = useTheme();
+  const editing = target.mode === 'edit' ? target.routine : null;
+  const [time, setTime] = useState(editing?.time ?? DEFAULT_TIME);
+  const [title, setTitle] = useState(editing?.title ?? '');
 
   const handleSubmit = async () => {
     // ⚠ 時刻はピッカーから来るので不正な値が入らない。検証が要るのは題名だけ
@@ -75,15 +173,14 @@ export default function RoutinesScreen() {
       Alert.alert(t.routines.missingTitle, t.routines.missingTitleBody);
       return;
     }
-
     try {
-      if (editingId) {
-        await updateRoutine(editingId, { time, title });
+      if (editing) {
+        await updateRoutine(editing.id, { time, title });
       } else {
         await addRoutine({ time, title });
       }
-      resetForm();
-      await refresh();
+      await onChanged();
+      onClose();
     } catch (error) {
       if (error instanceof RoutineLimitError) {
         Alert.alert(t.routines.limitTitle, t.routines.limitBody);
@@ -93,147 +190,50 @@ export default function RoutinesScreen() {
     }
   };
 
-  const handleEdit = (routine: RoutineItem) => {
-    setEditingId(routine.id);
-    setTime(routine.time);
-    setTitle(routine.title);
-  };
-
-  const handleDelete = (routine: RoutineItem) => {
-    Alert.alert(t.routines.removeTitle, `${routine.time}  ${routine.title}`, [
+  const handleDelete = () => {
+    if (!editing) return;
+    Alert.alert(t.routines.removeTitle, `${editing.time}  ${editing.title}`, [
       { text: t.routines.cancel, style: 'cancel' },
       {
         text: t.routines.remove,
         style: 'destructive',
         onPress: async () => {
-          await deleteRoutine(routine.id);
-          if (editingId === routine.id) resetForm();
-          await refresh();
+          await deleteRoutine(editing.id);
+          await onChanged();
+          onClose();
         },
       },
     ]);
   };
 
-  const isFull = routines.length >= MAX_ROUTINES && !editingId;
-
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <KeyboardAvoidingView
-          style={styles.safeArea}
-          behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-          <ScrollView
-          contentContainerStyle={styles.content}
-          keyboardShouldPersistTaps="handled"
-          // ⚠ 閉じる手段を用意すること。多行入力は Return が改行になるため、
-          //   スワイプで閉じられないとキーボードが画面を覆ったままになる
-          keyboardDismissMode="on-drag">
-            <View style={styles.header}>
-              <ThemedText type="subtitle">{t.routines.title}</ThemedText>
-              <ThemedText type="smallBold" themeColor="textSecondary">
-                {routines.length} / {MAX_ROUTINES}
-              </ThemedText>
-            </View>
-
-            {routines.length === 0 && (
-              <ThemedView type="backgroundElement" style={styles.empty}>
-                <ThemedText type="smallBold">{t.routines.emptyTitle}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t.routines.emptyBody}
-                </ThemedText>
-              </ThemedView>
-            )}
-
-            {routines.map((routine) => {
-              const isEditing = routine.id === editingId;
-              return (
-                <ThemedView
-                  key={routine.id}
-                  type={isEditing ? 'backgroundSelected' : 'backgroundElement'}
-                  style={styles.row}>
-                  <View style={styles.rowMain}>
-                    <View style={[styles.timeBadge, { backgroundColor: theme.accent }]}>
-                      <ThemedText type="smallBold" themeColor="accentText">
-                        {routine.time}
-                      </ThemedText>
-                    </View>
-                    <ThemedText style={styles.rowTitle} numberOfLines={2}>
-                      {routine.title}
-                    </ThemedText>
-                  </View>
-                  {/* ⚠ 文字リンクにしない。44pt を確保して押せるものだと分かる形にする */}
-                  <View style={styles.rowActions}>
-                    <Button label={t.routines.edit} variant="plain" onPress={() => handleEdit(routine)} />
-                    <Pressable
-                      onPress={() => handleDelete(routine)}
-                      style={styles.deleteHit}
-                      hitSlop={Spacing.two}>
-                      <ThemedText type="smallBold" themeColor="textSecondary">
-                        {t.routines.delete}
-                      </ThemedText>
-                    </Pressable>
-                  </View>
-                </ThemedView>
-              );
-            })}
-
-            {/*
-              自主卒業(spec §2)。判定を待たずにいつでも降りられるようにする。
-              ⚠ 思想としてはこちらが本体。アプリが許可を出すのではなく、ユーザーが決める。
-              ⚠ 一覧の直下に置くこと。追加フォームの下だとスクロールしないと見えず、
-                注釈のような薄い文字では押せるものに見えなかった(2026-09-15)。
-            */}
-            <Button
-              label={t.routines.graduate}
-              variant="secondary"
-              onPress={() => setIsGraduationOpen(true)}
-            />
-
-            {isFull ? (
-              <ThemedView type="backgroundElement" style={styles.empty}>
-                <ThemedText type="smallBold">{t.routines.fullTitle}</ThemedText>
-                <ThemedText type="small" themeColor="textSecondary">
-                  {t.routines.fullBody}
-                </ThemedText>
-              </ThemedView>
-            ) : (
-              <ThemedView type="backgroundElement" style={styles.form}>
-                <ThemedText type="smallBold">
-                  {editingId ? t.routines.editTitle : t.routines.addTitle}
-                </ThemedText>
-
-                <TimeField value={time} onChange={setTime} label={t.routines.time} />
-
-                <TextInput
-                  value={title}
-                  onChangeText={setTitle}
-                  placeholder={t.routines.titlePlaceholder}
-                  placeholderTextColor={theme.textSecondary}
-                  maxLength={TITLE_MAX_LENGTH}
-                  returnKeyType="done"
-                  onSubmitEditing={handleSubmit}
-                  style={[
-                    styles.input,
-                    { color: theme.text, borderColor: theme.backgroundSelected },
-                  ]}
-                />
-
-                <Button
-                  label={editingId ? t.routines.save : t.routines.add}
-                  onPress={handleSubmit}
-                />
-                {editingId && (
-                  <Button label={t.routines.cancel} variant="plain" onPress={resetForm} />
-                )}
-              </ThemedView>
-            )}
-          </ScrollView>
-        </KeyboardAvoidingView>
-      </SafeAreaView>
-
-      {/* 判定で出るものと同じモーダル。自分で呼んだ場合は「表示済み」にしない */}
-      <GraduationModal visible={isGraduationOpen} onClose={() => setIsGraduationOpen(false)} />
-    </ThemedView>
+    <Sheet visible onClose={onClose} title={editing ? t.routines.editTitle : t.routines.addTitle}>
+      <TimeField value={time} onChange={setTime} label={t.routines.time} />
+      <TextInput
+        value={title}
+        onChangeText={setTitle}
+        placeholder={t.routines.titlePlaceholder}
+        placeholderTextColor={theme.textSecondary}
+        maxLength={TITLE_MAX_LENGTH}
+        returnKeyType="done"
+        onSubmitEditing={handleSubmit}
+        autoFocus={!editing}
+        style={[styles.input, { color: theme.text, borderColor: theme.line }]}
+      />
+      <Button label={editing ? t.routines.save : t.routines.add} onPress={handleSubmit} />
+      {/* ⚠ 削除はシートの一番下に1つだけ。一覧の各行に並べない */}
+      {editing && (
+        <Pressable
+          onPress={handleDelete}
+          accessibilityRole="button"
+          style={({ pressed }) => [styles.delete, pressed && styles.pressed]}>
+          <ThemedText type="smallBold" themeColor="danger">
+            {t.routines.deleteAction}
+          </ThemedText>
+        </Pressable>
+      )}
+      <Button label={t.routines.cancel} variant="plain" onPress={onClose} />
+    </Sheet>
   );
 }
 
@@ -241,62 +241,48 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  safeArea: {
-    flex: 1,
-  },
   content: {
     padding: Spacing.three,
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.six,
+    gap: Spacing.four,
+    paddingBottom: Spacing.four,
   },
   header: {
     flexDirection: 'row',
-    alignItems: 'center',
+    alignItems: 'baseline',
     justifyContent: 'space-between',
+    paddingTop: Spacing.two,
   },
-  empty: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
+  full: {
+    textAlign: 'center',
   },
-  row: {
-    gap: Spacing.two,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-  },
-  rowMain: {
+  add: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: Spacing.three,
-  },
-  rowTitle: {
-    flex: 1,
-  },
-  rowActions: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.two,
-  },
-  timeBadge: {
-    paddingHorizontal: Spacing.two,
-    paddingVertical: Spacing.one,
-    borderRadius: Spacing.one,
-  },
-  deleteHit: {
-    minHeight: 44,
     justifyContent: 'center',
-    paddingHorizontal: Spacing.two,
+    gap: Spacing.two,
+    minHeight: 52,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderRadius: Radius.control,
   },
-  form: {
-    gap: Spacing.three,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
+  pressed: {
+    opacity: 0.6,
+  },
+  footer: {
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    paddingBottom: BottomTabInset + Spacing.three,
   },
   input: {
     borderWidth: 1,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
     paddingHorizontal: Spacing.three,
     minHeight: 48,
     fontSize: 16,
+  },
+  delete: {
+    minHeight: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

@@ -40,20 +40,25 @@ export function dateKeysBetween(fromKey: string, toKey: string): string[] {
   return keys;
 }
 
+function fromKey(key: string): Date | null {
+  const [year, month, day] = key.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 /**
- * 日付キーを読める形にする。`2026-09-07` -> `Monday, 7 September`。
+ * Today の見出し。`2026-09-16` -> `9月16日` / `September 16`。
  *
  * ⚠ 保存キーをそのまま画面に出さないこと。開発中の画面に見える。
  * ⚠ 年を出さない。今日のことしか扱わない画面に西暦は要らない。
  */
-export function formatDateKey(key: string): string {
-  const [year, month, day] = key.split('-').map(Number);
-  if (!year || !month || !day) return key;
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+export function formatMonthDay(key: string): string {
+  return fromKey(key)?.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) ?? key;
+}
+
+/** `2026-09-16` -> `水曜日` / `Wednesday` */
+export function formatWeekday(key: string): string {
+  return fromKey(key)?.toLocaleDateString(undefined, { weekday: 'long' }) ?? '';
 }
 
 /**
@@ -61,13 +66,10 @@ export function formatDateKey(key: string): string {
  * 卒業証書のように、後から見返す・人に見せるものに使う。
  */
 export function formatFullDateKey(key: string): string {
-  const [year, month, day] = key.split('-').map(Number);
-  if (!year || !month || !day) return key;
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  });
+  return (
+    fromKey(key)?.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) ??
+    key
+  );
 }
 
 /** "7:5" のような入力を "07:05" に正規化する。不正な値は null */

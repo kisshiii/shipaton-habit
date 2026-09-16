@@ -12,12 +12,15 @@
  *   primary   … その画面で進む操作。1画面に1つ
  *   secondary … 並列の操作。枠線だけ
  *   plain     … 取り消し・後回し。目立たせない
+ *
+ * `tone="ceremony"` は紺の画面(オンボーディングの入口・卒業)用。
+ * ⚠ テーマに従わず、紺の上で生成りを使う。普段の画面では使わない。
  */
 
 import { ActivityIndicator, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 
 import { ThemedText } from '@/components/themed-text';
-import { Spacing } from '@/constants/theme';
+import { Ceremony, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 type Variant = 'primary' | 'secondary' | 'plain';
@@ -29,6 +32,7 @@ type Props = {
   disabled?: boolean;
   /** 通信待ちなど。押せない状態にしてスピナーを出す */
   busy?: boolean;
+  tone?: 'default' | 'ceremony';
   style?: ViewStyle;
 };
 
@@ -38,16 +42,28 @@ export function Button({
   variant = 'primary',
   disabled = false,
   busy = false,
+  tone = 'default',
   style,
 }: Props) {
   const theme = useTheme();
   const isOff = disabled || busy;
 
+  const palette =
+    tone === 'ceremony'
+      ? { fill: Ceremony.cream, onFill: Ceremony.navy, line: Ceremony.creamSoft, text: Ceremony.cream }
+      : { fill: theme.accent, onFill: theme.accentText, line: theme.accent, text: theme.accent };
+  const labelColor =
+    variant === 'primary'
+      ? palette.onFill
+      : tone === 'ceremony' && variant === 'plain'
+        ? Ceremony.creamSoft
+        : palette.text;
+
   const surface: ViewStyle =
     variant === 'primary'
-      ? { backgroundColor: theme.accent }
+      ? { backgroundColor: palette.fill }
       : variant === 'secondary'
-        ? { borderColor: theme.accent, borderWidth: 1 }
+        ? { borderColor: palette.line, borderWidth: 1 }
         : {};
 
   return (
@@ -71,13 +87,10 @@ export function Button({
         {busy && (
           <ActivityIndicator
             size="small"
-            color={variant === 'primary' ? theme.accentText : theme.accent}
+            color={labelColor}
           />
         )}
-        <ThemedText
-          type="smallBold"
-          themeColor={variant === 'primary' ? 'accentText' : 'accent'}
-          style={styles.label}>
+        <ThemedText type="smallBold" style={[styles.label, { color: labelColor }]}>
           {label}
         </ThemedText>
       </View>
@@ -91,7 +104,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: Spacing.four,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.control,
   },
   plain: {
     minHeight: 44,

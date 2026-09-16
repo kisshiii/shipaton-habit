@@ -4,7 +4,20 @@ import { Fonts, ThemeColor } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 export type ThemedTextProps = TextProps & {
-  type?: 'default' | 'title' | 'small' | 'smallBold' | 'subtitle' | 'code';
+  /**
+   * display … 画面の見出し(明朝)。voice … ユーザーの言葉とアプリの問いかけ(明朝)。
+   * time … 時刻(等幅・数字の幅を揃える)
+   */
+  type?:
+    | 'default'
+    | 'title'
+    | 'small'
+    | 'smallBold'
+    | 'subtitle'
+    | 'code'
+    | 'display'
+    | 'voice'
+    | 'time';
   themeColor?: ThemeColor;
 };
 
@@ -15,7 +28,9 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
     <Text
       // ⚠ 本文は端末の文字サイズ設定に従わせる。見出しだけは上限を置かないと
       //   1行が画面幅を超えて折り返し地獄になる
-      maxFontSizeMultiplier={type === 'title' || type === 'subtitle' ? 1.4 : undefined}
+      maxFontSizeMultiplier={
+        type === 'title' || type === 'subtitle' || type === 'display' ? 1.4 : undefined
+      }
       style={[
         { color: theme[themeColor ?? 'text'] },
         type === 'default' && styles.default,
@@ -24,6 +39,9 @@ export function ThemedText({ style, type = 'default', themeColor, ...rest }: The
         type === 'smallBold' && styles.smallBold,
         type === 'subtitle' && styles.subtitle,
         type === 'code' && styles.code,
+        type === 'display' && styles.display,
+        type === 'voice' && styles.voice,
+        type === 'time' && styles.time,
         style,
       ]}
       {...rest}
@@ -56,6 +74,25 @@ const styles = StyleSheet.create({
     fontSize: 32,
     lineHeight: 44,
     fontWeight: 600,
+  },
+  display: {
+    fontFamily: Fonts?.voice,
+    fontSize: 30,
+    lineHeight: 40,
+    fontWeight: 700,
+  },
+  voice: {
+    fontFamily: Fonts?.voice,
+    fontSize: 19,
+    lineHeight: 30,
+    fontWeight: 600,
+  },
+  time: {
+    fontFamily: Fonts?.mono,
+    fontSize: 15,
+    lineHeight: 22,
+    fontWeight: 500,
+    fontVariant: ['tabular-nums'],
   },
   code: {
     fontFamily: Fonts.mono,

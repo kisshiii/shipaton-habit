@@ -21,7 +21,10 @@ export const en = {
     doneHint: 'Done',
     notDoneHint: 'Not done yet',
     toggleHint: 'Double tap to mark it done or undone',
-    progress: 'done',
+    /** ⚠ 件数は文の中に置く。数字だけを大きく出して煽らない */
+    progress: (done: number, total: number) => `${done} of ${total} done`,
+    allDone: 'That is everything for today.',
+    fallbackMeta: 'Notifications are off, so your words show here.',
     emptyTitle: 'Nothing scheduled',
     emptyBody: 'Add your first routine in the Routines tab. Today fills itself in from there.',
     noWordsTitle: 'Nothing to say yet',
@@ -45,8 +48,7 @@ export const en = {
     add: 'Add routine',
     save: 'Save',
     cancel: 'Cancel',
-    edit: 'Edit',
-    delete: 'Delete',
+    deleteAction: 'Delete this routine',
     graduate: 'I don’t need this anymore',
     missingTitle: 'Add a title',
     missingTitleBody: 'Write what you will do at that time.',
@@ -82,6 +84,8 @@ export const en = {
     pickerTitle: 'When should this one show up?',
     /** ⚠ 日替わりで選ばれることを伝える。黙っていると届かない言葉があるように見える */
     rotation: 'When several sets of words share a routine, one of them arrives each day.',
+    /** ⚠ VoiceOver 用。「···」ボタンの名前 */
+    more: 'More',
   },
 
   paywall: {
@@ -120,14 +124,13 @@ export const en = {
 
   graduation: {
     title: 'You might not need this anymore.',
-    body: 'You have been doing this on your own for a while now. That was the point.',
     note: 'This app was designed for you to quit it. Nobody here is going to tell you whether you are ready. You are the only one who knows that.',
     end: 'End my subscription',
     notYet: 'Not yet',
     close: 'Close',
     stillWorks: 'Either way, nothing here stops working.',
     freeNote: 'Nothing is holding you here. Delete the app whenever it has done its job.',
-    certificate: 'See your certificate',
+    certificate: 'Take your certificate',
     /**
      * ⚠ 卒業前にやめようとした人向け。**卒業とは呼ばない**が、責めない・引き止めない。
      *   やめるかどうかは本人が決める
@@ -149,13 +152,10 @@ export const en = {
     started: 'Started',
     graduated: 'Graduated',
     footer: 'KATSU — Habits that end',
-    share: 'Share as image',
-    close: 'Close',
     note: 'The image is made on this device. Your words are not on it, and nothing leaves unless you share it.',
   },
 
   onboarding: {
-    appName: 'KATSU',
     tagline: 'A voice from the you who believed.',
     intro:
       'You are about to write down what you want said to you on the days you would rather not show up.',

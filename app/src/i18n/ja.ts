@@ -26,7 +26,9 @@ export const ja: Copy = {
     doneHint: '完了',
     notDoneHint: 'まだ',
     toggleHint: 'ダブルタップで完了と未完了を切り替えます',
-    progress: '件完了',
+    progress: (done: number, total: number) => `${total}件のうち${done}件`,
+    allDone: '今日の分は、終わりです。',
+    fallbackMeta: '通知がオフのため、ここに出しています',
     emptyTitle: 'まだ何もありません',
     emptyBody: '「ルーティン」タブで最初のひとつを登録してください。この画面はそこから埋まります。',
     noWordsTitle: 'まだ言葉がありません',
@@ -50,8 +52,7 @@ export const ja: Copy = {
     add: '追加する',
     save: '保存',
     cancel: 'やめる',
-    edit: '編集',
-    delete: '削除',
+    deleteAction: 'このルーティンを削除',
     graduate: 'もう、これは要らない',
     missingTitle: 'やることを書いてください',
     missingTitleBody: 'その時刻に何をするのかを書いてください。',
@@ -85,6 +86,7 @@ export const ja: Copy = {
     deleteBody: '自分で書いたものです。また書けます。',
     pickerTitle: 'この言葉を、いつ出しますか？',
     rotation: '同じ対象の言葉が複数あるときは、その日ごとにどれかが届きます。',
+    more: 'その他',
   },
 
   paywall: {
@@ -109,14 +111,13 @@ export const ja: Copy = {
 
   graduation: {
     title: 'もう、これは要らないかもしれません。',
-    body: 'しばらく、自分の力で続けてきました。それがこのアプリの目的でした。',
     note: 'このアプリは、あなたに捨てられるために作られています。準備ができたかどうかを決めるのはこちらではありません。分かるのはあなただけです。',
     end: '購読を終了する',
     notYet: 'まだ続ける',
     close: '閉じる',
     stillWorks: 'どちらを選んでも、ここにあるものは動き続けます。',
     freeNote: '引き止めるものは何もありません。役目が終わったと思ったら、いつでも消してください。',
-    certificate: '卒業証書を見る',
+    certificate: '卒業証書を受け取る',
     leaveTitle: 'ここでやめても、かまいません。',
     leaveBody: (days: number) =>
       `卒業は、その日のルーティンを${days}日続けてやり切ったときです。それより前にやめるのは卒業ではありません。それでも決めるのはあなたで、書いた言葉は消えません。`,
@@ -129,13 +130,10 @@ export const ja: Copy = {
     started: '始めた日',
     graduated: '卒業した日',
     footer: 'KATSU ~自分に喝~',
-    share: '画像で共有',
-    close: '閉じる',
     note: '画像はこの端末の中で作られます。あなたの言葉は載りません。共有しない限り、どこにも送られません。',
   },
 
   onboarding: {
-    appName: 'KATSU',
     tagline: 'あの日、変わると決めた自分の声。',
     intro: 'これから、行きたくない日の自分に向けて、何と言ってほしいかを書いてもらいます。',
     introNote: 'このアプリは、あなたに捨てられるために作られています。うまくいけば、要らなくなります。',

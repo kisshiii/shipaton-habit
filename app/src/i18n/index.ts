@@ -28,14 +28,16 @@ export type { Copy };
  * ⚠ 起動中に言語を切り替える人はいないので、毎回読み直さない。
  *   iOS は言語変更でアプリを再起動するため、これで取りこぼさない。
  */
-function resolve(): Copy {
+function resolve(): 'ja' | 'en' {
   try {
-    const code = getLocales()[0]?.languageCode;
-    return code === 'ja' ? ja : en;
+    return getLocales()[0]?.languageCode === 'ja' ? 'ja' : 'en';
   } catch {
     // 取れなくてもアプリを止めない。英語で通す
-    return en;
+    return 'en';
   }
 }
 
-export const t: Copy = resolve();
+/** 表示言語。書体の選び分け(明朝 / New York)にも使う */
+export const language = resolve();
+
+export const t: Copy = language === 'ja' ? ja : en;
