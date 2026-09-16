@@ -25,7 +25,8 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { Fonts, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
-import { countDaysInclusive, formatFullDateKey, todayKey } from '@/lib/date';
+import { GRADUATION_STREAK_DAYS } from '@/constants/graduation';
+import { formatFullDateKey } from '@/lib/date';
 import { evaluateGraduation } from '@/lib/graduation';
 import { getAppState, getRoutines } from '@/storage';
 import type { RoutineItem } from '@/types';
@@ -39,34 +40,24 @@ type Details = {
   routines: RoutineItem[];
   startedOn: string;
   graduatedOn: string;
-  days: number;
-  achievedDays: number;
-  window: number;
-  threshold: number;
 };
 
 /**
- * 証書に載せるものを集める。出せる相手でなければ `null`。
- * ⚠ ルーティンが0件の人には出さない。卒業判定と同じ線引き(spec §2 判定の細部)。
+ * 証書に載せるものを集める。卒業していなければ `null`。
+ * ⚠ 66日に届く前にやめる人は卒業ではない。証書を出さない(spec §2 卒業の扱い)。
+ * ⚠ 卒業日は判定が記録から出す日。証書を開いた日ではない。
  */
 export async function loadCertificate(): Promise<Details | null> {
-  const [routines, appState, progress] = await Promise.all([
+  const [routines, appState, status] = await Promise.all([
     getRoutines(),
     getAppState(),
     evaluateGraduation(),
   ]);
-  if (!progress || !appState.startedOn || routines.length === 0) return null;
-
-  // 卒業した日は「証書を開いた日」。自分で降りると決めた日がその人の卒業日
-  const graduatedOn = todayKey();
+  if (!status?.graduatedOn || !appState.startedOn) return null;
   return {
     routines,
     startedOn: appState.startedOn,
-    graduatedOn,
-    days: countDaysInclusive(appState.startedOn, graduatedOn),
-    achievedDays: progress.achievedDays,
-    window: progress.window,
-    threshold: progress.threshold,
+    graduatedOn: status.graduatedOn,
   };
 }
 
@@ -122,7 +113,10 @@ export function Certificate({ visible, onClose }: Props) {
                     <Text style={styles.eyebrow}>{t.certificate.eyebrow}</Text>
                   </View>
 
-                  <Text style={styles.headline}>{t.certificate.headline}</Text>
+                  {/* ⚠ 日数は見出しで一度だけ言う。全員が同じ数字なので、長く使っても増えない */}
+                  <Text style={styles.headline}>
+                    {t.certificate.headline(GRADUATION_STREAK_DAYS)}
+                  </Text>
 
                   <View style={styles.rule} />
 
@@ -141,18 +135,7 @@ export function Certificate({ visible, onClose }: Props) {
                   <View style={styles.facts}>
                     <Fact label={t.certificate.started} value={formatFullDateKey(details.startedOn)} />
                     <Fact label={t.certificate.graduated} value={formatFullDateKey(details.graduatedOn)} />
-                    <Fact label={t.certificate.days} value={t.certificate.daysValue(details.days)} />
                   </View>
-
-                  {/*
-                    ⚠ 閾値に届いているときだけ出す。自分で早めに降りた人に
-                      「30日のうち4日」を突きつけると、証書が採点表になる
-                  */}
-                  {details.achievedDays >= details.threshold && (
-                    <Text style={styles.achieved}>
-                      {t.certificate.achieved(details.achievedDays, details.window)}
-                    </Text>
-                  )}
 
                   <Text style={styles.footer}>{t.certificate.footer}</Text>
                 </View>
@@ -272,11 +255,6 @@ const styles = StyleSheet.create({
     fontVariant: ['tabular-nums'],
     flexShrink: 1,
     textAlign: 'right',
-  },
-  achieved: {
-    color: CREAM,
-    fontSize: 15,
-    lineHeight: 22,
   },
   footer: {
     color: CREAM_SOFT,

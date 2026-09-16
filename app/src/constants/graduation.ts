@@ -1,6 +1,9 @@
 /**
- * 卒業判定の定数。9月に調整するため、ロジック内に数値を直書きしないこと。
+ * 卒業判定の定数。ロジック内に数値を直書きしないこと。
+ *
+ * 66日は習慣化の研究の中央値(Lally et al. 2010 / Singh et al. 2024、spec §8-2)。
+ * ⚠ 「全員が66日で身につく」という意味ではない。個人差は数週間〜1年近くある。
  */
 
-export const GRADUATION_WINDOW = 30; // 判定窓(日)
-export const GRADUATION_THRESHOLD = 21; // 達成日数
+/** その日のルーティンを全部やり切った日が、この日数だけ続いたら卒業(spec §2 卒業の扱い) */
+export const GRADUATION_STREAK_DAYS = 66;

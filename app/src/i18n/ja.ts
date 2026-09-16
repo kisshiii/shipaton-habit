@@ -117,17 +117,17 @@ export const ja: Copy = {
     stillWorks: 'どちらを選んでも、ここにあるものは動き続けます。',
     freeNote: '引き止めるものは何もありません。役目が終わったと思ったら、いつでも消してください。',
     certificate: '卒業証書を見る',
+    leaveTitle: 'ここでやめても、かまいません。',
+    leaveBody: (days: number) =>
+      `卒業は、その日のルーティンを${days}日続けてやり切ったときです。それより前にやめるのは卒業ではありません。それでも決めるのはあなたで、書いた言葉は消えません。`,
   },
 
   certificate: {
     eyebrow: '卒業証書',
-    headline: 'これはもう、あなたの習慣です。',
+    headline: (days: number) => `${days}日続けて、やり切りました。`,
     habitsLabel: '身につけたこと',
     started: '始めた日',
     graduated: '卒業した日',
-    days: '続けた日数',
-    daysValue: (count: number) => `${count}日`,
-    achieved: (done: number, window: number) => `直近${window}日のうち${done}日、やり切りました。`,
     footer: 'KATSU ~自分に喝~',
     share: '画像で共有',
     close: '閉じる',

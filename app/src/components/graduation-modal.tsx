@@ -1,35 +1,30 @@
 /**
  * 卒業モーダル。
  *
- * ⚠ ここは表彰の場ではない。**問いを出す場所**。
- *   「もう要らないんじゃないか」と聞くだけで、決めるのはユーザー(spec §2)。
- *   スコア・達成率・ランクのような「留まる理由」を足さないこと。
+ * 2つの顔を持つ(spec §2 卒業の扱い):
+ *   - **卒業した人**(連続66日): 「もう要らないかもしれない」と問い、卒業証書を渡す
+ *   - **まだの人**(`I don't need this anymore` から): やめてかまわないと伝える。
+ *     ⚠ **卒業とは呼ばない。証書も出さない。**ただし責めない・引き止めない
  *
- * ⚠ 卒業証書(spec §3-4)はここから開く。証書は留まる理由ではなく、
- *   **持って出ていくもの**なので、問いと矛盾しない。2026-09-15 に方針変更。
+ * ⚠ スコア・達成率・連続日数のような「留まる理由」を足さないこと。
+ *   証書は留まる理由ではなく、持って出ていくもの。
  *
- * 判定で出す場合も、設定から自分で呼ぶ場合も同じものを見せる。
- * 思想としては自主卒業のほうが本体で、アプリが許可を出すのではなく、
- * ユーザーがいつでも降りられる。
+ * ⚠ **やめることは課金者だけのものではない。**入口は無課金でも常時出す。
  *
- * ⚠ **卒業は課金者だけのものではない。**入口(`I don't need this anymore`)は
- *   無課金でも常時出す(spec §2 自主卒業)。無料で使い続けた人が離れるのも、
- *   このアプリが目指した成功であって、課金者限定にすると
- *   「金を払った人だけが卒業できる」という逆の意味になる。証書も同じく無課金で出す。
- *
- * ⚠ ただし**解約ボタンは購読している人にだけ出すこと。**無課金の人を Apple の
+ * ⚠ **解約ボタンは購読している人にだけ出すこと。**無課金の人を Apple の
  *   管理画面へ送っても解約するものが無く、意味の分からない行き止まりになる
  *   (実機で発覚 2026-09-07)。
  */
 
 import { useEffect, useState } from 'react';
-import { Modal, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Modal, StyleSheet, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { Certificate, loadCertificate } from '@/components/certificate';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
+import { GRADUATION_STREAK_DAYS } from '@/constants/graduation';
 import { Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { isPro, openManageSubscriptions } from '@/lib/purchases';
@@ -41,8 +36,8 @@ type Props = {
 
 export function GraduationModal({ visible, onClose }: Props) {
   const [isPaid, setIsPaid] = useState(false);
-  /** ルーティンが0件の人には証書を出さない。卒業判定と同じ線引き */
-  const [hasCertificate, setHasCertificate] = useState(false);
+  /** null = 判定中。⚠ 決まる前に文面を出すと、卒業した人に一瞬「まだ」の文が見える */
+  const [hasGraduated, setHasGraduated] = useState<boolean | null>(null);
   const [isCertificateOpen, setIsCertificateOpen] = useState(false);
 
   useEffect(() => {
@@ -53,12 +48,20 @@ export function GraduationModal({ visible, onClose }: Props) {
       if (!cancelled) setIsPaid(active);
     });
     loadCertificate().then((details) => {
-      if (!cancelled) setHasCertificate(details !== null);
+      if (!cancelled) setHasGraduated(details !== null);
     });
     return () => {
       cancelled = true;
     };
   }, [visible]);
+
+  const certificateButton = hasGraduated && (
+    <Button
+      label={t.graduation.certificate}
+      variant="secondary"
+      onPress={() => setIsCertificateOpen(true)}
+    />
+  );
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -66,66 +69,64 @@ export function GraduationModal({ visible, onClose }: Props) {
       <SafeAreaProvider>
         <View style={styles.backdrop}>
           <ThemedView style={styles.sheet}>
-            <ThemedText type="subtitle">{t.graduation.title}</ThemedText>
+            {hasGraduated === null ? (
+              <ActivityIndicator />
+            ) : (
+              <>
+                <ThemedText type="subtitle">
+                  {hasGraduated ? t.graduation.title : t.graduation.leaveTitle}
+                </ThemedText>
 
-            <ThemedText>
-              {t.graduation.body}
-            </ThemedText>
-            <ThemedText type="small" themeColor="textSecondary">
-              {t.graduation.note}
-            </ThemedText>
+                <ThemedText>
+                  {hasGraduated
+                    ? t.graduation.body
+                    : t.graduation.leaveBody(GRADUATION_STREAK_DAYS)}
+                </ThemedText>
+                {hasGraduated && (
+                  <ThemedText type="small" themeColor="textSecondary">
+                    {t.graduation.note}
+                  </ThemedText>
+                )}
 
-            <View style={styles.actions}>
-              {isPaid ? (
-                <>
-                  {/*
-                    ⚠ 開発者側からサブスクを解約することは技術的にできない。
-                      できるのは Apple の管理画面へ送ることまで。
-                      むしろ自動でやるより、自分の手で解約ボタンを押すほうが儀式として強い。
-                  */}
-                  {/*
-                    ⚠ 管理画面から戻ってきたとき、モーダルを開いたままにしないこと。
-                      解約を済ませて戻った人に同じ問いを出し続けることになる(実機で発覚 2026-09-13)。
-                  */}
-                  <Button
-                    label={t.graduation.end}
-                    onPress={async () => {
-                      await openManageSubscriptions();
-                      onClose();
-                    }}
-                  />
-                  {hasCertificate && (
-                    <Button
-                      label={t.graduation.certificate}
-                      variant="secondary"
-                      onPress={() => setIsCertificateOpen(true)}
-                    />
+                <View style={styles.actions}>
+                  {isPaid ? (
+                    <>
+                      {/*
+                        ⚠ 開発者側からサブスクを解約することは技術的にできない。
+                          できるのは Apple の管理画面へ送ることまで。
+                          むしろ自動でやるより、自分の手で解約ボタンを押すほうが儀式として強い。
+                      */}
+                      {/*
+                        ⚠ 管理画面から戻ってきたとき、モーダルを開いたままにしないこと。
+                          解約を済ませて戻った人に同じ問いを出し続けることになる(実機で発覚 2026-09-13)。
+                      */}
+                      <Button
+                        label={t.graduation.end}
+                        onPress={async () => {
+                          await openManageSubscriptions();
+                          onClose();
+                        }}
+                      />
+                      {certificateButton}
+                      <Button label={t.graduation.notYet} variant="plain" onPress={onClose} />
+                    </>
+                  ) : (
+                    <>
+                      {/*
+                        ⚠ 無課金の人に解約を勧めない。止めるものが無い以上、
+                          ここで示せるのは「いつ離れてもいい」ということだけ
+                      */}
+                      <Button label={t.graduation.close} onPress={onClose} />
+                      {certificateButton}
+                    </>
                   )}
-                  <Button label={t.graduation.notYet} variant="plain" onPress={onClose} />
-                </>
-              ) : (
-                <>
-                  {/*
-                    ⚠ 無課金の人に解約を勧めない。止めるものが無い以上、
-                      ここで示せるのは「いつ離れてもいい」ということだけ
-                  */}
-                  <Button label={t.graduation.close} onPress={onClose} />
-                  {hasCertificate && (
-                    <Button
-                      label={t.graduation.certificate}
-                      variant="secondary"
-                      onPress={() => setIsCertificateOpen(true)}
-                    />
-                  )}
-                </>
-              )}
-            </View>
+                </View>
 
-            <ThemedText type="small" themeColor="textSecondary">
-              {isPaid
-                ? t.graduation.stillWorks
-                : t.graduation.freeNote}
-            </ThemedText>
+                <ThemedText type="small" themeColor="textSecondary">
+                  {isPaid ? t.graduation.stillWorks : t.graduation.freeNote}
+                </ThemedText>
+              </>
+            )}
           </ThemedView>
         </View>
 

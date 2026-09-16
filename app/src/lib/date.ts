@@ -24,15 +24,18 @@ export function toTimeKey(date: Date): string {
 }
 
 /**
- * 今日を末尾とする直近 `days` 日分の日付キー(古い順)。
- * 卒業判定のローリング窓に使う。
+ * `fromKey` から `toKey` までの日付キー(両端を含む、古い順)。
+ * 卒業判定で Day 1 から今日までを1日ずつ見るのに使う。
+ * ⚠ 日付はローカルの暦で進める。ミリ秒を足すと夏時間の切り替え日に1日ずれる
  */
-export function recentDateKeys(days: number, endingOn: Date = new Date()): string[] {
+export function dateKeysBetween(fromKey: string, toKey: string): string[] {
+  const [year, month, day] = fromKey.split('-').map(Number);
+  if (!year || !month || !day) return [];
+  const cursor = new Date(year, month - 1, day);
   const keys: string[] = [];
-  for (let back = days - 1; back >= 0; back -= 1) {
-    const day = new Date(endingOn);
-    day.setDate(day.getDate() - back);
-    keys.push(toDateKey(day));
+  for (let key = toDateKey(cursor); key <= toKey; key = toDateKey(cursor)) {
+    keys.push(key);
+    cursor.setDate(cursor.getDate() + 1);
   }
   return keys;
 }
@@ -65,18 +68,6 @@ export function formatFullDateKey(key: string): string {
     month: 'long',
     day: 'numeric',
   });
-}
-
-/**
- * 2つの日付キーの間の日数。両端を含む(同じ日なら 1)。
- * ⚠ UTC で数える。ローカル時刻で引くと夏時間の切り替え日に1時間ずれて日数が狂う
- */
-export function countDaysInclusive(fromKey: string, toKey: string): number {
-  const toUtc = (key: string) => {
-    const [year, month, day] = key.split('-').map(Number);
-    return Date.UTC(year, month - 1, day);
-  };
-  return Math.round((toUtc(toKey) - toUtc(fromKey)) / 86_400_000) + 1;
 }
 
 /** "7:5" のような入力を "07:05" に正規化する。不正な値は null */

@@ -128,6 +128,13 @@ export const en = {
     stillWorks: 'Either way, nothing here stops working.',
     freeNote: 'Nothing is holding you here. Delete the app whenever it has done its job.',
     certificate: 'See your certificate',
+    /**
+     * ⚠ 卒業前にやめようとした人向け。**卒業とは呼ばない**が、責めない・引き止めない。
+     *   やめるかどうかは本人が決める
+     */
+    leaveTitle: 'You can stop here.',
+    leaveBody: (days: number) =>
+      `Graduating means doing everything on your list ${days} days in a row. Stopping before that is not graduating, but it is still your call, and nothing you wrote is deleted.`,
   },
 
   /**
@@ -136,13 +143,11 @@ export const en = {
    */
   certificate: {
     eyebrow: 'Certificate of graduation',
-    headline: 'This one is yours now.',
+    /** ⚠ 卒業した人にしか出ない。事実だけを言う */
+    headline: (days: number) => `${days} days in a row, all done.`,
     habitsLabel: 'What you made yours',
     started: 'Started',
     graduated: 'Graduated',
-    days: 'Days',
-    daysValue: (count: number) => `${count} ${count === 1 ? 'day' : 'days'}`,
-    achieved: (done: number, window: number) => `Done on ${done} of the last ${window} days.`,
     footer: 'KATSU — Habits that end',
     share: 'Share as image',
     close: 'Close',
