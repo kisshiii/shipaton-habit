@@ -44,7 +44,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "eas-build-pre-install": "node scripts/provision-blocklist.js"
+    "eas-build-pre-install": "node scripts/provision-blocklist.js",
+    "lint:safe": "bash scripts/lint.sh",
+    "test:graduation": "node scripts/test-graduation.js",
+    "setup:cloud": "bash scripts/cloud-setup.sh"
   },
   "private": true
 }
