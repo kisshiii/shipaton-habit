@@ -41,7 +41,11 @@ export function TimetableRow({ time, title, dimmed, focused, trailing, onPress, 
         focused && { backgroundColor: theme.backgroundSelected },
         pressed && styles.pressed,
       ]}>
-      <ThemedText type="time" themeColor={dimmed ? 'textSecondary' : 'accent'} style={styles.time}>
+      <ThemedText
+        type="time"
+        numberOfLines={1}
+        themeColor={dimmed ? 'textSecondary' : 'accent'}
+        style={styles.time}>
         {time}
       </ThemedText>
       <View style={styles.body}>
@@ -73,8 +77,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.two,
     borderBottomWidth: StyleSheet.hairlineWidth,
   },
+  // ⚠ 幅を固定しない。文字サイズを大きくした人で時刻が切れる。最低幅で列を揃えるだけにする
   time: {
-    width: 56,
+    minWidth: 56,
   },
   body: {
     flex: 1,

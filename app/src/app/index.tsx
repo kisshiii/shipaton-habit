@@ -21,7 +21,7 @@ import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
@@ -128,7 +128,11 @@ export default function TodayScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.content}>
+        {/*
+          ⚠ 下端の余白は iOS に決めさせる(automatic)。画面はタブバーの下まで伸びているので、
+            タブバーの高さを定数で足すと、機種やタブバーの形によって最後の行が隠れる
+        */}
+        <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
           <View style={styles.header}>
             <ThemedText type="display">{formatMonthDay(dateKey)}</ThemedText>
             {/* ⚠ 分母を煽りに使わない。文の中に置くだけで、色も強調も付けない */}
@@ -218,7 +222,7 @@ const styles = StyleSheet.create({
   content: {
     padding: Spacing.three,
     gap: Spacing.four,
-    paddingBottom: BottomTabInset + Spacing.six,
+    paddingBottom: Spacing.four,
   },
   header: {
     gap: Spacing.half,

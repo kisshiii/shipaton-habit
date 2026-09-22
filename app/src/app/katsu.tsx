@@ -33,7 +33,7 @@ import { Sheet } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { FREE_MESSAGE_LIMIT, MESSAGE_MAX_LENGTH } from '@/constants/messages';
-import { BottomTabInset, Fonts, Radius, Spacing } from '@/constants/theme';
+import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
@@ -170,6 +170,8 @@ export default function KatsuScreen() {
               <View key={message.id} style={[styles.word, { borderTopColor: theme.line }]}>
                 <ThemedText
                   style={[styles.quoteMark, { color: theme.accent }]}
+                  // ⚠ 飾りなので文字サイズの設定で拡大しない。高さが固定なので、拡大すると本文に重なる
+                  allowFontScaling={false}
                   accessibilityElementsHidden>
                   “
                 </ThemedText>
@@ -219,10 +221,17 @@ export default function KatsuScreen() {
           )}
         </ScrollView>
 
+        {/*
+          ⚠ 下の余白は OS に決めさせる。タブの中の画面では、安全領域の下端がタブバーの上端になる。
+            タブバーの高さを定数で足すと、機種・iOS のタブバーの形・文字サイズで食い違い、
+            ボタンがタブバーに重なる(iPhone 15 の実機で発覚 2026-09-22)。
+        */}
         {!needsPaywall && (
-          <View style={styles.footer}>
-            <Button label={t.katsu.writeTitle} onPress={() => setDraft({ text: '' })} />
-          </View>
+          <SafeAreaView edges={['bottom']}>
+            <View style={styles.footer}>
+              <Button label={t.katsu.writeTitle} onPress={() => setDraft({ text: '' })} />
+            </View>
+          </SafeAreaView>
         )}
       </SafeAreaView>
 
@@ -427,8 +436,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.three,
+    paddingVertical: Spacing.three,
   },
   input: {
     borderWidth: 1,

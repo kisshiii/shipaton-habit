@@ -23,7 +23,7 @@ import { ThemedView } from '@/components/themed-view';
 import { TimeField } from '@/components/time-field';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
 import { MAX_ROUTINES } from '@/constants/routines';
-import { BottomTabInset, Radius, Spacing } from '@/constants/theme';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
@@ -128,13 +128,20 @@ export default function RoutinesScreen() {
           ⚠ 画面の下に固定する。一覧の長さにかかわらず、スクロールせずに必ず見えること。
           ⚠ 66日に届く前は「卒業」ではない。押した先のモーダルがそれを伝える。
         */}
-        <View style={styles.footer}>
-          <Button
-            label={t.routines.graduate}
-            variant="secondary"
-            onPress={() => setIsGraduationOpen(true)}
-          />
-        </View>
+        {/*
+          ⚠ 下の余白は OS に決めさせる。タブの中の画面では、安全領域の下端がタブバーの上端になる。
+            タブバーの高さを定数で足すと、機種・iOS のタブバーの形・文字サイズで食い違い、
+            ボタンがタブバーに重なる(iPhone 15 の実機で発覚 2026-09-22)。
+        */}
+        <SafeAreaView edges={['bottom']}>
+          <View style={styles.footer}>
+            <Button
+              label={t.routines.graduate}
+              variant="secondary"
+              onPress={() => setIsGraduationOpen(true)}
+            />
+          </View>
+        </SafeAreaView>
       </SafeAreaView>
 
       {/* ⚠ key で開くたびに作り直す。前回の入力を持ち越さない */}
@@ -270,8 +277,7 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.three,
+    paddingVertical: Spacing.three,
   },
   input: {
     borderWidth: 1,

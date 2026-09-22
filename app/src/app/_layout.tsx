@@ -64,8 +64,8 @@ export default function TabLayout() {
     if (__DEV__) {
       if (!linkingUrl) return;
       // import にすると本番バンドルにも入る。ここは require でなければならない
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
       const { DEV_SEED_QUERY, seedGraduationDemo } =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
         require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
       if (Linking.parse(linkingUrl).queryParams?.[DEV_SEED_QUERY] !== 'graduation') return;
       seedGraduationDemo().then((didSeed) => {

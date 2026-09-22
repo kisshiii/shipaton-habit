@@ -281,17 +281,23 @@ function Intro({ onStart }: { onStart: () => void }) {
     <View style={[styles.fill, { backgroundColor: Ceremony.navy }]}>
       <StatusBar style="light" />
       <SafeAreaView style={styles.fill} edges={['top', 'bottom']}>
-        <View style={styles.introMark}>
-          <Image
-            source={require('../../assets/images/splash-icon.png')}
-            style={styles.splashImage}
-            accessibilityLabel="KATSU"
-          />
-        </View>
-        <View style={styles.introText}>
-          <Text style={styles.introTagline}>{t.onboarding.tagline}</Text>
-          <Text style={styles.introBody}>{t.onboarding.intro}</Text>
-        </View>
+        {/*
+          ⚠ スクロールできるようにしておく。小さい画面や大きい文字の設定では、
+            説明文が下のボタンに食い込む。ボタンだけは下に固定したまま
+        */}
+        <ScrollView contentContainerStyle={styles.introScroll} bounces={false}>
+          <View style={styles.introMark}>
+            <Image
+              source={require('../../assets/images/splash-icon.png')}
+              style={styles.splashImage}
+              accessibilityLabel="KATSU"
+            />
+          </View>
+          <View style={styles.introText}>
+            <Text style={styles.introTagline}>{t.onboarding.tagline}</Text>
+            <Text style={styles.introBody}>{t.onboarding.intro}</Text>
+          </View>
+        </ScrollView>
         <View style={styles.footer}>
           <Button tone="ceremony" label={t.onboarding.start} onPress={onStart} />
           <Text style={styles.introNote}>{t.onboarding.introNote}</Text>
@@ -342,6 +348,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
     paddingBottom: Spacing.three,
+  },
+  introScroll: {
+    flexGrow: 1,
   },
   introMark: {
     flex: 1,
