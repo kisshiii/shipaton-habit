@@ -27,13 +27,16 @@ export type GraduationStatus = {
 /**
  * その日が「全部完了」か。
  *
- * 分母0は達成扱いにする。これが起きるのは Day 1 で登録時点に時刻が過ぎていた場合で、
- * ルーティン自体は存在する。インストール時刻で不利にしない(spec §2 判定の細部)。
+ * 分母0には2通りあり、扱いが逆になる(spec §2 判定の細部):
+ *   - **Day 1 で登録時点に時刻が過ぎていた** → 達成扱い。ルーティンは存在し、
+ *     分母から外した項目が `excludedIds` に残っている。インストール時刻で不利にしない
+ *   - **ルーティンが1件も無かった日**(全部消した) → 未達成。やることが無い日を
+ *     「やり切った日」に数えると、全部消してアプリを開くだけで連続日数が伸びてしまう
  */
 function isAchieved(record: DailyRecord | undefined): boolean {
   // アプリを開かなかった日はレコードが無い。未達成として扱い、遡って作らない
   if (!record) return false;
-  if (record.totalCount === 0) return true;
+  if (record.totalCount === 0) return (record.excludedIds?.length ?? 0) > 0;
   return record.completedIds.length >= record.totalCount;
 }
 

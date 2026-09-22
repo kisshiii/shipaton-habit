@@ -80,9 +80,25 @@ const cases = [
   }],
   ['分母0の日(Day 1 の時刻超過)は達成扱い', () => {
     const r = build((i, k) =>
-      i === 0 ? { date: k, completedIds: [], totalCount: 0 } : i < N ? done(k) : undefined,
+      i === 0
+        ? { date: k, completedIds: [], totalCount: 0, excludedIds: ['a'] }
+        : i < N
+          ? done(k)
+          : undefined,
     );
     assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[N - 1]);
+  }],
+  ['ルーティンが1件も無い日(全部消した日)は途切れる', () => {
+    const r = build((i, k) =>
+      i === 20 ? { date: k, completedIds: [], totalCount: 0, excludedIds: [] } : done(k),
+    );
+    assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[20 + N]);
+  }],
+  ['全部消したまま開き続けても卒業しない', () => {
+    const r = build((i, k) =>
+      i < 200 ? { date: k, completedIds: [], totalCount: 0, excludedIds: [] } : undefined,
+    );
+    assert.strictEqual(findGraduationDate(r, START, keys[199]), null);
   }],
   ['Day 1 より前の記録は数えない', () => {
     const r = build((i, k) => (i < N ? done(k) : undefined));
