@@ -1,32 +1,30 @@
 /**
  * Today 画面。
- * 今日のルーティンを時刻順に並べ、タップでチェックする。
+ * 今日のルーティンを時刻表として並べ、タップでチェックする。
  *
  * ⚠ 未完了を失敗として見せないこと。赤字・警告・残り件数の煽りを置かない。
  *   進捗は出すが、足りないことを責める形にしない(UX禁止事項)。
+ *
+ * ⚠ 見出しは日付。「今日」はタブ名と同じで情報が増えない(2026-09-16 デザイン方針)。
  */
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import {
-  AppState as RNAppState,
-  type AppStateStatus,
-  Pressable,
-  ScrollView,
-  StyleSheet,
-  View,
-} from 'react-native';
+import * as Haptics from 'expo-haptics';
+import { AppState as RNAppState, type AppStateStatus, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
 import { CheckMark } from '@/components/check-mark';
+import { EmptyState } from '@/components/empty-state';
 import { GraduationModal } from '@/components/graduation-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { BottomTabInset, Spacing } from '@/constants/theme';
+import { TimetableList, TimetableRow } from '@/components/timetable-row';
+import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
-import { formatDateKey, todayKey } from '@/lib/date';
+import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
 import { evaluateGraduation } from '@/lib/graduation';
 import {
   getNotificationPermission,
@@ -48,10 +46,10 @@ export default function TodayScreen() {
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
   const { routineId: focusedId } = useLocalSearchParams<{ routineId?: string }>();
 
-  // 毎日ローリングで判定する。Day 30 固定ではないので「失敗した瞬間」が生まれない
+  // 毎日判定する。連続66日に達した日に一度だけ卒業を出す(spec §2 卒業の扱い)
   const checkGraduation = useCallback(async () => {
-    const progress = await evaluateGraduation();
-    if (progress?.shouldOffer) setIsGraduationOpen(true);
+    const status = await evaluateGraduation();
+    if (status?.shouldOffer) setIsGraduationOpen(true);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -86,6 +84,12 @@ export default function TodayScreen() {
   }, [refresh]);
 
   const handleToggle = async (routineId: string) => {
+    const wasDone = record?.completedIds.includes(routineId) ?? false;
+    // 付けたときは軽く叩く。外したときは最小限にとどめ、取り消しを演出しない
+    (wasDone
+      ? Haptics.selectionAsync()
+      : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
+    ).catch(() => {});
     setRecord(await toggleCompletion(routineId));
     // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
     await syncScheduledNotifications();
@@ -110,9 +114,13 @@ export default function TodayScreen() {
   // (spec §2 判定の細部)
   const completedIds = record?.completedIds ?? [];
   const doneCount = completedIds.length;
+  const totalCount = record?.totalCount ?? 0;
+  const dateKey = record?.date ?? todayKey();
 
+  const hasRoutines = routines.length > 0;
   const hasWords = messages.length > 0;
   const isBlocked = permission !== null && permission !== 'granted';
+  const isAllDone = hasRoutines && totalCount > 0 && doneCount >= totalCount;
   // 通知を切っている人にも同じ言葉が届くようにする(spec §4 通知実装の制約-1)。
   // 文言が無いときはアプリ側の定型文で埋めない
   const fallbackWord = isBlocked ? messages[0]?.text : undefined;
@@ -120,100 +128,82 @@ export default function TodayScreen() {
   return (
     <ThemedView style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.content}>
+        {/*
+          ⚠ 下端の余白は iOS に決めさせる(automatic)。画面はタブバーの下まで伸びているので、
+            タブバーの高さを定数で足すと、機種やタブバーの形によって最後の行が隠れる
+        */}
+        <ScrollView contentContainerStyle={styles.content} contentInsetAdjustmentBehavior="automatic">
           <View style={styles.header}>
-            <View style={styles.headerText}>
-              <ThemedText type="subtitle">{t.today.title}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {formatDateKey(record?.date ?? todayKey())}
-              </ThemedText>
-            </View>
-            {/* ⚠ 分母を煽りに使わない。数字を置くだけで、色も強調も付けない */}
-            <ThemedText
-              type="smallBold"
-              themeColor="textSecondary"
-              accessibilityLabel={`${doneCount} / ${record?.totalCount ?? 0} ${t.today.progress}`}>
-              {doneCount} / {record?.totalCount ?? 0}
+            <ThemedText type="display">{formatMonthDay(dateKey)}</ThemedText>
+            {/* ⚠ 分母を煽りに使わない。文の中に置くだけで、色も強調も付けない */}
+            <ThemedText type="small" themeColor="textSecondary">
+              {formatWeekday(dateKey)}
+              {hasRoutines ? `  ·  ${t.today.progress(doneCount, totalCount)}` : ''}
             </ThemedText>
           </View>
 
+          {/* ⚠ ユーザーの言葉は手紙として出す。案内の灰色の箱と混ぜない */}
           {fallbackWord && (
-            <ThemedView type="backgroundSelected" style={styles.word}>
-              <ThemedText>{fallbackWord}</ThemedText>
+            <ThemedView type="card" style={[styles.letter, { borderColor: theme.line }]}>
+              <ThemedText type="small" themeColor="textSecondary">
+                {t.today.fallbackMeta}
+              </ThemedText>
+              <ThemedText type="voice">{fallbackWord}</ThemedText>
             </ThemedView>
           )}
 
           {isBlocked && hasWords && (
-            <ThemedView type="backgroundElement" style={styles.notice}>
-              <ThemedText type="smallBold">{t.today.notificationsTitle}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t.today.notificationsBody}
-              </ThemedText>
-              <Button label={t.today.notificationsAction} onPress={handleEnableNotifications} />
-            </ThemedView>
+            <EmptyState
+              symbol="bell.badge"
+              title={t.today.notificationsTitle}
+              body={t.today.notificationsBody}
+              action={
+                <Button label={t.today.notificationsAction} onPress={handleEnableNotifications} />
+              }
+            />
           )}
 
-          {routines.length > 0 && !hasWords && (
-            <ThemedView type="backgroundElement" style={styles.notice}>
-              <ThemedText type="smallBold">{t.today.noWordsTitle}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t.today.noWordsBody}
-              </ThemedText>
-            </ThemedView>
+          {hasRoutines && !hasWords && (
+            <EmptyState symbol="quote.bubble" title={t.today.noWordsTitle} body={t.today.noWordsBody} />
           )}
 
-          {routines.length === 0 && (
-            <ThemedView type="backgroundElement" style={styles.notice}>
-              <ThemedText type="smallBold">{t.today.emptyTitle}</ThemedText>
-              <ThemedText type="small" themeColor="textSecondary">
-                {t.today.emptyBody}
-              </ThemedText>
-            </ThemedView>
+          {!hasRoutines && (
+            <EmptyState symbol="clock" title={t.today.emptyTitle} body={t.today.emptyBody} />
           )}
 
-          {routines.map((routine) => {
-            const isDone = completedIds.includes(routine.id);
-            const isFocused = routine.id === focusedId;
-            return (
-              <Pressable
-                key={routine.id}
-                onPress={() => handleToggle(routine.id)}
-                // ⚠ VoiceOver では丸印が見えない。行が「何時の何を、済ませたか」を
-                //   自分で名乗ること。記号側は読み上げから外してある
-                accessibilityRole="checkbox"
-                accessibilityState={{ checked: isDone }}
-                accessibilityLabel={`${routine.time} ${routine.title}, ${
-                  isDone ? t.today.doneHint : t.today.notDoneHint
-                }`}
-                accessibilityHint={t.today.toggleHint}
-                style={({ pressed }) => [pressed && styles.pressed]}>
-                <ThemedView
-                  type={isDone ? 'backgroundSelected' : 'backgroundElement'}
-                  style={[
-                    styles.row,
-                    isFocused && [styles.rowFocused, { borderColor: theme.accent }],
-                  ]}>
-                  <CheckMark isChecked={isDone} />
-                  <View style={styles.rowBody}>
-                    {/*
-                      ⚠ 時刻を先に、はっきり出すこと。時刻が決まっていることがこのアプリの
-                        前提で、仕様の書き方も `06:30 起きる` の順(spec §2 何を登録するのか)。
-                        Routines 画面では紺のバッジで出しているので、ここだけ小さいグレーだと
-                        画面間で扱いがずれる。
-                    */}
-                    <ThemedText
-                      type="smallBold"
-                      themeColor={isDone ? 'textSecondary' : 'accent'}>
-                      {routine.time}
-                    </ThemedText>
-                    <ThemedText numberOfLines={2} themeColor={isDone ? 'textSecondary' : 'text'}>
-                      {routine.title}
-                    </ThemedText>
-                  </View>
-                </ThemedView>
-              </Pressable>
-            );
-          })}
+          {hasRoutines && (
+            <TimetableList>
+              {routines.map((routine) => {
+                const isDone = completedIds.includes(routine.id);
+                return (
+                  <TimetableRow
+                    key={routine.id}
+                    time={routine.time}
+                    title={routine.title}
+                    dimmed={isDone}
+                    focused={routine.id === focusedId}
+                    onPress={() => handleToggle(routine.id)}
+                    trailing={<CheckMark isChecked={isDone} />}
+                    // ⚠ VoiceOver では丸印が見えない。行が「何時の何を、済ませたか」を
+                    //   自分で名乗ること。記号側は読み上げから外してある
+                    accessibilityRole="checkbox"
+                    accessibilityState={{ checked: isDone }}
+                    accessibilityLabel={`${routine.time} ${routine.title}, ${
+                      isDone ? t.today.doneHint : t.today.notDoneHint
+                    }`}
+                    accessibilityHint={t.today.toggleHint}
+                  />
+                );
+              })}
+            </TimetableList>
+          )}
+
+          {/* ⚠ 一行だけ。紙吹雪やお祝いの演出を足さない */}
+          {isAllDone && (
+            <ThemedText type="voice" themeColor="textSecondary" style={styles.allDone}>
+              {t.today.allDone}
+            </ThemedText>
+          )}
         </ScrollView>
       </SafeAreaView>
 
@@ -231,44 +221,21 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: Spacing.three,
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.six,
+    gap: Spacing.four,
+    paddingBottom: Spacing.four,
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    gap: Spacing.three,
-  },
-  headerText: {
     gap: Spacing.half,
+    paddingTop: Spacing.two,
   },
-  word: {
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-  },
-  notice: {
+  letter: {
     gap: Spacing.two,
     padding: Spacing.three,
-    borderRadius: Spacing.two,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
   },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.three,
-    // ⚠ 行そのものがチェックのタップ領域。小さくしないこと
-    minHeight: 64,
-    padding: Spacing.three,
-    borderRadius: Spacing.two,
-  },
-  rowFocused: {
-    borderWidth: 2,
-  },
-  pressed: {
-    opacity: 0.7,
-  },
-  rowBody: {
-    flex: 1,
-    gap: Spacing.half,
+  allDone: {
+    textAlign: 'center',
+    fontSize: 16,
   },
 });

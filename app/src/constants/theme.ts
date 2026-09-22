@@ -13,6 +13,8 @@ import '@/global.css';
 
 import { Platform } from 'react-native';
 
+import { language } from '@/i18n';
+
 export const Colors = {
   light: {
     text: '#14151A',
@@ -23,6 +25,12 @@ export const Colors = {
     accent: '#0F1B61',
     /** accent の上に載せる文字・記号の色 */
     accentText: '#FAF3E6',
+    /** 時刻表の罫線。⚠ 一覧は箱で囲まず、これで区切る */
+    line: '#E2DED3',
+    /** ユーザーの言葉を載せる紙。灰色の箱(案内)と区別するため白に近くする */
+    card: '#FFFFFF',
+    /** 削除などの取り消せない操作だけに使う。⚠ 未完了や進捗に使わない(赤で煽らない) */
+    danger: '#9A3B24',
   },
   dark: {
     text: '#F4F1E8',
@@ -32,7 +40,29 @@ export const Colors = {
     textSecondary: '#A6ACBB',
     accent: '#EFE1C6',
     accentText: '#0F1B61',
+    line: '#262B3A',
+    card: '#11141E',
+    danger: '#E0906F',
   },
+} as const;
+
+/**
+ * 節目の画面(オンボーディングの入口・卒業・証書)だけで使う紺の世界。
+ * ⚠ テーマに従わせない。起動画面・アイコンと同じ色で、ダークモードでも変えない。
+ *   普段は紙の色、節目だけ紺 ── 色の切り替わりそのものを儀式の合図にする。
+ */
+export const Ceremony = {
+  navy: '#0F1B61',
+  cream: '#FAF0E0',
+  creamSoft: 'rgba(250, 240, 224, 0.72)',
+  creamRule: 'rgba(250, 240, 224, 0.22)',
+} as const;
+
+/** 角丸。⚠ 何にでも同じ値を付けない。押せるもの・紙・シートで分ける */
+export const Radius = {
+  control: 14,
+  card: 16,
+  sheet: 22,
 } as const;
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
@@ -47,18 +77,26 @@ export const Fonts = Platform.select({
     rounded: 'ui-rounded',
     /** iOS `UIFontDescriptorSystemDesignMonospaced` */
     mono: 'ui-monospace',
+    /**
+     * 「声」の書体。ユーザーの言葉・画面の見出し・アプリの問いかけだけに使う。
+     * ⚠ 日本語は `ui-serif` だとゴシックに落ちるため、ヒラギノ明朝を名指しする。
+     *   操作(ボタン・説明)はゴシックのまま ── 手紙と道具を書体で分ける(2026-09-16 デザイン方針)
+     */
+    voice: language === 'ja' ? 'Hiragino Mincho ProN' : 'ui-serif',
   },
   default: {
     sans: 'normal',
     serif: 'serif',
     rounded: 'normal',
     mono: 'monospace',
+    voice: 'serif',
   },
   web: {
     sans: 'var(--font-display)',
     serif: 'var(--font-serif)',
     rounded: 'var(--font-rounded)',
     mono: 'var(--font-mono)',
+    voice: 'var(--font-serif)',
   },
 });
 
@@ -72,5 +110,4 @@ export const Spacing = {
   six: 64,
 } as const;
 
-export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
 export const MaxContentWidth = 800;

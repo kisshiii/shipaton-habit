@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { DarkTheme, DefaultTheme, ThemeProvider, router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { useColorScheme } from 'react-native';
+import { DevSettings, useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding';
@@ -52,6 +53,26 @@ export default function TabLayout() {
   // 同じ応答が返ってくる。処理済みを覚えておかないと、普通に開いただけなのに
   // 古い項目へ飛ばされる
   const handledResponseRef = useRef<string | null>(null);
+
+  /**
+   * ⚠ 開発ビルド専用: `app:///?katsu-dev-seed=graduation` で卒業直前の状態を作る(`src/dev/demo-seed.ts`)。
+   *   `if (__DEV__)` の中で require すること。本番ビルドではブロックごと消え、
+   *   デモ用のコードがバンドルに入らない。早期 return では消えない。
+   */
+  const linkingUrl = Linking.useLinkingURL();
+  useEffect(() => {
+    if (__DEV__) {
+      if (!linkingUrl) return;
+      // import にすると本番バンドルにも入る。ここは require でなければならない
+      const { DEV_SEED_QUERY, seedGraduationDemo } =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
+      if (Linking.parse(linkingUrl).queryParams?.[DEV_SEED_QUERY] !== 'graduation') return;
+      seedGraduationDemo().then((didSeed) => {
+        if (didSeed) DevSettings.reload();
+      });
+    }
+  }, [linkingUrl]);
 
   useEffect(() => {
     if (!lastResponse) return;

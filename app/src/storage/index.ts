@@ -87,6 +87,23 @@ export async function markOnboarded(dateKey: string = todayKey()): Promise<void>
   await patchAppState({ onboardedAt: dateKey });
 }
 
+/**
+ * ⚠ **開発ビルド専用。**卒業画面を確かめる・デモを撮るために、保存内容を丸ごと差し替える。
+ *   呼び出し側は `if (__DEV__)` の中からしか呼ばない。ここでも本番では拒否する。
+ */
+export async function replaceAllForDevelopment(snapshot: {
+  routines: RoutineItem[];
+  records: RecordMap;
+  messages: KatsuMessage[];
+  appState: AppState;
+}): Promise<void> {
+  if (!__DEV__) throw new Error('replaceAllForDevelopment is development only');
+  await writeJson(KEYS.routines, snapshot.routines);
+  await writeJson(KEYS.records, snapshot.records);
+  await writeJson(KEYS.messages, snapshot.messages);
+  await writeJson(KEYS.appState, snapshot.appState);
+}
+
 // --- Routines ---------------------------------------------------------------
 
 /** 時刻順に並べて返す */
@@ -264,7 +281,7 @@ export async function getTodayRecord(): Promise<DailyRecord> {
  *
  * ⚠ 1日ずつ読む API は置かない。記録は1つのキーにまとまって入っているので、
  *   日付ごとに呼ぶと同じ JSON を何度もパースすることになる。
- *   卒業判定は30日分、通知の予約は7日分をまとめて見る。
+ *   卒業判定は Day 1 から今日までの全期間、通知の予約は7日分をまとめて見る。
  */
 export async function getDailyRecords(): Promise<Record<string, DailyRecord>> {
   return readJson<RecordMap>(KEYS.records, {});

@@ -24,7 +24,7 @@
 ## Promotional Text (170)
 
 ```
-Write what you would say to yourself on the day you decided to change. When you skip, that is what you hear. Stay long enough and this app tells you to leave.
+A habit takes about 66 days to stick, by the research median. Until then, your own words keep you going. Do it all 66 days in a row, and this app tells you to leave.
 ```
 
 ## Keywords (100, カンマ区切り・スペースなし)
@@ -53,9 +53,11 @@ Most habit apps need you to keep needing them. Streaks you are afraid to
 break, notifications that pull you back, a small guilt when you leave. Their
 success and yours point in opposite directions.
 
-This one is built the other way. Keep your routines on your own for long
-enough and KATSU asks whether you still need it, and shows you where the
-cancel button is. Leaving is the point.
+This one is built the other way. Do everything on your list 66 days in a
+row — about the median time it takes a habit to become automatic, according
+to research (Lally et al., 2010) — and KATSU tells you that you have
+graduated, hands you a certificate to keep, and shows you where the cancel
+button is. Leaving is the point.
 
 HOW IT WORKS
 
@@ -66,8 +68,8 @@ HOW IT WORKS
 
 WHAT IT WILL NOT DO
 
-• No streaks to protect, no scores, no charts
-• Nothing is ever called a failure
+• No streak counter to stare at, no scores, no charts
+• Nothing is ever called a failure. Miss a day and the count quietly starts over
 • No account, no sign-up, no cloud
 
 WHAT YOU WRITE STAYS ON YOUR PHONE
@@ -135,7 +137,7 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Promotional Text (170)
 
 ```
-変わると決めた日の自分の言葉を書く。やらなかった日に届くのは、その言葉です。続けば、このアプリは「もう要らないんじゃないか」と自分から聞いてきます。
+習慣が身につくまで、研究の中央値で約66日。それまでは、あなた自身の言葉が届きます。66日続けてやり切ったら、このアプリはあなたに卒業を告げます。
 ```
 
 ### Keywords (100, カンマ区切り・スペースなし)
@@ -164,8 +166,10 @@ KATSU は、あなたに捨てられるために作られた習慣アプリで�
 途切れさせたくない連続記録、呼び戻す通知、離れるときの小さな罪悪感。
 アプリの成功とあなたの成功が、正反対を向いています。
 
-KATSU は逆側に賭けています。自分の力で続けられる日が十分に積み上がったら、
-「もう要らないのでは」と聞き、解約の場所を案内します。離れることが目的です。
+KATSU は逆側に賭けています。その日のルーティンを66日続けてやり切ったら、
+卒業です。66日は、習慣が自動的にできるようになるまでの研究上の中央値
+(Lally ら, 2010)。卒業証書を渡し、「もう要らないのでは」と聞き、
+解約の場所を案内します。離れることが目的です。
 
 ■ 使い方
 
@@ -176,8 +180,8 @@ KATSU は逆側に賭けています。自分の力で続けられる日が十�
 
 ■ しないこと
 
-・守るべき連続記録も、点数も、グラフもありません
-・できなかったことを「失敗」と呼びません
+・連続日数のカウンターも、点数も、グラフも画面に出しません
+・できなかったことを「失敗」と呼びません。途切れたら、黙って数え直すだけです
 ・アカウントも、サインアップも、クラウドもありません
 
 ■ 書いた言葉は端末から出ません
@@ -291,10 +295,29 @@ REST API なら:
 1. **Today 画面** ── 何をする日なのかが一目で分かる。ここが主戦場
 2. **通知が届いた画面** ── 自分の言葉が出ている状態。**このアプリの主張そのもの**なので、 ここで見せる文言だけは本気で書くこと
 3. **Your KATSU** ── 書く場所。`For: All routines` の行まで入れる
-4. **卒業モーダル** ── `You might not need this anymore.` 他社が絶対に出さない画面
+4. **卒業画面(紺・証書つき)** ── `66 days in a row, all done.` 他社が絶対に出さない画面。 **1.0.1 から撮り直す。**開発ビルドで `app:///?katsu-dev-seed=graduation` を開くと出せる(spec §4)
 5. **ペイウォール** ── 価格を自分で選ぶところ
 
 **⚠ 順番に意味がある。**1〜2で「何のアプリか」、4で「なぜ他と違うか」を出す。 逆にすると、ただの習慣アプリのスクショに見える。
+
+## 1.0.1 の「このバージョンの新機能」 **【暫定】2026-09-22(ユーザー確認前)**
+
+**⚠ 1.0.1 を出すときに説明文・プロモーションテキストも上の版に差し替えること。**
+**⚠ 「21日」を否定する書き出しは使わない(ユーザー判断 2026-09-22)。**俗説を知らない人には何を否定しているのか分からず、読み手の注意が66日ではなく21日に向く。66日は肯定形で言い、出典は説明文に置く。旧文の「No streaks to protect / 守るべき連続記録もありません」は、連続66日で卒業する仕様と食い違う。 プロモーションテキストは審査なしで変えられるが、説明文は新しいバージョンと一緒に審査に出る。
+
+```
+• Graduation now means doing everything on your list 66 days in a row — about the median time research gives for a habit to stick. Graduates get a certificate to keep and share.
+• A new look: your words set like a letter, your day laid out as a timetable.
+• A clearer plan screen: all three plans unlock the same things. You set the price.
+• Fixed: the graduation screen stayed open after you managed your subscription.
+```
+
+```
+・卒業の条件を「その日のルーティンを66日続けてやり切ること」にしました。66日は、習慣が身につくまでの研究上の中央値です。卒業すると、残しておける卒業証書を受け取れます。
+・デザインを一新しました。自分の言葉は手紙のように、一日は時刻表のように並びます。
+・プランの画面を分かりやすくしました。3つとも中身は同じで、値段はあなたが決めます。
+・購読の管理から戻ったとき、卒業画面が開いたままになる問題を直しました。
+```
 
 ## 提出前の確認
 

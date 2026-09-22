@@ -11,6 +11,7 @@
     "expo-device": "~57.0.1",
     "expo-font": "~57.0.1",
     "expo-glass-effect": "~57.0.1",
+    "expo-haptics": "~57.0.3",
     "expo-image": "~57.0.2",
     "expo-linking": "~57.0.5",
     "expo-localization": "~57.0.1",
@@ -29,6 +30,7 @@
     "react-native-reanimated": "4.5.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "~4.26.0",
+    "react-native-view-shot": "5.1.0",
     "react-native-web": "~0.21.0",
     "react-native-worklets": "0.10.1"
   },
@@ -42,7 +44,10 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "lint": "expo lint",
-    "eas-build-pre-install": "node scripts/provision-blocklist.js"
+    "eas-build-pre-install": "node scripts/provision-blocklist.js",
+    "lint:safe": "bash scripts/lint.sh",
+    "test:graduation": "node scripts/test-graduation.js",
+    "setup:cloud": "bash scripts/cloud-setup.sh"
   },
   "private": true
 }

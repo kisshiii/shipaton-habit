@@ -24,33 +24,52 @@ export function toTimeKey(date: Date): string {
 }
 
 /**
- * 今日を末尾とする直近 `days` 日分の日付キー(古い順)。
- * 卒業判定のローリング窓に使う。
+ * `fromKey` から `toKey` までの日付キー(両端を含む、古い順)。
+ * 卒業判定で Day 1 から今日までを1日ずつ見るのに使う。
+ * ⚠ 日付はローカルの暦で進める。ミリ秒を足すと夏時間の切り替え日に1日ずれる
  */
-export function recentDateKeys(days: number, endingOn: Date = new Date()): string[] {
+export function dateKeysBetween(fromKey: string, toKey: string): string[] {
+  const [year, month, day] = fromKey.split('-').map(Number);
+  if (!year || !month || !day) return [];
+  const cursor = new Date(year, month - 1, day);
   const keys: string[] = [];
-  for (let back = days - 1; back >= 0; back -= 1) {
-    const day = new Date(endingOn);
-    day.setDate(day.getDate() - back);
-    keys.push(toDateKey(day));
+  for (let key = toDateKey(cursor); key <= toKey; key = toDateKey(cursor)) {
+    keys.push(key);
+    cursor.setDate(cursor.getDate() + 1);
   }
   return keys;
 }
 
+function fromKey(key: string): Date | null {
+  const [year, month, day] = key.split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 /**
- * 日付キーを読める形にする。`2026-09-07` -> `Monday, 7 September`。
+ * Today の見出し。`2026-09-16` -> `9月16日` / `September 16`。
  *
  * ⚠ 保存キーをそのまま画面に出さないこと。開発中の画面に見える。
  * ⚠ 年を出さない。今日のことしか扱わない画面に西暦は要らない。
  */
-export function formatDateKey(key: string): string {
-  const [year, month, day] = key.split('-').map(Number);
-  if (!year || !month || !day) return key;
-  return new Date(year, month - 1, day).toLocaleDateString(undefined, {
-    weekday: 'long',
-    day: 'numeric',
-    month: 'long',
-  });
+export function formatMonthDay(key: string): string {
+  return fromKey(key)?.toLocaleDateString(undefined, { month: 'long', day: 'numeric' }) ?? key;
+}
+
+/** `2026-09-16` -> `水曜日` / `Wednesday` */
+export function formatWeekday(key: string): string {
+  return fromKey(key)?.toLocaleDateString(undefined, { weekday: 'long' }) ?? '';
+}
+
+/**
+ * 日付キーを年まで含めて読める形にする。`2026-09-15` -> `2026年9月15日` / `September 15, 2026`。
+ * 卒業証書のように、後から見返す・人に見せるものに使う。
+ */
+export function formatFullDateKey(key: string): string {
+  return (
+    fromKey(key)?.toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' }) ??
+    key
+  );
 }
 
 /** "7:5" のような入力を "07:05" に正規化する。不正な値は null */

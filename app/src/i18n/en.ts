@@ -21,7 +21,10 @@ export const en = {
     doneHint: 'Done',
     notDoneHint: 'Not done yet',
     toggleHint: 'Double tap to mark it done or undone',
-    progress: 'done',
+    /** ⚠ 件数は文の中に置く。数字だけを大きく出して煽らない */
+    progress: (done: number, total: number) => `${done} of ${total} done`,
+    allDone: 'That is everything for today.',
+    fallbackMeta: 'Notifications are off, so your words show here.',
     emptyTitle: 'Nothing scheduled',
     emptyBody: 'Add your first routine in the Routines tab. Today fills itself in from there.',
     noWordsTitle: 'Nothing to say yet',
@@ -37,7 +40,7 @@ export const en = {
     emptyTitle: 'Nothing yet',
     emptyBody: 'Add something you will do every day at the same time. One is enough to start.',
     fullTitle: 'Start with a few',
-    fullBody: 'You can add more after you graduate.',
+    fullBody: 'Up to three. Fewer is easier to finish every day.',
     addTitle: 'Add a routine',
     editTitle: 'Edit routine',
     time: 'Time',
@@ -45,13 +48,12 @@ export const en = {
     add: 'Add routine',
     save: 'Save',
     cancel: 'Cancel',
-    edit: 'Edit',
-    delete: 'Delete',
+    deleteAction: 'Delete this routine',
     graduate: 'I don’t need this anymore',
     missingTitle: 'Add a title',
     missingTitleBody: 'Write what you will do at that time.',
     limitTitle: 'Start with a few',
-    limitBody: 'You can add more after you graduate.',
+    limitBody: 'Up to three. Fewer is easier to finish every day.',
     removeTitle: 'Remove this routine?',
     remove: 'Remove',
   },
@@ -82,12 +84,16 @@ export const en = {
     pickerTitle: 'When should this one show up?',
     /** ⚠ 日替わりで選ばれることを伝える。黙っていると届かない言葉があるように見える */
     rotation: 'When several sets of words share a routine, one of them arrives each day.',
+    /** ⚠ VoiceOver 用。「···」ボタンの名前 */
+    more: 'More',
   },
 
   paywall: {
-    title: 'What is this worth to you?',
-    body: 'Every option unlocks the same thing: more than one set of words, and different words for different routines. You pick the price.',
-    quit: 'This app is designed for you to quit it. When you do, cancel and the charges stop.',
+    /** ⚠ 答えるのはユーザー。主語を「あなた」、単位を「月」にして値札の質問に見せない */
+    title: 'What is this app worth to you, each month?',
+    /** ⚠ 価格の上に一度だけ言う。これが無いと3つの価格が松竹梅に見える */
+    sameTitle: 'All three unlock the same things',
+    sameItems: ['More than one set of words', 'Different words for different routines'],
     unreachable: 'Could not reach the store. Try again later. Nothing else is affected.',
     /** ⚠ RevenueCat に current の Offering が無い。ダッシュボード側の設定漏れ */
     noOffering: 'No plans are set up yet. Nothing else is affected.',
@@ -106,25 +112,50 @@ export const en = {
     /** ⚠ 支払いは済んでいる。謝るのはこちら側で、ユーザーの操作は間違っていない */
     purchaseUnconfirmed:
       'Payment went through, but we could not unlock it yet. Try Restore in a moment.',
+    /**
+     * ⚠ 3.1.2 の必須表示。解約の場所と期限を具体的に書く。
+     *   「言葉は消えない」は spec §2(課金が切れても書いた言葉を消さない)の事実どおり。
+     */
     renewal:
-      'Monthly, renewing until you cancel. Manage or cancel it in your Apple ID settings at any time.',
+      'Renews monthly until you cancel. To cancel, go to Settings → Apple ID → Subscriptions at least 24 hours before it renews. Your words stay even if you cancel.',
     terms: 'Terms of Use',
     privacy: 'Privacy Policy',
   },
 
   graduation: {
     title: 'You might not need this anymore.',
-    body: 'You have been doing this on your own for a while now. That was the point.',
     note: 'This app was designed for you to quit it. Nobody here is going to tell you whether you are ready. You are the only one who knows that.',
     end: 'End my subscription',
     notYet: 'Not yet',
     close: 'Close',
     stillWorks: 'Either way, nothing here stops working.',
     freeNote: 'Nothing is holding you here. Delete the app whenever it has done its job.',
+    certificate: 'Take your certificate',
+    /**
+     * ⚠ 卒業前にやめようとした人向け。**卒業とは呼ばない**が、責めない・引き止めない。
+     *   やめるかどうかは本人が決める
+     */
+    leaveTitle: 'You can stop here.',
+    leaveBody: (days: number) =>
+      `Graduating means doing everything on your list ${days} days in a row. Stopping before that is not graduating, but it is still your call, and nothing you wrote is deleted.`,
+  },
+
+  /**
+   * ⚠ 祝福するが、可愛くしない。感嘆符・絵文字・「Congratulations!」を入れない。
+   * ⚠ 採点に見える語(score / rank / streak)を入れない。
+   */
+  certificate: {
+    eyebrow: 'Certificate of graduation',
+    /** ⚠ 卒業した人にしか出ない。事実だけを言う */
+    headline: (days: number) => `${days} days in a row, all done.`,
+    habitsLabel: 'What you made yours',
+    started: 'Started',
+    graduated: 'Graduated',
+    footer: 'KATSU — Habits that end',
+    note: 'The image is made on this device. Your words are not on it, and nothing leaves unless you share it.',
   },
 
   onboarding: {
-    appName: 'KATSU',
     tagline: 'A voice from the you who believed.',
     intro:
       'You are about to write down what you want said to you on the days you would rather not show up.',

@@ -75,7 +75,13 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
     setIsLoading(true);
     getOffering().then((result) => {
       if (cancelled) return;
-      setPackages(result.kind === 'ok' ? result.offering.availablePackages : null);
+      // ⚠ 安い順に並べること。覚悟の目盛りとして下から上へ読ませる(spec §2)。
+      //   Offering や ASC の並びは画面の外で変わりうるので、それに依存しない
+      setPackages(
+        result.kind === 'ok'
+          ? [...result.offering.availablePackages].sort((a, b) => a.product.price - b.product.price)
+          : null,
+      );
       setProblem(result.kind === 'ok' ? null : result.kind);
       setIsLoading(false);
     });
@@ -133,12 +139,26 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
             { paddingBottom: Spacing.four + insets.bottom },
           ]}>
           <ThemedText type="subtitle">{t.paywall.title}</ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t.paywall.body}
-          </ThemedText>
-          <ThemedText type="small" themeColor="textSecondary">
-            {t.paywall.quit}
-          </ThemedText>
+
+          {/*
+            ⚠ 「3つとも同じ」は価格より**先に**、一度だけ言うこと。
+              後に置くと価格を見た時点で機能差だと思われ、問いが松竹梅に化ける。
+              ここを長い説明文に戻さない(2026-09-15 に v1 案が多すぎると判断された)。
+          */}
+          <View
+            style={[styles.same, { borderColor: theme.backgroundSelected }]}
+            accessible
+            accessibilityLabel={`${t.paywall.sameTitle}: ${t.paywall.sameItems.join(', ')}`}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.paywall.sameTitle}
+            </ThemedText>
+            {t.paywall.sameItems.map((item) => (
+              <View key={item} style={styles.sameItem}>
+                <View style={[styles.dot, { backgroundColor: theme.accent }]} />
+                <ThemedText type="smallBold">{item}</ThemedText>
+              </View>
+            ))}
+          </View>
 
           {isLoading && <ActivityIndicator />}
 
@@ -259,6 +279,22 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.two,
+  },
+  same: {
+    gap: Spacing.one,
+    paddingVertical: Spacing.two,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+  },
+  sameItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+  },
+  dot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
   },
   tier: {
     gap: Spacing.one,
