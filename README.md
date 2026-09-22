@@ -4,8 +4,9 @@
 
 A habit app built to make itself unnecessary. You set a few daily routines. When
 you skip one, the app sends you a notification — **written by you, not by the
-app.** After enough days on your own, it asks whether you still need it, and
-points you at the cancel button.
+app.** Do everything on your list 66 days in a row and you graduate: it hands you
+a certificate, asks whether you still need it, and points you at the cancel
+button.
 
 Built for RevenueCat Shipaton 2026. iOS only.
 
@@ -31,9 +32,13 @@ Three screens: routines, today, your words. Everything in the core loop is free 
 routines, checking off, notifications, graduation. The paid plan adds more than
 one set of words, and different words for different routines.
 
-- **Graduation** is a rolling 30-day window, not a fixed day 30. There is no
-  moment where the app tells you that you failed, because that moment never
-  exists in the data model. You can also graduate yourself at any time.
+- **Graduation** is 66 days in a row of doing everything on your list — about
+  the median time research gives for a habit to become automatic (Lally et al.,
+  2010). Miss a day and the count quietly starts over; there is no streak
+  counter on screen and nothing is ever called a failure. You can stop at any
+  time, but stopping before day 66 is not called graduating, and only
+  graduates get the certificate. The certificate is rendered on the device and
+  never includes the words you wrote.
 - **Notifications** are scheduled ahead and cancelled when you check the item
   off, because a local notification cannot know your state at fire time.
 - **Nothing you write leaves the device.** No backend, no analytics on your
@@ -89,9 +94,9 @@ npx eas submit --platform ios --latest
 app/src/
   app/          expo-router screens: today, routines, your words
   components/   onboarding, paywall, graduation, the self-harm notice
-  lib/          notifications, graduation window, purchases, the Tier 1 check
+  lib/          notifications, the graduation streak, purchases, the Tier 1 check
   storage/      the only place that talks to AsyncStorage
-  constants/    graduation window and threshold, limits, theme
+  constants/    the graduation streak length, limits, theme
 docs/spec.md    every decision, and the rejected alternatives with reasons
 CLAUDE.md       the constraints this codebase is built under
 ```
