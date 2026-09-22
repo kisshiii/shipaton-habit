@@ -24,7 +24,7 @@
 ## Promotional Text (170)
 
 ```
-Not 21 days. Research puts the median at about 66. Until you get there, your own words keep you going. Do it all 66 days in a row, and this app tells you to leave.
+A habit takes about 66 days to stick, by the research median. Until then, your own words keep you going. Do it all 66 days in a row, and this app tells you to leave.
 ```
 
 ## Keywords (100, カンマ区切り・スペースなし)
@@ -137,7 +137,7 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Promotional Text (170)
 
 ```
-習慣は21日では身につかない。研究の中央値は約66日。やることを66日続けてやり切ったら、このアプリはあなたに卒業を告げます。それまでは、あなた自身の言葉が届きます。
+習慣が身につくまで、研究の中央値で約66日。それまでは、あなた自身の言葉が届きます。66日続けてやり切ったら、このアプリはあなたに卒業を告げます。
 ```
 
 ### Keywords (100, カンマ区切り・スペースなし)
@@ -302,7 +302,8 @@ REST API なら:
 
 ## 1.0.1 の「このバージョンの新機能」 **【暫定】2026-09-22(ユーザー確認前)**
 
-**⚠ 1.0.1 を出すときに説明文・プロモーションテキストも上の版に差し替えること。**旧文の「No streaks to protect / 守るべき連続記録もありません」は、連続66日で卒業する仕様と食い違う。 プロモーションテキストは審査なしで変えられるが、説明文は新しいバージョンと一緒に審査に出る。
+**⚠ 1.0.1 を出すときに説明文・プロモーションテキストも上の版に差し替えること。**
+**⚠ 「21日」を否定する書き出しは使わない(ユーザー判断 2026-09-22)。**俗説を知らない人には何を否定しているのか分からず、読み手の注意が66日ではなく21日に向く。66日は肯定形で言い、出典は説明文に置く。旧文の「No streaks to protect / 守るべき連続記録もありません」は、連続66日で卒業する仕様と食い違う。 プロモーションテキストは審査なしで変えられるが、説明文は新しいバージョンと一緒に審査に出る。
 
 ```
 • Graduation now means doing everything on your list 66 days in a row — about the median time research gives for a habit to stick. Graduates get a certificate to keep and share.
