@@ -42,10 +42,10 @@
 ## Promotional Text (170)
 
 ```
-The research median for a habit to stick is about 66 days. Until then, your own words keep you going. Do everything 66 days in a row, and this app tells you to leave.
+Habits take time: research puts the median near 66 days. KATSU carries you through them with the words you wrote yourself, then tells you to leave.
 ```
 
-(166文字)**審査なしでいつでも変えられる。1.0.1 の審査を待たずに先に差し替えてよい。**
+(147文字)**審査なしでいつでも変えられる。1.0.1 の審査を待たずに先に差し替えてよい。**
 
 ## Keywords (100, カンマ区切り・スペースなし)
 
@@ -178,7 +178,7 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Promotional Text (170)
 
 ```
-習慣が身につくまで、研究の中央値で約66日。それまでは、あなた自身の言葉が届きます。66日連続でやり切ったら、このアプリはあなたに卒業を告げます。
+習慣が身につくまでには時間がかかります。研究では、意識しなくてもできるようになるまで約66日(中央値)。KATSUは、その66日を毎日やり切れるように、あなた自身が書いた言葉を届けます。やり切ったら、卒業です。
 ```
 
 ### Keywords (100, カンマ区切り・スペースなし)
@@ -194,7 +194,7 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Description
 
 ```
-KATSU は、あなたに捨てられるために作られた習慣アプリです。
+KATSU は、あなたが使わなくなることを目指して作られた習慣アプリです。
 
 続けたいことを、時刻とともに登録します。時間が過ぎてもやっていないとき、
 スマホがそれを伝えます。ただし、こちらが用意した言葉ではありません。
