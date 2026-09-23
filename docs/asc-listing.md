@@ -1,8 +1,24 @@
 # App Store Connect に貼る文言
 
-*作成: 2026-09-07 / 確度: **【暫定】**(提出前に本人が読み直すこと)*
+*作成: 2026-09-07 / 改訂: 2026-09-22(1.0.1 向け、マーケ担当チャット案)/ 2026-09-23(日本語名を本人確定) / 確度: **【暫定】**(提出前に本人が読み直すこと)*
 
 ⚠ ここは**下書き置き場**であって決定の記録ではない。仕様の判断は `spec.md` に書く。
+
+---
+
+## 2026-09-22 改訂で変えたこと
+
+| # | 箇所 | 変更 | 理由 |
+| --- | --- | --- | --- |
+| 1 | 英語説明文・新機能・英語プロモーション | 研究の一文と「66 days in a row」を切り離した。英語説明文には「連続はこのアプリの選択」と明記 | spec §8-2: 研究が支えるのは66日という長さだけ。「研究に基づいて連続66日」と読める書き方をしない |
+| 2 | 説明文(英日) | 「卒業は連続だ」と自分から認める一文を追加 | 「WHY IT ENDS」で他社の連続記録を批判しているのに、卒業条件が連続66日。先に言わないと矛盾に見える |
+| 3 | 英語サブタイトル | `Your own words when you skip` → `Reminders in your own words` | 核(自分の言葉)を保ったまま、検索語 `reminder` を入れる |
+| 4 | 英語キーワード | `habit`(名前と重複)、`quit`(禁煙・禁酒系を呼び込む)、`graduate`(検索されない)、`reminder`(サブタイトルへ移動)を外した | 100文字を検索される語に使う |
+| 5 | 英語プロモーション | 主語を「研究の中央値」にした | 「A habit takes about 66 days」は全員が66日と読める。66日は中央値 |
+| 6 | 日本語プロモーション・説明文 | 「66日続けて」→「66日連続で」 | 連続か通算か曖昧だった |
+| 7 | 日本語の名前・サブタイトル | 公開中の名前に合わせ、サブタイトルに「習慣」を入れる案を追加 | 下書きの名前(`KATSU 終わるための習慣`)と公開中の名前(`KATSU ~自分に喝~`)が違っていた。→ **2026-09-23 に公開中の名前で確定(下記)** |
+| 8 | 審査ノート | 卒業まで審査中に到達できないことと、関連する画面の出し方を追記 | 1.0.1 の主な変更が審査担当者に見えないため |
+| 9 | 新機能 | 日本語版を追加 | — |
 
 ---
 
@@ -11,7 +27,7 @@
 | 欄 | 値 | 文字数 |
 | --- | --- | --- |
 | App Name (30) | `KATSU — Habits that end` | 23 |
-| Subtitle (30) | `Your own words when you skip` | 28 |
+| Subtitle (30) | `Reminders in your own words` | 27 |
 
 **⚠ `KATSU` 単独は App Store で既に使われている**(2026-09-08 に判明)。 App Store の名前は一意である必要があるため、修飾語を付ける。**改名ではない** ── spec §1 が 「サブタイトルで打ち消す」例として挙げていた `KATSU — Habits that end` をそのまま名前側に上げただけ。 これで**名前の重複回避とトンカツ避けが同時に片づく**。
 
@@ -19,21 +35,29 @@
 
 **⚠ 名前が「Habits that end」を担うようになったので、サブタイトルは別の仕事をさせる。** ここで初めて**「言葉を書くのは自分」**という核を出す。名前とサブタイトルで同じことを言わない。
 
+**⚠ サブタイトルは検索の索引にも入る 【決定】2026-09-22:** 旧案 `Your own words when you skip` は核を言えていたが、検索される語が1つも無かった。 `Reminders in your own words` は核を保ったまま `reminder` で検索に引っかかる。
+
 **⚠ もし審査で「既存アプリと紛らわしい」(Guideline 2.3.8)と指摘されたら**、 `KATSU — Habits designed to end`(30) へ寄せる。
 
 ## Promotional Text (170)
 
 ```
-A habit takes about 66 days to stick, by the research median. Until then, your own words keep you going. Do it all 66 days in a row, and this app tells you to leave.
+Habits take time: research puts the median near 66 days. KATSU carries you through them with the words you wrote yourself, then tells you to leave.
 ```
+
+(147文字)**審査なしでいつでも変えられる。1.0.1 の審査を待たずに先に差し替えてよい。**
 
 ## Keywords (100, カンマ区切り・スペースなし)
 
 ```
-habit,routine,streak,discipline,motivation,accountability,reminder,morning,daily,quit,graduate
+routine,streak,discipline,motivation,accountability,morning,daily,goal,tracker,promise,checklist
 ```
 
-**⚠ アプリ名と重複する語を入れない**(Apple が別途索引する)。 `katsu` は入れないこと ── 料理の検索結果に混ざりに行くことになる。
+(96文字)
+
+**⚠ アプリ名・サブタイトルと重複する語を入れない**(Apple が別途索引する)。`habit` は名前の `Habits`、`reminder` はサブタイトルで索引される。 `katsu` は入れないこと ── 料理の検索結果に混ざりに行くことになる。
+
+**⚠ `quit` は入れない 【決定】2026-09-22。** 禁煙・禁酒など「やめる」アプリを探す人を呼び込み、ダウンロードにつながらない。`Habits that end` が同じ誤解を招かないよう、説明文の冒頭で打ち消している。
 
 ## Description
 
@@ -53,11 +77,15 @@ Most habit apps need you to keep needing them. Streaks you are afraid to
 break, notifications that pull you back, a small guilt when you leave. Their
 success and yours point in opposite directions.
 
-This one is built the other way. Do everything on your list 66 days in a
-row — about the median time it takes a habit to become automatic, according
-to research (Lally et al., 2010) — and KATSU tells you that you have
-graduated, hands you a certificate to keep, and shows you where the cancel
-button is. Leaving is the point.
+This one is built the other way. Do everything on your list 66 days in a row
+and you graduate: KATSU tells you so, hands you a certificate to keep, and
+shows you where the cancel button is. Leaving is the point.
+
+Why 66? It is roughly the median time research found for a habit to become
+automatic (Lally et al., 2010). The "in a row" is our choice, not the
+research's — so that graduating means something. Yes, that makes it a streak.
+You just never see a counter, and missing a day costs you nothing but the
+count.
 
 HOW IT WORKS
 
@@ -90,6 +118,10 @@ worth to you. Cancel any time from Settings, and if you graduate, you should.
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
 
+**⚠ 研究に触れるときの決まり(spec §8-2):** 研究が支えるのは**66日という長さだけ**。Lally らは「1日休んでも習慣化はほとんど遅れなかった」とも報告しており、「連続」はむしろ研究と食い違う。**「研究に基づいて連続66日」と読める書き方をしない。** 66日は中央値であって、全員が66日で身につくとは書かない。
+
+**⚠ 「卒業は連続だ」を自分から言う理由 【決定】2026-09-22:** 「WHY IT ENDS」で他社の連続記録を批判している以上、黙っていると読み手が矛盾に気づいたときに不誠実に見える。 違いは**カウンターを見せないこと**と**途切れても数以外に何も失わないこと**で、そこを正直に言う。
+
 **⚠ 説明文の末尾の EULA リンクを消さないこと 【必須】2026-09-12(リジェクトで判明):** Guideline 3.1.2(c) は**アプリ内とストアのメタデータの両方**に規約リンクを求める。 アプリ内(ペイウォール)だけでは足りず、**App Store の説明文にも要る。** Apple 標準 EULA を使う場合は説明文に、独自 EULA なら ASC の EULA 欄に。
 
 ## Review Notes(審査ノート)
@@ -100,6 +132,13 @@ No account or sign-in is required. Everything works on first launch.
 Onboarding asks for one routine and one line of text; any values work.
 Notifications are local only. To see one without waiting, add a routine a
 minute or two ahead and leave the app.
+
+GRADUATION (new in 1.0.1)
+Graduation requires completing every routine on 66 consecutive days, so it
+cannot be reached during review. The certificate and graduation screen are
+shown only to users who reach it. The "I don't need this anymore" button at
+the bottom of the Routines screen is always available and shows the related
+flow for users who choose to stop early.
 
 SUBSCRIPTIONS
 Three monthly auto-renewing subscriptions unlock the same content. They differ
@@ -125,33 +164,37 @@ network traffic is the RevenueCat SDK for subscription status.
 
 | 欄 | 値 | 文字数 |
 | --- | --- | --- |
-| App Name (30) | `KATSU 終わるための習慣` | 14 |
-| Subtitle (30) | `自分で書いた言葉が、自分に届く` | 15 |
+| App Name (30) | `KATSU ~自分に喝~`(公開中の名前) | 12 |
+| Subtitle (30) | `自分で書いた言葉が届く習慣アプリ` | 16 |
+
+**⚠ 日本語名は公開中のまま 【決定】2026-09-23(本人判断):** 下書きの旧版は `KATSU 終わるための習慣` だったが、**「終わるための習慣」は一目で意味が分かりにくい**(本人指摘)。 公開中の `KATSU ~自分に喝~` を維持する。名前に「習慣」が無いぶん、**サブタイトルで検索語を補う**。
 
 **⚠ 日本語でも名前に修飾語を付ける。**英語側と揃え、ロケール間で別物に見えないようにする。 日本語では「トンカツ避け」は不要(漢字の「喝」が想起される)だが、 **名前の一意性は言語ごとに要る。**
 
-**⚠ サブタイトルは「自分の言葉」を出す。**名前が卒業モデルを担うので、 サブタイトルで差別化の核を言う。名前と同じことを繰り返さない。
+**⚠ サブタイトルは「自分の言葉」を出す。**名前と同じことを繰り返さない。
 
 **⚠ 「サボった」を使わないこと 【決定】2026-09-08:** 一度 `サボった朝に届く、自分の言葉` にしていたが却下した。 **「サボった」は未完了に判定を下す語**で、UX禁止事項「未完了を『失敗』として表示しない」と正面から矛盾する。 アプリの中で守っている原則を、ストアの1行目で自分から破ることになる。 「朝」も不要 ── ルーティンは夜にも置ける。
 
 ### Promotional Text (170)
 
 ```
-習慣が身につくまで、研究の中央値で約66日。それまでは、あなた自身の言葉が届きます。66日続けてやり切ったら、このアプリはあなたに卒業を告げます。
+習慣が身につくまでには時間がかかります。研究では、意識しなくてもできるようになるまで約66日(中央値)。KATSUは、その66日を毎日やり切れるように、あなた自身が書いた言葉を届けます。やり切ったら、卒業です。
 ```
 
 ### Keywords (100, カンマ区切り・スペースなし)
 
 ```
-習慣,習慣化,ルーティン,朝活,早起き,継続,目標,自己管理,リマインダー,通知,毎日,卒業,やる気,三日坊主
+習慣化,ルーティン,朝活,早起き,継続,目標,自己管理,リマインダー,毎日,やる気,三日坊主,筋トレ,日課
 ```
 
-**⚠ `KATSU` `喝` を入れないこと。**アプリ名は Apple が別途索引する。
+**⚠ `KATSU` `喝` を入れないこと。**アプリ名は Apple が別途索引する。 サブタイトルに「習慣」を入れたので、キーワードから `習慣` を外してある(重複)。 旧版の `通知` `卒業` は検索されにくいので外し、`筋トレ` `日課` を足した(2026-09-22)。
+
+**⚠ `三日坊主` はキーワードにだけ置く。** 悩みそのものを表す検索語として強いが、人に貼るラベルでもあるので、ストアの見える文面には出さない(「サボった」を使わない判断と同じ理由)。
 
 ### Description
 
 ```
-KATSU は、あなたに捨てられるために作られた習慣アプリです。
+KATSU は、あなたが使わなくなることを目指して作られた習慣アプリです。
 
 続けたいことを、時刻とともに登録します。時間が過ぎてもやっていないとき、
 スマホがそれを伝えます。ただし、こちらが用意した言葉ではありません。
@@ -166,10 +209,14 @@ KATSU は、あなたに捨てられるために作られた習慣アプリで�
 途切れさせたくない連続記録、呼び戻す通知、離れるときの小さな罪悪感。
 アプリの成功とあなたの成功が、正反対を向いています。
 
-KATSU は逆側に賭けています。その日のルーティンを66日続けてやり切ったら、
-卒業です。66日は、習慣が自動的にできるようになるまでの研究上の中央値
-(Lally ら, 2010)。卒業証書を渡し、「もう要らないのでは」と聞き、
+KATSU は逆側に賭けています。その日のルーティンをすべてやり切る日が
+66日連続したら、卒業です。卒業証書を渡し、「もう要らないのでは」と聞き、
 解約の場所を案内します。離れることが目的です。
+
+66という数字は、習慣が自動的にできるようになるまでの研究上の中央値から
+取りました(Lally ら, 2010)。「連続」は研究ではなく、このアプリの選択です。
+卒業に意味を持たせるために。つまり、卒業の条件はたしかに連続記録です。
+ただ、それを眺める画面はなく、途切れても失うのは数だけです。
 
 ■ 使い方
 
@@ -300,24 +347,72 @@ REST API なら:
 
 **⚠ 順番に意味がある。**1〜2で「何のアプリか」、4で「なぜ他と違うか」を出す。 逆にすると、ただの習慣アプリのスクショに見える。
 
-## 1.0.1 の「このバージョンの新機能」 **【暫定】2026-09-22(ユーザー確認前)**
+## 1.0.1 の「このバージョンの新機能」 **【暫定】2026-09-22**
 
 **⚠ 1.0.1 を出すときに説明文・プロモーションテキストも上の版に差し替えること。**
 **⚠ 「21日」を否定する書き出しは使わない(ユーザー判断 2026-09-22)。**俗説を知らない人には何を否定しているのか分からず、読み手の注意が66日ではなく21日に向く。66日は肯定形で言い、出典は説明文に置く。旧文の「No streaks to protect / 守るべき連続記録もありません」は、連続66日で卒業する仕様と食い違う。 プロモーションテキストは審査なしで変えられるが、説明文は新しいバージョンと一緒に審査に出る。
+**⚠ 新機能の欄では研究に触れない(2026-09-22 改訂)。** 短い箇条書きの中で研究と「連続」を並べると、研究が連続を支えているように読める。出典と「連続はこのアプリの選択」という説明は説明文に任せる。
+
+### 英語
 
 ```
-• Graduation now means doing everything on your list 66 days in a row — about the median time research gives for a habit to stick. Graduates get a certificate to keep and share.
+• Graduation now means doing everything on your list 66 days in a row. Graduates get a certificate to keep and share.
 • A new look: your words set like a letter, your day laid out as a timetable.
 • A clearer plan screen: all three plans unlock the same things. You set the price.
 • Fixed: the graduation screen stayed open after you managed your subscription.
 ```
 
+### 日本語
+
 ```
-・卒業の条件を「その日のルーティンを66日続けてやり切ること」にしました。66日は、習慣が身につくまでの研究上の中央値です。卒業すると、残しておける卒業証書を受け取れます。
-・デザインを一新しました。自分の言葉は手紙のように、一日は時刻表のように並びます。
-・プランの画面を分かりやすくしました。3つとも中身は同じで、値段はあなたが決めます。
-・購読の管理から戻ったとき、卒業画面が開いたままになる問題を直しました。
+・卒業の条件が変わりました。その日のルーティンをすべてやり切る日が66日連続したら、卒業です。卒業した人には、手元に残して共有できる卒業証書を渡します。
+・見た目を新しくしました。あなたの言葉は手紙のように、一日は時刻表のように並びます。
+・プランの画面を分かりやすくしました。3つのプランでできることは同じです。値段はあなたが決めます。
+・修正:購読の管理から戻ったとき、卒業の画面が開いたまま残っていた問題を直しました。
 ```
+
+## 次のバージョン(1.0.2以降)で直すこと **【決定】2026-09-23**
+
+### 研究の言い方を弱める
+
+**問題:** 説明文の `Why 66?` / 「66という数字は…」が **`research found` / 「研究上の中央値」** と書いており、分野全体の結論のように読める。 実際は**1本の研究**の、しかも**曲線に当てはまった参加者の中での中央値**(ユーザー指摘 2026-09-23)。
+
+**確認した事実**(一次情報。出典の書き方自体は正しい):
+
+- Lally, P., van Jaarsveld, C. H. M., Potts, H. W. W., & Wardle, J. (2010). *How are habits formed: Modelling habit formation in the real world.* **European Journal of Social Psychology, 40(6), 998–1009**
+- 96人が12週間、毎日同じ場面で1つの行動(食事・飲み物・運動)を繰り返した
+- 自動性が頭打ち(95%到達)になるまでは **18〜254日**。66日はその**中央値**
+- 測っているのは**自己申告の自動性**であって、「習慣が完成した」という判定ではない
+
+**⚠ 1.0.1 の審査中に説明文を変えると審査から引き上げになる**ため、この版では直さない(ユーザー判断)。
+
+**英語(差し替え案):**
+
+```
+Why 66? In one study where people repeated a daily action, the median time
+to reach peak automaticity was 66 days — with individuals ranging from 18 to
+254 (Lally et al., 2010). The "in a row" is our choice, not the research's —
+so that graduating means something. Yes, that makes it a streak. You just
+never see a counter, and missing a day costs you nothing but the count.
+```
+
+**日本語(差し替え案):**
+
+```
+66という数字は、ある研究から取りました。毎日同じ場面で行動を繰り返した人たちが、
+意識しなくてもできると感じるまでに、中央値で66日かかっています
+(Lally ら, 2010。個人差は18〜254日)。「連続」は研究ではなく、このアプリの選択です。
+卒業に意味を持たせるために。つまり、卒業の条件はたしかに連続記録です。
+ただ、それを眺める画面はなく、途切れても失うのは数だけです。
+```
+
+**⚠ プロモーションテキストは審査なしで差し替えられる。**同じ理由で「研究では」と言い切っている部分があれば、そちらは先に直してよい。
+
+### アプリ内の日本語(コミット済み・ビルド未反映)
+
+`c57317b` で「捨てられるために作られています」を「使わなくなることを目指して作られています」に直したが、**EAS の無料枠切れで 1.0.1 のビルドに入っていない**(ビルド19が提出済み)。枠は 2026-10-01 に戻る。次のビルドで自動的に入る。
+
+---
 
 ## 提出前の確認
 
