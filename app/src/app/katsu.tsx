@@ -38,6 +38,8 @@ import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
 import { isPro } from '@/lib/purchases';
+import { containsSelfHarmText } from '@/lib/self-harm-guard';
+import { attacksThePerson } from '@/lib/soft-guard';
 import { countChars, truncateChars } from '@/lib/text';
 import {
   addMessage,
@@ -314,6 +316,8 @@ function Composer({
   const [text, setText] = useState(draft.text);
   // Tier 1 で止めたことを一度だけ伝えるための状態。書き直せば消える
   const [isBlocked, setIsBlocked] = useState(false);
+  /** 端末内の判定を待っている間(最大3秒)。二度押しで二重に保存させない */
+  const [isChecking, setIsChecking] = useState(false);
 
   const handleChange = (next: string) => {
     // TextInput の maxLength は UTF-16 単位で数えるため使わない。
@@ -323,11 +327,7 @@ function Composer({
     if (isBlocked) setIsBlocked(false);
   };
 
-  const handleSubmit = async () => {
-    if (!text.trim()) {
-      Alert.alert(t.katsu.emptyTitle, t.katsu.emptyBody);
-      return;
-    }
+  const save = async () => {
     try {
       if (draft.id) {
         await updateMessage(draft.id, text);
@@ -344,6 +344,31 @@ function Composer({
       }
       throw error;
     }
+  };
+
+  const handleSubmit = async () => {
+    if (!text.trim()) {
+      Alert.alert(t.katsu.emptyTitle, t.katsu.emptyBody);
+      return;
+    }
+    // Tier 2: 人格・存在を否定する言葉なら、保存の前に一度だけ言い換えを提案する。止めはしない。
+    // ⚠ Tier 1 に当たる言葉はここで聞かない。保存側で止めてヘルプラインを出す
+    // ⚠ 本文を変えずに保存し直すときは聞かない(一度「このまま」と決めた言葉)
+    const isChanged = text.trim() !== draft.text.trim();
+    let isAttack = false;
+    if (isChanged && !containsSelfHarmText(text)) {
+      setIsChecking(true);
+      isAttack = await attacksThePerson(text);
+      setIsChecking(false);
+    }
+    if (isAttack) {
+      Alert.alert(t.katsu.softGuardTitle, t.katsu.softGuardBody, [
+        { text: t.katsu.softGuardRewrite, style: 'cancel' },
+        { text: t.katsu.softGuardKeep, onPress: save },
+      ]);
+      return;
+    }
+    await save();
   };
 
   return (
@@ -374,7 +399,11 @@ function Composer({
           責めない・驚かせない・説教しない(spec §2)。
       */}
       {isBlocked && <SelfHarmNotice />}
-      <Button label={draft.id ? t.katsu.saveEdit : t.katsu.save} onPress={handleSubmit} />
+      <Button
+        label={draft.id ? t.katsu.saveEdit : t.katsu.save}
+        onPress={handleSubmit}
+        busy={isChecking}
+      />
       <Button label={t.katsu.cancel} variant="plain" onPress={onClose} />
     </Sheet>
   );

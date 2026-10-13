@@ -94,6 +94,11 @@ export const ja: Copy = {
     anotherAction: 'プランを見る',
     emptyTitle: '何か書いてください',
     emptyBody: 'その瞬間の自分に、何と言いますか。',
+    softGuardTitle: '行動ではなく、あなた自身に向いています',
+    softGuardBody:
+      '厳しいのはかまいません。ただ、この言葉はあなたという人を否定しています。「今日のあなた」が何をしなかったか、いま何をするかに向けてみませんか。',
+    softGuardRewrite: '書き直す',
+    softGuardKeep: 'このまま保存',
     deleteTitle: 'これを削除しますか？',
     deleteBody: '自分で書いたものです。また書けます。',
     pickerTitle: 'この言葉を、いつ出しますか？',

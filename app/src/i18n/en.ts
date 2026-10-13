@@ -105,6 +105,15 @@ export const en = {
     anotherAction: 'See the plans',
     emptyTitle: 'Write something',
     emptyBody: 'What would you say to yourself at that moment?',
+    /**
+     * Tier 2 ソフトガード(spec §2)。人格・存在を否定する言葉のとき、保存の前に一度だけ聞く。
+     * ⚠ 止めない・説教しない。言い換えの例文をこちらで書かない(届くのは本人の言葉だけ)
+     */
+    softGuardTitle: 'This one is aimed at you, not at what you did',
+    softGuardBody:
+      'Harsh is fine. But this says something about who you are. Try pointing it at today: what you skipped, and what to do now.',
+    softGuardRewrite: 'Rewrite',
+    softGuardKeep: 'Keep it',
     deleteTitle: 'Delete this?',
     deleteBody: 'You wrote it. You can write it again.',
     pickerTitle: 'When should this one show up?',

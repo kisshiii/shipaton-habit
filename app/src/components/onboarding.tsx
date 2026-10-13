@@ -24,6 +24,7 @@
 
 import { useState } from 'react';
 import {
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -48,6 +49,8 @@ import { Ceremony, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { requestNotificationPermission, syncScheduledNotifications } from '@/lib/notifications';
+import { containsSelfHarmText } from '@/lib/self-harm-guard';
+import { attacksThePerson } from '@/lib/soft-guard';
 import { countChars, truncateChars } from '@/lib/text';
 import { addMessage, addRoutine, markOnboarded, SelfHarmTextError } from '@/storage';
 
@@ -72,6 +75,8 @@ export function Onboarding({ onFinished }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  /** 端末内の判定を待っている間(最大3秒)。二度押しで二重に保存させない */
+  const [isChecking, setIsChecking] = useState(false);
 
   // 前のステップで出したエラーを引きずらない
   const goTo = (next: Step) => {
@@ -93,12 +98,7 @@ export function Onboarding({ onFinished }: Props) {
     goTo('words');
   };
 
-  const handleSaveWords = async () => {
-    if (!words.trim()) {
-      setError(t.onboarding.wordsRequired);
-      return;
-    }
-    setError(null);
+  const saveWords = async () => {
     try {
       await addMessage(words);
     } catch (caught) {
@@ -110,6 +110,29 @@ export function Onboarding({ onFinished }: Props) {
       throw caught;
     }
     goTo('notifications');
+  };
+
+  const handleSaveWords = async () => {
+    if (!words.trim()) {
+      setError(t.onboarding.wordsRequired);
+      return;
+    }
+    setError(null);
+    // Tier 2: 人格・存在を否定する言葉なら一度だけ言い換えを提案する。止めはしない(spec §2)
+    let isAttack = false;
+    if (!containsSelfHarmText(words)) {
+      setIsChecking(true);
+      isAttack = await attacksThePerson(words);
+      setIsChecking(false);
+    }
+    if (isAttack) {
+      Alert.alert(t.katsu.softGuardTitle, t.katsu.softGuardBody, [
+        { text: t.katsu.softGuardRewrite, style: 'cancel' },
+        { text: t.katsu.softGuardKeep, onPress: saveWords },
+      ]);
+      return;
+    }
+    await saveWords();
   };
 
   const handleAskNotifications = async () => {
@@ -249,7 +272,9 @@ export function Onboarding({ onFinished }: Props) {
                   {step === 'routine' && (
                     <Button label={t.onboarding.next} onPress={handleSaveRoutine} />
                   )}
-                  {step === 'words' && <Button label={t.onboarding.next} onPress={handleSaveWords} />}
+                  {step === 'words' && (
+                    <Button label={t.onboarding.next} onPress={handleSaveWords} busy={isChecking} />
+                  )}
                   {step === 'notifications' && (
                     <>
                       <Button label={t.onboarding.allow} onPress={handleAskNotifications} />
