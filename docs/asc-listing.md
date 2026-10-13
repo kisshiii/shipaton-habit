@@ -1,10 +1,21 @@
 # App Store Connect に貼る文言
 
-*作成: 2026-09-07 / 改訂: 2026-09-22(1.0.1 向け、マーケ担当チャット案)/ 2026-09-23(日本語名を本人確定) / 確度: **【暫定】**(提出前に本人が読み直すこと)*
+*作成: 2026-09-07 / 改訂: 2026-09-22(1.0.1 向け、マーケ担当チャット案)/ 2026-09-23(日本語名を本人確定)/ 2026-10-13(1.0.2 向け: 休みありの卒業条件・研究の言い方) / 確度: **【暫定】**(提出前に本人が読み直すこと)*
 
 ⚠ ここは**下書き置き場**であって決定の記録ではない。仕様の判断は `spec.md` に書く。
 
 ---
+
+## 2026-10-13 改訂で変えたこと(1.0.2)
+
+| # | 箇所 | 変更 | 理由 |
+| --- | --- | --- | --- |
+| 1 | 説明文(英日) | 「66日連続」「in a row」「つまり卒業の条件は連続記録です」を外し、**休みは直近7日で2回まで**に書き換えた | 卒業条件が変わった(spec §2 卒業の扱い / plan §1) |
+| 2 | 説明文(英日) | 「連続日数のカウンターを出さない」を外し、「数字は66日までの進み具合の1つだけ」にした | Today に `Day 23 / 66` を出すようになった(plan §4) |
+| 3 | 説明文・プロモーション(英日) | 研究の言い方を弱めた(`research found` → 「ある研究で、中央値」)。9/23 の差し替え案を、休みありの文脈で書き直して入れた | 1本の研究の中央値であって、分野の結論ではない(下の「研究の言い方を弱める」) |
+| 4 | 説明文(英日) | 研究が「1日休んでもほとんど遅れなかった」と報告していることを、休みを認める理由として書いた | 9/22 には「連続」が研究と食い違う点として隠していた事実。休みありにしたことで、研究と仕様が同じ向きになった |
+| 5 | 説明文(英日) | 使い方に「毎日のことを選ぶ。週に数回なら毎日の形に」を足した | 曜日指定を入れない代わりの案内(plan §2) |
+| 6 | 審査ノート・新機能・スクショ | 1.0.2 向けに更新 | — |
 
 ## 2026-09-22 改訂で変えたこと
 
@@ -42,10 +53,10 @@
 ## Promotional Text (170)
 
 ```
-Habits take time: research puts the median near 66 days. KATSU carries you through them with the words you wrote yourself, then tells you to leave.
+Habits take time. In one study, the median was 66 days. KATSU carries you through them with words you wrote yourself, lets you rest, then tells you to leave.
 ```
 
-(147文字)**審査なしでいつでも変えられる。1.0.1 の審査を待たずに先に差し替えてよい。**
+(157文字)**審査なしでいつでも変えられる。**ただし「lets you rest」は 1.0.2 の仕様なので、**1.0.2 の公開と同時に差し替えること。**
 
 ## Keywords (100, カンマ区切り・スペースなし)
 
@@ -77,27 +88,29 @@ Most habit apps need you to keep needing them. Streaks you are afraid to
 break, notifications that pull you back, a small guilt when you leave. Their
 success and yours point in opposite directions.
 
-This one is built the other way. Do everything on your list 66 days in a row
-and you graduate: KATSU tells you so, hands you a certificate to keep, and
-shows you where the cancel button is. Leaving is the point.
+This one is built the other way. Do everything on your list on 66 days and
+you graduate: KATSU tells you so, hands you a certificate to keep, and shows
+you where the cancel button is. Leaving is the point.
 
-Why 66? It is roughly the median time research found for a habit to become
-automatic (Lally et al., 2010). The "in a row" is our choice, not the
-research's — so that graduating means something. Yes, that makes it a streak.
-You just never see a counter, and missing a day costs you nothing but the
-count.
+Why 66? In one study where people repeated a daily action, the median time
+to reach peak automaticity was 66 days — with individuals ranging from 18 to
+254 (Lally et al., 2010). The same study found that missing a day now and
+then did not set people back much. So KATSU lets you rest: up to two days in
+any seven, without losing your place. Rest days do not count toward the 66,
+and a third rest day in a week starts the count over.
 
 HOW IT WORKS
 
-• Add a few daily routines — a time and a thing to do
+• Add a few daily routines — a time and a thing to do. A few times a week?
+  Make it daily: gym becomes "move for 10 minutes"
 • Write what you would say to yourself for skipping one
 • Miss one, and that is what arrives
 • Check it off any time that day. There is no late
 
 WHAT IT WILL NOT DO
 
-• No streak counter to stare at, no scores, no charts
-• Nothing is ever called a failure. Miss a day and the count quietly starts over
+• No scores, no charts, no badges. One number: how far you are toward 66
+• Nothing is ever called a failure. A day you miss is just a rest day
 • No account, no sign-up, no cloud
 
 WHAT YOU WRITE STAYS ON YOUR PHONE
@@ -118,9 +131,9 @@ worth to you. Cancel any time from Settings, and if you graduate, you should.
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
 
-**⚠ 研究に触れるときの決まり(spec §8-2):** 研究が支えるのは**66日という長さだけ**。Lally らは「1日休んでも習慣化はほとんど遅れなかった」とも報告しており、「連続」はむしろ研究と食い違う。**「研究に基づいて連続66日」と読める書き方をしない。** 66日は中央値であって、全員が66日で身につくとは書かない。
+**⚠ 研究に触れるときの決まり(spec §8-2):** 研究が支えるのは**66日という長さだけ**。66日は**1本の研究の中央値**であって、全員が66日で身につくとは書かない。分野全体の結論のようにも書かない(`research found` と言わない)。休みについては、Lally らが「1日休んでも習慣化はほとんど遅れなかった」と報告しているので、**休みを認める理由として言ってよい**。ただし「直近7日で2回まで」という線引きはこのアプリの選択で、研究が決めた数字ではない。
 
-**⚠ 「卒業は連続だ」を自分から言う理由 【決定】2026-09-22:** 「WHY IT ENDS」で他社の連続記録を批判している以上、黙っていると読み手が矛盾に気づいたときに不誠実に見える。 違いは**カウンターを見せないこと**と**途切れても数以外に何も失わないこと**で、そこを正直に言う。
+**⚠ 以下は 1.0.1 の判断(10-13 に失効。卒業条件が連続ではなくなったため)。** 「卒業は連続だ」を自分から言う理由 【決定】2026-09-22: 「WHY IT ENDS」で他社の連続記録を批判している以上、黙っていると読み手が矛盾に気づいたときに不誠実に見える。 違いは**カウンターを見せないこと**と**途切れても数以外に何も失わないこと**で、そこを正直に言う。
 
 **⚠ 説明文の末尾の EULA リンクを消さないこと 【必須】2026-09-12(リジェクトで判明):** Guideline 3.1.2(c) は**アプリ内とストアのメタデータの両方**に規約リンクを求める。 アプリ内(ペイウォール)だけでは足りず、**App Store の説明文にも要る。** Apple 標準 EULA を使う場合は説明文に、独自 EULA なら ASC の EULA 欄に。
 
@@ -133,10 +146,12 @@ Onboarding asks for one routine and one line of text; any values work.
 Notifications are local only. To see one without waiting, add a routine a
 minute or two ahead and leave the app.
 
-GRADUATION (new in 1.0.1)
-Graduation requires completing every routine on 66 consecutive days, so it
-cannot be reached during review. The certificate and graduation screen are
-shown only to users who reach it. The "I don't need this anymore" button at
+GRADUATION (updated in 1.0.2)
+Graduation requires completing every routine on 66 days, with up to two rest
+days in any seven, so it cannot be reached during review. The certificate and
+graduation screen are shown only to users who reach it. The progress line on
+Today (Day N / 66) and the full-screen marks at 7, 33 and 50 days follow the
+same count. The "I don't need this anymore" button at
 the bottom of the Routines screen is always available and shows the related
 flow for users who choose to stop early.
 
@@ -178,8 +193,10 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Promotional Text (170)
 
 ```
-習慣が身につくまでには時間がかかります。研究では、意識しなくてもできるようになるまで約66日(中央値)。KATSUは、その66日を毎日やり切れるように、あなた自身が書いた言葉を届けます。やり切ったら、卒業です。
+習慣が身につくまでには時間がかかります。ある研究では、意識しなくてもできるようになるまで中央値で66日。KATSUは、あなた自身が書いた言葉でその66日を支えます。休んでもかまいません。やり切ったら、卒業です。
 ```
+
+**⚠ 「休んでもかまいません」は 1.0.2 の仕様。1.0.2 の公開と同時に差し替えること。**
 
 ### Keywords (100, カンマ区切り・スペースなし)
 
@@ -209,26 +226,29 @@ KATSU は、あなたが使わなくなることを目指して作られた習�
 途切れさせたくない連続記録、呼び戻す通知、離れるときの小さな罪悪感。
 アプリの成功とあなたの成功が、正反対を向いています。
 
-KATSU は逆側に賭けています。その日のルーティンをすべてやり切る日が
-66日連続したら、卒業です。卒業証書を渡し、「もう要らないのでは」と聞き、
+KATSU は逆側に賭けています。その日のルーティンをすべてやり切った日が
+66日に届いたら、卒業です。卒業証書を渡し、「もう要らないのでは」と聞き、
 解約の場所を案内します。離れることが目的です。
 
-66という数字は、習慣が自動的にできるようになるまでの研究上の中央値から
-取りました(Lally ら, 2010)。「連続」は研究ではなく、このアプリの選択です。
-卒業に意味を持たせるために。つまり、卒業の条件はたしかに連続記録です。
-ただ、それを眺める画面はなく、途切れても失うのは数だけです。
+66という数字は、ある研究から取りました。毎日同じ場面で行動を繰り返した人たちが、
+意識しなくてもできると感じるまでに、中央値で66日かかっています
+(Lally ら, 2010。個人差は18〜254日)。同じ研究は、ときどき1日休んでも
+ほとんど遅れなかったとも報告しています。だから KATSU では休めます。
+直近7日で2回まで、それまでの日数はそのまま。休んだ日は66日には入らず、
+7日のうちに3回休んだら、また1日目から数えます。
 
 ■ 使い方
 
-・毎日の予定を数件だけ登録する(時刻とやること)
+・毎日の予定を数件だけ登録する(時刻とやること)。週に数回のことは、
+ 毎日の形にすると続きます(例:ジム → 毎日10分体を動かす)
 ・やらなかった自分に、何と言ってほしいかを書く
 ・時間が過ぎていたら、それが届く
 ・チェックはその日のうちなら何時でもいい。遅刻という概念はありません
 
 ■ しないこと
 
-・連続日数のカウンターも、点数も、グラフも画面に出しません
-・できなかったことを「失敗」と呼びません。途切れたら、黙って数え直すだけです
+・点数も、グラフも、バッジもありません。数字は66日までの進み具合の1つだけです
+・できなかったことを「失敗」と呼びません。やらなかった日は、ただの休みです
 ・アカウントも、サインアップも、クラウドもありません
 
 ■ 書いた言葉は端末から出ません
@@ -342,12 +362,36 @@ REST API なら:
 1. **Today 画面** ── 何をする日なのかが一目で分かる。ここが主戦場
 2. **通知が届いた画面** ── 自分の言葉が出ている状態。**このアプリの主張そのもの**なので、 ここで見せる文言だけは本気で書くこと
 3. **Your KATSU** ── 書く場所。`For: All routines` の行まで入れる
-4. **卒業画面(紺・証書つき)** ── `66 days in a row, all done.` 他社が絶対に出さない画面。 **1.0.1 から撮り直す。**開発ビルドで `app:///?katsu-dev-seed=graduation` を開くと出せる(spec §4)
+4. **卒業画面(紺・証書つき)** ── `66 days. All done.` 他社が絶対に出さない画面。開発ビルドで `app:///?katsu-dev-seed=graduation` を開くと出せる(spec §4)。**1.0.2 で見出しが変わったので撮り直す**
 5. **ペイウォール** ── 価格を自分で選ぶところ
 
 **⚠ 順番に意味がある。**1〜2で「何のアプリか」、4で「なぜ他と違うか」を出す。 逆にすると、ただの習慣アプリのスクショに見える。
 
-## 1.0.1 の「このバージョンの新機能」 **【暫定】2026-09-22**
+**⚠ 1.0.2 では 1(Today)も撮り直す。**上部に `Day 23 / 66` と休みの残りが出るようになった(plan §5)。数字は 20〜40 日くらいの、途中だと分かる値にする。
+
+## 1.0.2 の「このバージョンの新機能」 **【暫定】2026-10-13**
+
+**⚠ 説明文・プロモーションテキストも上の版に差し替えること。**新機能の欄では研究に触れない(9/22 と同じ理由)。
+
+### 英語
+
+```
+• Rest days: graduation now means doing everything on your list on 66 days, with up to two rest days in any seven. Resting doesn't send you back to day 1.
+• See how far you are: Day 23 / 66 on Today, with your rest days for the week.
+• A quiet mark at 7, 33 and 50 days.
+• Adding, removing or renaming a routine starts the count over. KATSU tells you before it does.
+```
+
+### 日本語
+
+```
+・休めるようになりました。その日のルーティンをすべてやり切った日が66日に届いたら卒業です。休みは直近7日で2回まで、休んでも1日目には戻りません。
+・どこまで来たかが見えます。今日の画面に「66日のうち23日」と、この1週間の休みを出します。
+・7日・33日・50日に、節目の画面を一度だけ出します。
+・ルーティンを足す・消す・名前を変えると、また1日目から数えます。変える前にお知らせします。
+```
+
+## 1.0.1 の「このバージョンの新機能」 **【暫定】2026-09-22**(提出済み・承認済み)
 
 **⚠ 1.0.1 を出すときに説明文・プロモーションテキストも上の版に差し替えること。**
 **⚠ 「21日」を否定する書き出しは使わない(ユーザー判断 2026-09-22)。**俗説を知らない人には何を否定しているのか分からず、読み手の注意が66日ではなく21日に向く。66日は肯定形で言い、出典は説明文に置く。旧文の「No streaks to protect / 守るべき連続記録もありません」は、連続66日で卒業する仕様と食い違う。 プロモーションテキストは審査なしで変えられるが、説明文は新しいバージョンと一緒に審査に出る。
@@ -371,7 +415,7 @@ REST API なら:
 ・修正:購読の管理から戻ったとき、卒業の画面が開いたまま残っていた問題を直しました。
 ```
 
-## 次のバージョン(1.0.2以降)で直すこと **【決定】2026-09-23**
+## 次のバージョン(1.0.2以降)で直すこと **【決定】2026-09-23**(→ 2026-10-13 に上の説明文へ反映済み)
 
 ### 研究の言い方を弱める
 

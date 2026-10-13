@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-/** docs/asc-listing.md の 1.0.1 版を ASC に流し込む(説明文・プロモ・キーワード・新機能・サブタイトル・審査ノート)。提出はしない。 */
+/** docs/asc-listing.md の最新版を ASC に流し込む(説明文・プロモ・キーワード・新機能・サブタイトル・審査ノート)。提出はしない。 */
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
@@ -37,7 +37,10 @@ const after = (heading, re) => {
 const CODE = /```\n([\s\S]*?)\n```/;
 const names = [...md.matchAll(/\| App Name \(30\) \| `([^`]+)`/g)].map((m) => m[1]);
 const subtitles = [...md.matchAll(/\| Subtitle \(30\) \| `([^`]+)`/g)].map((m) => m[1]);
-const whatsNew = [...md.slice(md.indexOf('## 1.0.1 の「このバージョンの新機能」')).matchAll(/```\n([\s\S]*?)\n```/g)].map((m) => m[1].trim());
+// 新機能は一番上(= 一番新しい版)の「このバージョンの新機能」から英・日の順に取る
+const whatsNewAt = md.search(/^## [\d.]+ の「このバージョンの新機能」/m);
+if (whatsNewAt < 0) throw new Error('whatsNew section not found');
+const whatsNew = [...md.slice(whatsNewAt).matchAll(/```\n([\s\S]*?)\n```/g)].map((m) => m[1].trim());
 
 const copy = {
   'en-US': {
