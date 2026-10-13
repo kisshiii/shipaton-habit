@@ -12,6 +12,7 @@
 | 1.0.2 | **実装済み。ビルド22を TestFlight に送っている途中**(EAS ビルド `c6f5a18f`)。審査提出は11月初旬の予定 |
 | ブランチ | `docs/plan-1.0.2`(計画と CLAUDE.md)→ その上に `feat/graduation-rest-days`(1.0.2 の実装)。**どちらも push・マージしていない** |
 | main | 1.0.1 のまま |
+| ソフトガード(1.1 の予定) | **実装済み・実機未確認。**ブランチ `feat/soft-guard`(`feat/graduation-rest-days` の上)。ビルド23(1.0.2)に入れて TestFlight へ送った(EAS ビルド `11fe53a8`)。**ビルドが通ったかは未確認** |
 
 ### 1.0.2 に入っているもの(plan §1〜§4)
 
@@ -26,7 +27,8 @@
 
 ## 次にやること
 
-1. **TestFlight で確かめる**(下の「1.0.2 で確かめること」)
+0. **ビルド23が通ったか見る:** https://expo.dev/accounts/kisshi.apps/projects/app/builds/11fe53a8-07d9-42fa-a627-de44d495267f 。失敗していたらネイティブモジュール(`app/modules/katsu-soft-guard`)のコンパイルを疑う。ソフトガードを入れるかは未決なので、1.0.2 として出すのはビルド22(ソフトガードなし)でもよい
+1. **TestFlight で確かめる**(下の「1.0.2 で確かめること」)。ソフトガードは iPhone 15 Pro 以降・Apple Intelligence オンの端末でだけ動く。Your KATSU で「お前は一生変われない」のような言葉と「さっさと起きろ」のような言葉を保存して、前者だけに確認が出るかを見る
 2. 問題が無ければ `feat/graduation-rest-days` を main にマージ(先に `docs/plan-1.0.2`)
 3. **スクリーンショットを撮り直す** ── Today(上部が変わった)と卒業画面(見出しが変わった)。`docs/asc-listing.md` の「スクリーンショット」
 4. ASC: `scripts/asc/create-version.js` と `push-copy.js` の `VERSION` を `1.0.2` にしてから流し込む → 審査提出(11月初旬)
