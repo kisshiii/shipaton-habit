@@ -38,15 +38,22 @@ for (const [src, out] of [
 }
 fs.writeFileSync(
   path.join(OUT, 'storage.js'),
-  'exports.getAppState = async () => ({}); exports.getDailyRecords = async () => ({}); exports.getRoutines = async () => [];',
+  [
+    'exports.getAppState = async () => ({});',
+    'exports.getDailyRecords = async () => ({});',
+    'exports.getRoutines = async () => [];',
+    'exports.markMilestonesCelebrated = async () => {};',
+    'exports.markRestartNoticeShown = async () => {};',
+  ].join('\n'),
 );
 
 const { dateKeysBetween } = require(path.join(OUT, 'date.js'));
-const { computeProgress } = require(path.join(OUT, 'graduation.js'));
+const { computeProgress, milestonesUpTo, pickMilestone } = require(path.join(OUT, 'graduation.js'));
 const {
   GRADUATION_STREAK_DAYS: N,
   REST_WINDOW_DAYS: W,
   MAX_REST_DAYS: R,
+  MILESTONE_DAYS: M,
 } = require(path.join(OUT, 'constants.js'));
 
 const START = '2026-01-01';
@@ -212,6 +219,26 @@ const cases = [
   ['休まず続いている日数は、ルーティンを変えたときも0に戻る', () => {
     const r = build((i, k) => done(k));
     assert.strictEqual(progress(r, 20, [keys[15]]).unbrokenDays, 6);
+  }],
+
+  // --- 節目 -----------------------------------------------------------------
+  ['節目に届いた日に、その節目を出す', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(pickMilestone(progress(r, M[0] - 2), []), null);
+    assert.strictEqual(pickMilestone(progress(r, M[0] - 1), []), M[0]);
+  }],
+  ['一度祝った節目は、数え直して同じ日数に届いても出さない', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(pickMilestone(progress(r, M[0] + 20, [keys[20]]), [M[0]]), null);
+  }],
+  ['いくつも越えていたら一番大きいものだけ。済みにするのはそれ以下全部', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(pickMilestone(progress(r, M[1] - 1), []), M[1]);
+    assert.deepStrictEqual(milestonesUpTo(M[1]), [M[0], M[1]]);
+  }],
+  ['卒業した後は節目を出さない', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(pickMilestone(progress(r, 300), []), null);
   }],
 
   // --- 日付 -----------------------------------------------------------------

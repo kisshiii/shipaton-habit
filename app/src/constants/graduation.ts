@@ -13,3 +13,9 @@ export const REST_WINDOW_DAYS = 7;
 
 /** その期間で使える休みの回数。これを超えたら(3回目の休みで)数え直す */
 export const MAX_REST_DAYS = 2;
+
+/**
+ * 節目のお祝いを出す日数(やり切った日の数)。それぞれ一生に1回だけ(plan §4)。
+ * 33 は66日の折り返し。
+ */
+export const MILESTONE_DAYS = [7, 33, 50] as const;

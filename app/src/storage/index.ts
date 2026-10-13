@@ -87,6 +87,17 @@ export async function markOnboarded(dateKey: string = todayKey()): Promise<void>
   await patchAppState({ onboardedAt: dateKey });
 }
 
+/** 節目のお祝いを出したことを残す。それより小さい節目もまとめて済みにする */
+export async function markMilestonesCelebrated(days: readonly number[]): Promise<void> {
+  const celebrated = new Set([...((await getAppState()).celebratedMilestones ?? []), ...days]);
+  await patchAppState({ celebratedMilestones: [...celebrated].sort((a, b) => a - b) });
+}
+
+/** 休みによる数え直しのお知らせを出したことを残す */
+export async function markRestartNoticeShown(restartOn: string): Promise<void> {
+  await patchAppState({ restartNoticeShownFor: restartOn });
+}
+
 /**
  * ルーティンを変えた日を残す。卒業の数え直しの起点になる(plan §1)。
  * 追加・削除・名前の変更で呼ぶ。時刻の変更では呼ばない。

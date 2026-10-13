@@ -19,20 +19,34 @@ import { CheckMark } from '@/components/check-mark';
 import { EmptyState } from '@/components/empty-state';
 import { GraduationModal } from '@/components/graduation-modal';
 import { GraduationProgress } from '@/components/graduation-progress';
+import { MilestoneModal } from '@/components/milestone-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
+import { MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
-import { evaluateGraduation, type GraduationProgress as Progress } from '@/lib/graduation';
+import {
+  evaluateGraduation,
+  milestonesUpTo,
+  type GraduationProgress as Progress,
+} from '@/lib/graduation';
 import {
   getNotificationPermission,
   requestNotificationPermission,
   syncScheduledNotifications,
 } from '@/lib/notifications';
-import { getMessages, getRoutines, getTodayRecord, markGraduated, toggleCompletion } from '@/storage';
+import {
+  getMessages,
+  getRoutines,
+  getTodayRecord,
+  markGraduated,
+  markMilestonesCelebrated,
+  markRestartNoticeShown,
+  toggleCompletion,
+} from '@/storage';
 import type { DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
 export default function TodayScreen() {
@@ -43,6 +57,12 @@ export default function TodayScreen() {
   const [permission, setPermission] = useState<string | null>(null);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
+  const [milestone, setMilestone] = useState<number | null>(null);
+  /**
+   * 休みで数え直したお知らせ。出すと決めた時点で「出した」と記録し、
+   * この画面が開いている間は出したままにする(タブを移るたびに消えたり出たりさせない)
+   */
+  const [isRestartNoticeOpen, setIsRestartNoticeOpen] = useState(false);
   const dateRef = useRef(todayKey());
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
@@ -53,6 +73,11 @@ export default function TodayScreen() {
     const status = await evaluateGraduation();
     setProgress(status?.progress ?? null);
     if (status?.shouldOffer) setIsGraduationOpen(true);
+    if (status?.milestone) setMilestone(status.milestone);
+    if (status?.showRestartNotice && status.progress.restRestartOn) {
+      setIsRestartNoticeOpen(true);
+      await markRestartNoticeShown(status.progress.restRestartOn);
+    }
   }, []);
 
   const refresh = useCallback(async () => {
@@ -107,6 +132,13 @@ export default function TodayScreen() {
     await markGraduated();
   };
 
+  // 閉じた時点で「祝った」と記録する。それより小さい節目もまとめて済みにする
+  const handleCloseMilestone = async () => {
+    if (milestone === null) return;
+    setMilestone(null);
+    await markMilestonesCelebrated(milestonesUpTo(milestone));
+  };
+
   const handleEnableNotifications = async () => {
     const next = await requestNotificationPermission();
     setPermission(next);
@@ -147,6 +179,13 @@ export default function TodayScreen() {
 
           {/* 卒業までの進み具合(plan §4)。ルーティンが無い人には出さない */}
           {hasRoutines && progress && <GraduationProgress progress={progress} />}
+
+          {/* ⚠ 静かに一行だけ。「失敗」「リセット」と言わない。赤くしない(plan §4) */}
+          {hasRoutines && isRestartNoticeOpen && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.today.restartNotice(MAX_REST_DAYS, REST_WINDOW_DAYS)}
+            </ThemedText>
+          )}
 
           {/* ⚠ ユーザーの言葉は手紙として出す。案内の灰色の箱と混ぜない */}
           {fallbackWord && (
@@ -214,6 +253,7 @@ export default function TodayScreen() {
       </SafeAreaView>
 
       <GraduationModal visible={isGraduationOpen} onClose={handleCloseGraduation} />
+      <MilestoneModal day={milestone} onClose={handleCloseMilestone} />
     </ThemedView>
   );
 }

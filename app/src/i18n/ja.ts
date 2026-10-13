@@ -31,6 +31,8 @@ export const ja: Copy = {
     dayOf: (day: number, goal: number) => `${goal}日のうち${day}日`,
     rests: (used: number, max: number, window: number) => `直近${window}日の休み ${used}/${max}`,
     unbroken: (days: number) => `休まず${days}日`,
+    restartNotice: (rests: number, window: number) =>
+      `また1日目から。休みは直近${window}日で${rests}回まで使えます。`,
     fallbackMeta: '通知がオフのため、ここに出しています',
     emptyTitle: 'まだ何もありません',
     emptyBody: '「ルーティン」タブで最初のひとつを登録してください。この画面はそこから埋まります。',
@@ -141,6 +143,13 @@ export const ja: Copy = {
     graduated: '卒業した日',
     footer: 'KATSU ~自分に喝~',
     note: '画像はこの端末の中で作られます。あなたの言葉は載りません。共有しない限り、どこにも送られません。',
+  },
+
+  milestone: {
+    title: (day: number, goal: number) => (day * 2 === goal ? '折り返しです。' : `${day}日。`),
+    body: (day: number, goal: number) =>
+      `${goal}日のうち${day}日、やり切りました。あと${goal - day}日、一日ずつです。`,
+    close: '今日に戻る',
   },
 
   onboarding: {

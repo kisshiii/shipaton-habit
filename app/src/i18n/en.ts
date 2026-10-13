@@ -32,6 +32,12 @@ export const en = {
     rests: (used: number, max: number, window: number) =>
       `Rest days in the last ${window}: ${used} of ${max}`,
     unbroken: (days: number) => (days === 1 ? '1 day without a rest' : `${days} days without a rest`),
+    /**
+     * 休みで数え直した後、次に開いたとき1回だけ出す(plan §4)。
+     * ⚠ 「failed」「reset」「lost」と言わない。静かに、事実と次のことだけ
+     */
+    restartNotice: (rests: number, window: number) =>
+      `Back to day 1. You can rest up to ${rests} days in any ${window}.`,
     fallbackMeta: 'Notifications are off, so your words show here.',
     emptyTitle: 'Nothing scheduled',
     emptyBody: 'Add your first routine in the Routines tab. Today fills itself in from there.',
@@ -174,6 +180,17 @@ export const en = {
     graduated: 'Graduated',
     footer: 'KATSU — Habits that end',
     note: 'The image is made on this device. Your words are not on it, and nothing leaves unless you share it.',
+  },
+
+  /**
+   * 節目のお祝い(plan §4)。卒業画面と同じ紺の全面表示を、それぞれ一生に1回だけ。
+   * ⚠ 祝福するが、可愛くしない。感嘆符・絵文字・「Congratulations!」を入れない
+   */
+  milestone: {
+    title: (day: number, goal: number) => (day * 2 === goal ? 'Halfway.' : `${day} days.`),
+    body: (day: number, goal: number) =>
+      `${day} of ${goal} days, everything done. ${goal - day} to go, one day at a time.`,
+    close: 'Back to today',
   },
 
   onboarding: {

@@ -38,6 +38,14 @@ export type AppState = {
    */
   routineChangedOn?: string[];
   /**
+   * お祝いを出した節目(`MILESTONE_DAYS`)。数え直して同じ日数に届いても、もう出さない。
+   * ⚠ undefined は「1.0.2 でまだ一度も判定していない」の目印。そのとき越えている節目は
+   *   出さずにここへ入れる(更新前に越えた節目を後から祝わない)
+   */
+  celebratedMilestones?: number[];
+  /** 休みによる数え直しのお知らせを出した、その数え直しの日。同じ数え直しで二度出さない */
+  restartNoticeShownFor?: string;
+  /**
    * オンボーディングを終えた日。
    * ⚠ `startedOn` で代用しないこと。全ルーティンを消した人にオンボーディングを
    *   やり直させることになる。

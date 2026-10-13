@@ -13,9 +13,20 @@
  * 日数は `src/constants/graduation.ts` の定数だけで決まる。ここに数値を直書きしないこと。
  */
 
-import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
+import {
+  GRADUATION_STREAK_DAYS,
+  MAX_REST_DAYS,
+  MILESTONE_DAYS,
+  REST_WINDOW_DAYS,
+} from '@/constants/graduation';
 import { dateKeysBetween, todayKey } from '@/lib/date';
-import { getAppState, getDailyRecords, getRoutines } from '@/storage';
+import {
+  getAppState,
+  getDailyRecords,
+  getRoutines,
+  markMilestonesCelebrated,
+  markRestartNoticeShown,
+} from '@/storage';
 import type { DailyRecord } from '@/types';
 
 export type GraduationProgress = {
@@ -42,6 +53,10 @@ export type GraduationStatus = {
   graduatedOn: string | null;
   /** 卒業モーダルを出してよいか。表示済みなら false */
   shouldOffer: boolean;
+  /** いまお祝いを出す節目。無ければ null。卒業モーダルを出すときは出さない */
+  milestone: number | null;
+  /** 休みで数え直したお知らせを、いま出すか */
+  showRestartNotice: boolean;
 };
 
 /**
@@ -122,6 +137,26 @@ export function computeProgress(
 }
 
 /**
+ * いまお祝いを出す節目。届いていて、まだ祝っていないもののうち一番大きいもの。
+ * ⚠ 卒業した後は出さない。数え直して同じ日数に届いても、一度祝った節目は出さない
+ */
+export function pickMilestone(
+  progress: GraduationProgress,
+  celebrated: readonly number[],
+): number | null {
+  if (progress.graduatedOn !== null) return null;
+  const reached = MILESTONE_DAYS.filter(
+    (day) => day <= progress.doneDays && !celebrated.includes(day),
+  );
+  return reached.length > 0 ? Math.max(...reached) : null;
+}
+
+/** 節目を祝ったとき、済みにする日数(それ以下の節目もまとめて) */
+export function milestonesUpTo(day: number): number[] {
+  return MILESTONE_DAYS.filter((milestone) => milestone <= day);
+}
+
+/**
  * ⚠ ルーティンが0件のときは判定そのものを実行しない(`null` を返す)。
  *   ルーティンが無い人は「卒業を提案する相手」ではない。
  */
@@ -136,10 +171,26 @@ export async function evaluateGraduation(): Promise<GraduationStatus | null> {
   if (!appState.startedOn) return null;
 
   const progress = computeProgress(records, appState.startedOn, appState.routineChangedOn);
+  let celebrated = appState.celebratedMilestones;
+  let noticeShownFor = appState.restartNoticeShownFor;
+  if (celebrated === undefined) {
+    // 1.0.2 で初めての判定。更新前に越えた節目と、更新前の数え直しは知らせない
+    celebrated = milestonesUpTo(progress.doneDays);
+    await markMilestonesCelebrated(celebrated);
+    if (progress.restRestartOn) {
+      noticeShownFor = progress.restRestartOn;
+      await markRestartNoticeShown(noticeShownFor);
+    }
+  }
+
+  // 卒業モーダルは1回だけ。閉じた後もアプリは通常通り使える
+  const shouldOffer = progress.graduatedOn !== null && !appState.graduatedAt;
   return {
     progress,
     graduatedOn: progress.graduatedOn,
-    // 卒業モーダルは1回だけ。閉じた後もアプリは通常通り使える
-    shouldOffer: progress.graduatedOn !== null && !appState.graduatedAt,
+    shouldOffer,
+    milestone: shouldOffer ? null : pickMilestone(progress, celebrated),
+    showRestartNotice:
+      progress.restRestartOn !== null && progress.restRestartOn !== noticeShownFor,
   };
 }
