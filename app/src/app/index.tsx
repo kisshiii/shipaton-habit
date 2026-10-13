@@ -18,6 +18,7 @@ import { Button } from '@/components/button';
 import { CheckMark } from '@/components/check-mark';
 import { EmptyState } from '@/components/empty-state';
 import { GraduationModal } from '@/components/graduation-modal';
+import { GraduationProgress } from '@/components/graduation-progress';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
@@ -25,7 +26,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
-import { evaluateGraduation } from '@/lib/graduation';
+import { evaluateGraduation, type GraduationProgress as Progress } from '@/lib/graduation';
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -41,6 +42,7 @@ export default function TodayScreen() {
   const [messages, setMessages] = useState<KatsuMessage[]>([]);
   const [permission, setPermission] = useState<string | null>(null);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
+  const [progress, setProgress] = useState<Progress | null>(null);
   const dateRef = useRef(todayKey());
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
@@ -49,6 +51,7 @@ export default function TodayScreen() {
   // 毎日判定する。やり切った日が66日に達した日に一度だけ卒業を出す(spec §2 卒業の扱い)
   const checkGraduation = useCallback(async () => {
     const status = await evaluateGraduation();
+    setProgress(status?.progress ?? null);
     if (status?.shouldOffer) setIsGraduationOpen(true);
   }, []);
 
@@ -141,6 +144,9 @@ export default function TodayScreen() {
               {hasRoutines ? `  ·  ${t.today.progress(doneCount, totalCount)}` : ''}
             </ThemedText>
           </View>
+
+          {/* 卒業までの進み具合(plan §4)。ルーティンが無い人には出さない */}
+          {hasRoutines && progress && <GraduationProgress progress={progress} />}
 
           {/* ⚠ ユーザーの言葉は手紙として出す。案内の灰色の箱と混ぜない */}
           {fallbackWord && (

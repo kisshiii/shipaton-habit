@@ -24,6 +24,14 @@ export const en = {
     /** ⚠ 件数は文の中に置く。数字だけを大きく出して煽らない */
     progress: (done: number, total: number) => `${done} of ${total} done`,
     allDone: 'That is everything for today.',
+    /**
+     * 卒業までの進み具合(plan §4)。数字はやり切った日の数。
+     * ⚠ 休みを「missed」「lost」と言わない。残りが0でも警告にしない
+     */
+    dayOf: (day: number, goal: number) => `Day ${day} / ${goal}`,
+    rests: (used: number, max: number, window: number) =>
+      `Rest days in the last ${window}: ${used} of ${max}`,
+    unbroken: (days: number) => (days === 1 ? '1 day without a rest' : `${days} days without a rest`),
     fallbackMeta: 'Notifications are off, so your words show here.',
     emptyTitle: 'Nothing scheduled',
     emptyBody: 'Add your first routine in the Routines tab. Today fills itself in from there.',
