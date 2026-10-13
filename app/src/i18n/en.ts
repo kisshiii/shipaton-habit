@@ -148,8 +148,9 @@ export const en = {
      *   やめるかどうかは本人が決める
      */
     leaveTitle: 'You can stop here.',
-    leaveBody: (days: number) =>
-      `Graduating means doing everything on your list ${days} days in a row. Stopping before that is not graduating, but it is still your call, and nothing you wrote is deleted.`,
+    /** ⚠ 「in a row」と言わない。休みがあるので連続ではない(plan §3) */
+    leaveBody: (days: number, rests: number, window: number) =>
+      `Graduating means doing everything on your list on ${days} days, with up to ${rests} rest days in any ${window}. Stopping before that is not graduating, but it is still your call, and nothing you wrote is deleted.`,
   },
 
   /**
@@ -159,7 +160,7 @@ export const en = {
   certificate: {
     eyebrow: 'Certificate of graduation',
     /** ⚠ 卒業した人にしか出ない。事実だけを言う */
-    headline: (days: number) => `${days} days in a row, all done.`,
+    headline: (days: number) => `${days} days. All done.`,
     habitsLabel: 'What you made yours',
     started: 'Started',
     graduated: 'Graduated',

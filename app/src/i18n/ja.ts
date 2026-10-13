@@ -126,13 +126,13 @@ export const ja: Copy = {
     freeNote: '引き止めるものは何もありません。役目が終わったと思ったら、いつでも消してください。',
     certificate: '卒業証書を受け取る',
     leaveTitle: 'ここでやめても、かまいません。',
-    leaveBody: (days: number) =>
-      `卒業は、その日のルーティンを${days}日続けてやり切ったときです。それより前にやめるのは卒業ではありません。それでも決めるのはあなたで、書いた言葉は消えません。`,
+    leaveBody: (days: number, rests: number, window: number) =>
+      `卒業は、その日のルーティンをやり切った日が${days}日に届いたときです（休みは直近${window}日で${rests}回まで）。それより前にやめるのは卒業ではありません。それでも決めるのはあなたで、書いた言葉は消えません。`,
   },
 
   certificate: {
     eyebrow: '卒業証書',
-    headline: (days: number) => `${days}日続けて、やり切りました。`,
+    headline: (days: number) => `${days}日、やり切りました。`,
     habitsLabel: '身につけたこと',
     started: '始めた日',
     graduated: '卒業した日',

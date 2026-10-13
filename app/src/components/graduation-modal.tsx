@@ -30,7 +30,7 @@ import {
 } from '@/components/certificate';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { GRADUATION_STREAK_DAYS } from '@/constants/graduation';
+import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
 import { Ceremony, Fonts, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { isPro, openManageSubscriptions } from '@/lib/purchases';
@@ -172,7 +172,7 @@ function Leaving({
     <View style={styles.backdrop}>
       <ThemedView style={styles.sheet}>
         <ThemedText type="display">{t.graduation.leaveTitle}</ThemedText>
-        <ThemedText>{t.graduation.leaveBody(GRADUATION_STREAK_DAYS)}</ThemedText>
+        <ThemedText>{t.graduation.leaveBody(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)}</ThemedText>
 
         <View style={styles.actions}>
           {isPaid ? (
