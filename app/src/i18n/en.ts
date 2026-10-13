@@ -56,6 +56,18 @@ export const en = {
     limitBody: 'Up to three. Fewer is easier to finish every day.',
     removeTitle: 'Remove this routine?',
     remove: 'Remove',
+    /** ⚠ 曜日指定は入れない。週に数回のことは毎日の形に言い換えてもらう(plan §2) */
+    dailyHint:
+      'Pick things you’ll do every day. If it’s a few times a week, make it daily: gym becomes “move for 10 minutes.”',
+    changeNote: 'Adding, removing or renaming one later starts the count over.',
+    /**
+     * ルーティンを変えると数え直しになるときの確認(plan §1・§4)。
+     * ⚠ 「リセット」「失う」と言わない。何が起きるかを事実だけ伝え、決めるのは本人
+     */
+    restartTitle: 'Start the count over?',
+    restartBody: (days: number, goal: number) =>
+      `You are on day ${days} of ${goal}. Changing your routines starts the count again from day 1.`,
+    restartConfirm: 'Change it',
   },
 
   katsu: {

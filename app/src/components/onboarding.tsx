@@ -163,6 +163,13 @@ export function Onboarding({ onFinished }: Props) {
                       <ThemedText type="small" themeColor="textSecondary">
                         {t.onboarding.routineBody}
                       </ThemedText>
+                      {/* 毎日の習慣の案内(plan §2)。手順は増やさず、一言添えるだけ */}
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.routines.dailyHint}
+                      </ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.routines.changeNote}
+                      </ThemedText>
                       <TimeField value={time} onChange={setTime} label={t.routines.time} />
                       {/* ⚠ この例文が実質的なチュートリアル。消さないこと */}
                       <TextInput

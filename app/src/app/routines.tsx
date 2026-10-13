@@ -6,6 +6,8 @@
  * ⚠ 時刻はホイールで選ばせる。手で打たせない(`time-field.tsx`)。
  * ⚠ 一覧と編集を分ける。入力欄を一覧の下に常に出しておかない。
  *   行を押すと編集シート、追加も同じシートから(2026-09-16 デザイン方針)。
+ * ⚠ 追加・削除・名前の変更で卒業の数え直しになる(plan §1)。数えている途中なら、
+ *   変える前に確認で伝える。時刻の変更では数え直さないので聞かない。
  */
 
 import { useCallback, useState } from 'react';
@@ -22,10 +24,12 @@ import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimeField } from '@/components/time-field';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
+import { GRADUATION_STREAK_DAYS } from '@/constants/graduation';
 import { MAX_ROUTINES } from '@/constants/routines';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
+import { evaluateGraduation } from '@/lib/graduation';
 import { syncScheduledNotifications } from '@/lib/notifications';
 import {
   addRoutine,
@@ -41,6 +45,33 @@ const DEFAULT_TIME = '07:00';
 
 /** シートの中身。null なら閉じている */
 type SheetTarget = { mode: 'add' } | { mode: 'edit'; routine: RoutineItem };
+
+/**
+ * ルーティンを変えたら数え直しになるとき、いま何日目か。伝える必要が無ければ null。
+ * まだ1日もやり切っていない人と卒業した人は、変えても何も変わらないので聞かない
+ */
+async function currentDayIfRestarting(): Promise<number | null> {
+  const status = await evaluateGraduation();
+  if (!status || status.graduatedOn) return null;
+  return status.progress.doneDays > 0 ? status.progress.doneDays : null;
+}
+
+function restartMessage(day: number): string {
+  return t.routines.restartBody(day, GRADUATION_STREAK_DAYS);
+}
+
+/** 数え直しになることを伝えてから変える。伝える必要が無ければそのまま変える */
+async function confirmRestart(change: () => Promise<void>): Promise<void> {
+  const day = await currentDayIfRestarting();
+  if (day === null) {
+    await change();
+    return;
+  }
+  Alert.alert(t.routines.restartTitle, restartMessage(day), [
+    { text: t.routines.cancel, style: 'cancel' },
+    { text: t.routines.restartConfirm, onPress: change },
+  ]);
+}
 
 export default function RoutinesScreen() {
   const theme = useTheme();
@@ -99,6 +130,16 @@ export default function RoutinesScreen() {
               ))}
             </TimetableList>
           )}
+
+          {/* 毎日の習慣の案内と、変えたら数え直しになること(plan §2) */}
+          <View style={styles.hints}>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.routines.dailyHint}
+            </ThemedText>
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.routines.changeNote}
+            </ThemedText>
+          </View>
 
           {isFull ? (
             // ⚠ 警告にしない。制限そのものがメッセージ
@@ -180,26 +221,34 @@ function RoutineSheet({
       Alert.alert(t.routines.missingTitle, t.routines.missingTitleBody);
       return;
     }
-    try {
-      if (editing) {
-        await updateRoutine(editing.id, { time, title });
-      } else {
-        await addRoutine({ time, title });
+    const save = async () => {
+      try {
+        if (editing) {
+          await updateRoutine(editing.id, { time, title });
+        } else {
+          await addRoutine({ time, title });
+        }
+        await onChanged();
+        onClose();
+      } catch (error) {
+        if (error instanceof RoutineLimitError) {
+          Alert.alert(t.routines.limitTitle, t.routines.limitBody);
+          return;
+        }
+        throw error;
       }
-      await onChanged();
-      onClose();
-    } catch (error) {
-      if (error instanceof RoutineLimitError) {
-        Alert.alert(t.routines.limitTitle, t.routines.limitBody);
-        return;
-      }
-      throw error;
-    }
+    };
+    // 時刻だけの変更では数え直さない。名前の変更と追加は数え直す(plan §1)
+    const isRestarting = !editing || title.trim() !== editing.title;
+    await (isRestarting ? confirmRestart(save) : save());
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!editing) return;
-    Alert.alert(t.routines.removeTitle, `${editing.time}  ${editing.title}`, [
+    // 削除の確認は元から出しているので、数え直しになることはその中で伝える
+    const day = await currentDayIfRestarting();
+    const target = `${editing.time}  ${editing.title}`;
+    Alert.alert(t.routines.removeTitle, day === null ? target : `${target}\n\n${restartMessage(day)}`, [
       { text: t.routines.cancel, style: 'cancel' },
       {
         text: t.routines.remove,
@@ -261,6 +310,9 @@ const styles = StyleSheet.create({
   },
   full: {
     textAlign: 'center',
+  },
+  hints: {
+    gap: Spacing.one,
   },
   add: {
     flexDirection: 'row',

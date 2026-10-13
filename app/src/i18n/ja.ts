@@ -60,6 +60,13 @@ export const ja: Copy = {
     limitBody: '3件までです。少ないほど、毎日やり切れます。',
     removeTitle: 'このルーティンを削除しますか？',
     remove: '削除',
+    dailyHint:
+      '毎日やることを選んでください。週に数回のことは、毎日の形にすると続きます（例：ジム → 毎日10分体を動かす）。',
+    changeNote: 'あとから足す・消す・名前を変えると、また1日目から数えます。',
+    restartTitle: 'また1日目から数えます',
+    restartBody: (days: number, goal: number) =>
+      `いま${goal}日のうち${days}日目です。ルーティンを変えると、また1日目から数えます。`,
+    restartConfirm: '変える',
   },
 
   katsu: {
