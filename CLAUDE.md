@@ -139,6 +139,7 @@ type KatsuMessage = {
 type AppState = {
   startedOn?: string;   // 最初のルーティンを保存した日 = Day 1
   graduatedAt?: string; // 卒業モーダルを表示済みなら記録(再表示しない)
+  routineChangedOn?: string[]; // ルーティンを変えた日(追加・削除・名前の変更)。数え直しの起点。全部残す
   onboardedAt?: string; // オンボーディング完了日。startedOn で代用しないこと
 };
 

@@ -88,6 +88,16 @@ export async function markOnboarded(dateKey: string = todayKey()): Promise<void>
 }
 
 /**
+ * ルーティンを変えた日を残す。卒業の数え直しの起点になる(plan §1)。
+ * 追加・削除・名前の変更で呼ぶ。時刻の変更では呼ばない。
+ */
+async function markRoutineChanged(dateKey: string = todayKey()): Promise<void> {
+  const changedOn = (await getAppState()).routineChangedOn ?? [];
+  if (changedOn.includes(dateKey)) return;
+  await patchAppState({ routineChangedOn: [...changedOn, dateKey] });
+}
+
+/**
  * ⚠ **開発ビルド専用。**卒業画面を確かめる・デモを撮るために、保存内容を丸ごと差し替える。
  *   呼び出し側は `if (__DEV__)` の中からしか呼ばない。ここでも本番では拒否する。
  */
@@ -119,6 +129,7 @@ async function saveRoutines(routines: RoutineItem[]): Promise<void> {
 /**
  * ルーティンを1件追加する。
  * 最初の1件を保存した日を Day 1 (`startedOn`) として記録する。
+ * 2件目以降は、卒業の数え直しの起点として追加した日を残す(plan §1)。
  * 上限に達している場合は RoutineLimitError を投げる。
  */
 export async function addRoutine(input: {
@@ -143,14 +154,18 @@ export async function addRoutine(input: {
 
   const date = todayKey();
   const appState = await getAppState();
-  const startedOn = appState.startedOn ?? date;
-  if (!appState.startedOn) await patchAppState({ startedOn: date });
+  if (appState.startedOn) {
+    await markRoutineChanged(date);
+  } else {
+    await patchAppState({ startedOn: date });
+  }
 
-  // Day 1 に限り、登録した時点で既に時刻が過ぎている項目を分母から外す
-  // (22時にインストールした人の「07:00 起きる」が確実に未達成になるのを防ぐ)。
+  // 追加した日は Day 1 か、数え直しの起点(どちらも数え始めの日)。
+  // 登録した時点で既に時刻が過ぎている項目は、その日に限り分母から外す
+  // (22時に足した「07:00 起きる」で、その日が確実に休みになるのを防ぐ)。
   // ⚠ 判定はこの1回だけ。結果を DailyRecord に永続化し、以後は再計算しない。
-  //   Day 1 中に時刻を編集しても除外は覆らない(spec §2 判定の細部)。
-  if (date === startedOn && time < toTimeKey(new Date())) {
+  //   その日のうちに時刻を編集しても除外は覆らない(spec §2 判定の細部)。
+  if (time < toTimeKey(new Date())) {
     await excludeFromToday(routine.id);
   }
 
@@ -172,22 +187,30 @@ export async function updateRoutine(
     if (!time) throw new Error('Invalid time');
     target.time = time;
   }
+  // 名前を変えたら数え直す。名前を書き換えて中身ごと差し替える抜け道を塞ぐ(plan §1)。
+  // 時刻の変更では数え直さない
+  let isRenamed = false;
   if (patch.title !== undefined) {
     const title = patch.title.trim();
     if (!title) throw new Error('Empty title');
+    isRenamed = title !== target.title;
     target.title = title;
   }
   await saveRoutines(routines);
+  if (isRenamed) await markRoutineChanged();
 }
 
 /**
  * ルーティンを削除する。
  * 今日の記録からもチェック状態を落とし、分母を引き直す。
  * 過去日の記録は再計算しない(spec §2: 分母は固定)。
+ * 削除した日を、卒業の数え直しの起点として残す(plan §1)。
  */
 export async function deleteRoutine(id: string): Promise<void> {
   const routines = await getRoutines();
+  if (!routines.some((routine) => routine.id === id)) return;
   await saveRoutines(routines.filter((routine) => routine.id !== id));
+  await markRoutineChanged();
 
   // ⚠ そのルーティン専用にしていた言葉を消さない。全ルーティン共通に戻すだけ。
   //   消すと「書いた言葉を消さない」(spec §2 課金が切れたとき)と同じ一線を越える。

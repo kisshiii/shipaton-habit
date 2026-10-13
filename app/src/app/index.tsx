@@ -46,7 +46,7 @@ export default function TodayScreen() {
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
   const { routineId: focusedId } = useLocalSearchParams<{ routineId?: string }>();
 
-  // 毎日判定する。連続66日に達した日に一度だけ卒業を出す(spec §2 卒業の扱い)
+  // 毎日判定する。やり切った日が66日に達した日に一度だけ卒業を出す(spec §2 卒業の扱い)
   const checkGraduation = useCallback(async () => {
     const status = await evaluateGraduation();
     if (status?.shouldOffer) setIsGraduationOpen(true);

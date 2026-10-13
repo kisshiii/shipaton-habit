@@ -1,11 +1,13 @@
 #!/usr/bin/env node
 /**
- * 卒業判定(連続66日)のテスト。RN を起動せずに動く。
+ * 卒業判定(やり切った日を66日、休みは直近7日で2回まで)のテスト。RN を起動せずに動く。
  *   npm run test:graduation
  *
  * date.ts / graduation.ts / constants を TypeScript で変換して一時フォルダに置き、
  * storage だけ空の実装に差し替えて読み込む。テストランナーは入れていない(依存を増やさない)。
  * 夏時間の確認は TZ を変えて2回走らせる: `TZ=America/New_York npm run test:graduation`
+ *
+ * ⚠ 日数はすべて定数から組み立てる。定数を変えてもテストの意味が変わらないようにする。
  */
 
 const assert = require('assert');
@@ -40,70 +42,179 @@ fs.writeFileSync(
 );
 
 const { dateKeysBetween } = require(path.join(OUT, 'date.js'));
-const { findGraduationDate } = require(path.join(OUT, 'graduation.js'));
-const { GRADUATION_STREAK_DAYS: N } = require(path.join(OUT, 'constants.js'));
+const { computeProgress } = require(path.join(OUT, 'graduation.js'));
+const {
+  GRADUATION_STREAK_DAYS: N,
+  REST_WINDOW_DAYS: W,
+  MAX_REST_DAYS: R,
+} = require(path.join(OUT, 'constants.js'));
 
 const START = '2026-01-01';
-const keys = dateKeysBetween(START, '2026-12-31');
+const keys = dateKeysBetween(START, '2027-12-31');
 const done = (k) => ({ date: k, completedIds: ['a'], totalCount: 1 });
 const notDone = (k) => ({ date: k, completedIds: [], totalCount: 1 });
+/** i 日目(0 始まり)の記録を fn で作る。undefined はアプリを開かなかった日 */
 const build = (fn) =>
   Object.fromEntries(keys.map((k, i) => [k, fn(i, k)]).filter(([, v]) => v));
+/** 指定した日だけ休み、それ以外はやり切った記録 */
+const restsAt = (...days) => build((i, k) => (days.includes(i) ? notDone(k) : done(k)));
+const progress = (records, todayIndex, changedOn = [], startedOn = START) =>
+  computeProgress(records, startedOn, changedOn, keys[todayIndex]);
+const graduatedOn = (records, changedOn = [], startedOn = START) =>
+  progress(records, 400, changedOn, startedOn).graduatedOn;
 
 const cases = [
-  [`${N}日連続で、${N}日目が卒業日`, () => {
+  // --- 66日の数え方 ---------------------------------------------------------
+  [`やり切った日が${N}日で、${N}日目が卒業日`, () => {
     const r = build((i, k) => (i < N ? done(k) : undefined));
-    assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[N - 1]);
+    assert.strictEqual(graduatedOn(r), keys[N - 1]);
   }],
   [`${N - 1}日では卒業しない`, () => {
     const r = build((i, k) => (i < N - 1 ? done(k) : undefined));
-    assert.strictEqual(findGraduationDate(r, START, keys[200]), null);
+    assert.strictEqual(graduatedOn(r), null);
   }],
-  ['途中で1日やり切らなかったら数え直す', () => {
-    const r = build((i, k) => (i === 30 ? notDone(k) : done(k)));
-    assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[30 + N]);
+  ['休みの日は数え直さないが、66日にも入らない', () => {
+    assert.strictEqual(graduatedOn(restsAt(30)), keys[N]);
   }],
-  ['アプリを開かなかった日(記録なし)も途切れる', () => {
-    const r = build((i, k) => (i === 10 ? undefined : done(k)));
-    assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[10 + N]);
+  [`直近${W}日に${R}回までの休みでは数え直さない`, () => {
+    const rests = Array.from({ length: R }, (_, j) => 10 + j);
+    assert.strictEqual(graduatedOn(restsAt(...rests)), keys[N - 1 + R]);
   }],
-  ['今日まだやっていなくても途切れた扱いにしない', () => {
-    const today = keys[N - 1];
-    const r = build((i, k) => (i < N - 1 ? done(k) : i === N - 1 ? notDone(k) : undefined));
-    assert.strictEqual(findGraduationDate(r, START, today), null);
-    r[today] = done(today);
-    assert.strictEqual(findGraduationDate(r, START, today), today);
+  [`直近${W}日に${R + 1}回目の休みが出たら、その翌日から数え直す`, () => {
+    const rests = Array.from({ length: R + 1 }, (_, j) => 10 + j * 2);
+    const last = rests[rests.length - 1];
+    assert.strictEqual(graduatedOn(restsAt(...rests)), keys[last + N]);
   }],
-  ['卒業した後に途切れても卒業日は変わらない', () => {
-    const r = build((i, k) => (i < N ? done(k) : notDone(k)));
-    assert.strictEqual(findGraduationDate(r, START, keys[300]), keys[N - 1]);
+  [`${W}日より前の休みは数えない(${W}日に1回ずつなら途切れない)`, () => {
+    const rests = Array.from({ length: R + 3 }, (_, j) => 10 + j * W);
+    // 休みはどの直近 W 日にも1回しか入らないので、数え直しは起きない
+    assert.strictEqual(graduatedOn(restsAt(...rests)), keys[N - 1 + rests.length]);
   }],
-  ['分母0の日(Day 1 の時刻超過)は達成扱い', () => {
-    const r = build((i, k) =>
-      i === 0
-        ? { date: k, completedIds: [], totalCount: 0, excludedIds: ['a'] }
-        : i < N
-          ? done(k)
-          : undefined,
-    );
-    assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[N - 1]);
+  ['直近7日の境目: ちょうど W 日前の休みは窓の外', () => {
+    // 窓は「その日を含む W 日」。最後の休みから W 日前の休みは同じ窓に入らない
+    const tail = Array.from({ length: R }, (_, j) => 20 + j);
+    const last = tail[tail.length - 1];
+    const today = last + 1; // やり切った日
+    const outside = progress(restsAt(last - W, ...tail), today);
+    assert.strictEqual(outside.doneDays, today + 1 - (R + 1));
+    // 1日近づけると R+1 回が同じ窓に入り、最後の休みで数え直しになる
+    const inside = progress(restsAt(last - W + 1, ...tail), today);
+    assert.strictEqual(inside.restRestartOn, keys[last]);
+    assert.strictEqual(inside.doneDays, 1);
   }],
-  ['ルーティンが1件も無い日(全部消した日)は途切れる', () => {
+  ['数え直しより前の休み(3回目そのものも)は、次の窓に数えない', () => {
+    const first = Array.from({ length: R + 1 }, (_, j) => 10 + j); // 数え直しになる
+    const last = first[first.length - 1];
+    const next = Array.from({ length: R }, (_, j) => last + 1 + j); // 直後に R 回休む
+    const p = progress(restsAt(...first, ...next), last + R + 1);
+    assert.strictEqual(p.restsInWindow, R);
+    assert.strictEqual(p.doneDays, 1); // 今日の分だけ
+    assert.strictEqual(p.restRestartOn, keys[last]);
+    // もう1回休むと数え直し
+    const again = progress(restsAt(...first, ...next, last + R + 1), last + R + 2);
+    assert.strictEqual(again.restRestartOn, keys[last + R + 1]);
+  }],
+  ['アプリを開かなかった日(記録なし)は休み', () => {
+    const r = build((i, k) => (i >= 10 && i <= 10 + R ? undefined : done(k)));
+    assert.strictEqual(graduatedOn(r), keys[10 + R + N]);
+  }],
+  ['ルーティンが1件も無い日(全部消した日)は休み', () => {
     const r = build((i, k) =>
       i === 20 ? { date: k, completedIds: [], totalCount: 0, excludedIds: [] } : done(k),
     );
-    assert.strictEqual(findGraduationDate(r, START, keys[200]), keys[20 + N]);
+    assert.strictEqual(graduatedOn(r), keys[N]);
   }],
   ['全部消したまま開き続けても卒業しない', () => {
     const r = build((i, k) =>
       i < 200 ? { date: k, completedIds: [], totalCount: 0, excludedIds: [] } : undefined,
     );
-    assert.strictEqual(findGraduationDate(r, START, keys[199]), null);
+    assert.strictEqual(progress(r, 199).graduatedOn, null);
+  }],
+  ['分母0の日(Day 1 の時刻超過)はやり切った日', () => {
+    const r = build((i, k) =>
+      i === 0 ? { date: k, completedIds: [], totalCount: 0, excludedIds: ['a'] } : done(k),
+    );
+    assert.strictEqual(graduatedOn(r), keys[N - 1]);
   }],
   ['Day 1 より前の記録は数えない', () => {
     const r = build((i, k) => (i < N ? done(k) : undefined));
-    assert.strictEqual(findGraduationDate(r, keys[5], keys[200]), null);
+    assert.strictEqual(graduatedOn(r, [], keys[5]), null);
   }],
+
+  // --- 今日 -----------------------------------------------------------------
+  ['今日まだやっていなくても休みにしない', () => {
+    const rests = Array.from({ length: R }, (_, j) => 10 + j);
+    const today = 10 + R;
+    const r = restsAt(...rests);
+    r[keys[today]] = notDone(keys[today]);
+    const p = progress(r, today);
+    assert.strictEqual(p.restsInWindow, R);
+    assert.strictEqual(p.doneDays, 10);
+    assert.strictEqual(p.restRestartOn, null);
+  }],
+  ['今日やり切った時点で1日に数える', () => {
+    const r = build((i, k) => (i < N - 1 ? done(k) : i === N - 1 ? notDone(k) : undefined));
+    assert.strictEqual(progress(r, N - 1).graduatedOn, null);
+    assert.strictEqual(progress(r, N - 1).doneDays, N - 1);
+    r[keys[N - 1]] = done(keys[N - 1]);
+    assert.strictEqual(progress(r, N - 1).graduatedOn, keys[N - 1]);
+    assert.strictEqual(progress(r, N - 1).doneDays, N);
+  }],
+
+  // --- ルーティンの変更(追加・削除・名前) ---------------------------------
+  ['ルーティンを変えた日が新しい起点(その日やり切れば1日目)', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 50, [keys[50]]).doneDays, 1);
+    assert.strictEqual(progress(r, 50, [keys[50]]).countStartedOn, keys[50]);
+    assert.strictEqual(graduatedOn(r, [keys[50]]), keys[50 + N - 1]);
+  }],
+  ['変えた日より前の休みは、直近の回数に含めない', () => {
+    const rests = Array.from({ length: R }, (_, j) => 48 - j);
+    const r = restsAt(...rests, 51);
+    const p = progress(r, 52, [keys[50]]);
+    assert.strictEqual(p.restsInWindow, 1);
+    assert.strictEqual(p.doneDays, 2); // 変えた日と今日
+  }],
+  ['同じ日に何度変えても、起点はその日', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 50, [keys[50], keys[50]]).doneDays, 1);
+  }],
+  ['卒業した後に変えても、卒業日は変わらない', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(graduatedOn(r, [keys[N + 10]]), keys[N - 1]);
+  }],
+  ['変えた後は、休みで数え直したお知らせを出さない', () => {
+    const rests = Array.from({ length: R + 1 }, (_, j) => 10 + j);
+    const r = restsAt(...rests);
+    assert.strictEqual(progress(r, 30).restRestartOn, keys[10 + R]);
+    assert.strictEqual(progress(r, 30, [keys[20]]).restRestartOn, null);
+  }],
+  ['Day 1 より前・今日より後の変更日は無視する', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 30, ['2025-12-31', keys[40]]).doneDays, 31);
+  }],
+
+  // --- 卒業後 ---------------------------------------------------------------
+  ['卒業した後に何度休んでも、卒業日は変わらない', () => {
+    const r = build((i, k) => (i < N ? done(k) : notDone(k)));
+    assert.strictEqual(progress(r, 300).graduatedOn, keys[N - 1]);
+  }],
+
+  // --- 休まず続いている日数 ---------------------------------------------------
+  ['休まず続いている日数は、休むと0に戻る(卒業には影響しない)', () => {
+    const r = restsAt(10);
+    assert.strictEqual(progress(r, 9).unbrokenDays, 10);
+    assert.strictEqual(progress(r, 10).unbrokenDays, 10); // 今日はまだ休みではない
+    assert.strictEqual(progress(r, 11).unbrokenDays, 1); // 昨日休んで、今日やり切った
+    assert.strictEqual(progress(r, 15).unbrokenDays, 5);
+    assert.strictEqual(progress(r, 15).doneDays, 15);
+  }],
+  ['休まず続いている日数は、ルーティンを変えたときも0に戻る', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 20, [keys[15]]).unbrokenDays, 6);
+  }],
+
+  // --- 日付 -----------------------------------------------------------------
   ['夏時間の切り替えをまたいでも日付が飛ばない・重複しない', () => {
     assert.deepStrictEqual(dateKeysBetween('2026-03-06', '2026-03-10'), [
       '2026-03-06', '2026-03-07', '2026-03-08', '2026-03-09', '2026-03-10',
@@ -129,5 +240,7 @@ for (const [name, fn] of cases) {
   }
 }
 fs.rmSync(OUT, { recursive: true, force: true });
-console.log(`\nTZ=${process.env.TZ ?? '(local)'}  N=${N}  ${cases.length - failed}/${cases.length} passed`);
+console.log(
+  `\nTZ=${process.env.TZ ?? '(local)'}  N=${N} W=${W} R=${R}  ${cases.length - failed}/${cases.length} passed`,
+);
 process.exit(failed ? 1 : 0);
