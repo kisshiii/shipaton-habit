@@ -78,6 +78,20 @@ node scripts/asc-builds.js 20   # 処理状況。VALID になれば TestFlight �
 
 ⚠ `app.json` の `version` を上げてからビルドする(ビルド番号は EAS 側で自動で増える)。
 
+### 撮影用ビルドで状態を作る(確認のダイアログが出ない)
+
+```sh
+cd app
+npx eas-cli build -p ios --profile screenshots --non-interactive   # シミュレーター向けリリース構成
+# 落としてきた .app を入れて、状態を入れて起動 → 一度終了 → もう一度起動すると反映される
+xcrun simctl install <UDID> KATSU.app
+xcrun simctl launch <UDID> com.kisshi.gradhabit -katsuDevSeed progress -AppleLanguages "(en)" -AppleLocale en_US
+xcrun simctl terminate <UDID> com.kisshi.gradhabit
+xcrun simctl launch <UDID> com.kisshi.gradhabit -AppleLanguages "(en)" -AppleLocale en_US
+```
+
+状態は `graduation` / `progress` / `milestone-7` / `milestone-33` / `milestone-50` / `restart`(`src/dev/demo-seed.ts`)。⚠ 同じ種類は2回続けて入れられない(再読み込みの繰り返しを防ぐため)。入れ直すときは別の種類を挟む。
+
 ### 卒業画面を出す(開発ビルド専用)
 
 実データでは66日やり切る必要があるので、開発ビルドだけの入口を用意してある(`src/dev/demo-seed.ts`)。**本番バンドルには入らない。**

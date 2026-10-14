@@ -3,7 +3,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider, router } from 'expo-router';
 import * as Linking from 'expo-linking';
 import * as Notifications from 'expo-notifications';
 import * as SplashScreen from 'expo-splash-screen';
-import { DevSettings, useColorScheme } from 'react-native';
+import { DevSettings, Settings, useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding';
@@ -55,21 +55,25 @@ export default function TabLayout() {
   const handledResponseRef = useRef<string | null>(null);
 
   /**
-   * ⚠ 開発ビルド専用: `app:///?katsu-dev-seed=graduation` で卒業直前の状態を作る(`src/dev/demo-seed.ts`)。
-   *   `if (__DEV__)` の中で require すること。本番ビルドではブロックごと消え、
-   *   デモ用のコードがバンドルに入らない。早期 return では消えない。
+   * ⚠ 開発・撮影用ビルド専用: 卒業・節目・途中の日数などの状態を作る(`src/dev/demo-seed.ts`)。
+   *   起動引数 `-katsuDevSeed progress`、または開発ビルドなら `app:///?katsu-dev-seed=progress`。
+   *   `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中で require すること。本番ビルドでは
+   *   どちらも偽に置き換わってブロックごと消え、デモ用のコードがバンドルに入らない。早期 return では消えない。
+   *   `EXPO_PUBLIC_KATSU_DEV_TOOLS` は eas.json の `screenshots` プロファイルだけが立てる。
    */
   const linkingUrl = Linking.useLinkingURL();
   useEffect(() => {
-    if (__DEV__) {
-      if (!linkingUrl) return;
+    if (__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') {
       // import にすると本番バンドルにも入る。ここは require でなければならない
-      const { DEV_SEED_QUERY, seedGraduationDemo } =
+      const { DEV_SEED_ARGUMENT, DEV_SEED_QUERY, isDemoKind, seedDemo } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
-      if (Linking.parse(linkingUrl).queryParams?.[DEV_SEED_QUERY] !== 'graduation') return;
-      seedGraduationDemo().then((didSeed) => {
-        if (didSeed) DevSettings.reload();
+      const fromUrl = linkingUrl ? Linking.parse(linkingUrl).queryParams?.[DEV_SEED_QUERY] : undefined;
+      const kind = fromUrl ?? Settings.get(DEV_SEED_ARGUMENT);
+      if (!isDemoKind(kind)) return;
+      seedDemo(kind).then((didSeed) => {
+        // 撮影用ビルド(リリース構成)では再読み込みできない。アプリを開き直して反映する
+        if (didSeed && __DEV__) DevSettings.reload();
       });
     }
   }, [linkingUrl]);

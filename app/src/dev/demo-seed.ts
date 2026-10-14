@@ -1,26 +1,47 @@
 /**
- * ⚠ **開発ビルド専用。App Store 版には入らない。**
+ * ⚠ **開発ビルド・スクリーンショット用ビルド専用。App Store 版には入らない。**
  *
- * 卒業は「やり切った日が66日」なので、実際に66日待たないと卒業画面と証書が出ない。
- * 見た目の確認とデモ動画の撮影のために、66日分をやり切った状態を作る。
+ * 卒業も節目も、実際に日数が経たないと画面に出ない。見た目の確認とストア用の撮影のために、
+ * その日数ぶんの記録を作って保存内容を丸ごと差し替える。
  *
- * 使い方(開発ビルドを起動した状態で):
- *   シミュレーター: xcrun simctl openurl booted "app:///?katsu-dev-seed=graduation"
- *   実機: Safari などで同じ URL を開く
- * → 状態を差し替えてアプリを再読み込みし、Today で卒業画面が開く。
+ * 状態の種類(`DemoKind`):
+ *   - `graduation`  66日やり切った。Today で卒業画面が開く
+ *   - `progress`    23日目・直近7日の休み1回。Today の進み具合と、1件チェック済みの今日(撮影用)
+ *   - `milestone-7` / `milestone-33` / `milestone-50`  その日数に届いた。Today で節目の画面が開く
+ *   - `restart`     3回目の休みで数え直した直後。Today に数え直しのお知らせが出る
  *
- * ⚠ 読み込みは `_layout.tsx` の `if (__DEV__) { require(...) }` からだけ行う。
+ * 使い方:
+ *   シミュレーター(確認のダイアログが出ない): `xcrun simctl launch <UDID> com.kisshi.gradhabit -katsuDevSeed progress`
+ *     → 差し替えたら、アプリを一度終了して開き直す(`simctl terminate` → `simctl launch`)
+ *   開発ビルドなら URL でも: `app:///?katsu-dev-seed=progress`(差し替えて再読み込みする)
+ *
+ * ⚠ 読み込みは `_layout.tsx` の `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中からだけ行う。
  *   本番ビルドではそのブロックごと消えるので、このファイルもバンドルに入らない。
  */
 
-import { GRADUATION_STREAK_DAYS } from '@/constants/graduation';
+import { GRADUATION_STREAK_DAYS, MILESTONE_DAYS } from '@/constants/graduation';
 import { language } from '@/i18n';
 import { toDateKey } from '@/lib/date';
-import { getAppState, getMessages, getRoutines, replaceAllForDevelopment } from '@/storage';
-import type { DailyRecord, KatsuMessage, RoutineItem } from '@/types';
+import { getMessages, getDevSeedForDevelopment, replaceAllForDevelopment } from '@/storage';
+import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
-/** URL のクエリ名。`?katsu-dev-seed=graduation` */
+/** URL のクエリ名(`?katsu-dev-seed=progress`)と、起動引数の名前(`-katsuDevSeed progress`) */
 export const DEV_SEED_QUERY = 'katsu-dev-seed';
+export const DEV_SEED_ARGUMENT = 'katsuDevSeed';
+
+export const DEMO_KINDS = [
+  'graduation',
+  'progress',
+  'milestone-7',
+  'milestone-33',
+  'milestone-50',
+  'restart',
+] as const;
+export type DemoKind = (typeof DEMO_KINDS)[number];
+
+export function isDemoKind(value: unknown): value is DemoKind {
+  return typeof value === 'string' && (DEMO_KINDS as readonly string[]).includes(value);
+}
 
 const DEMO = {
   ja: {
@@ -41,35 +62,84 @@ const DEMO = {
   },
 } as const;
 
+/** 1日分の作り方。`done` は全部やり切った日、`rest` は何もしなかった日 */
+type Day = 'done' | 'rest';
+
+type Plan = {
+  /** 昨日までの日々(古い順)。最初の日が Day 1 */
+  past: Day[];
+  /** 今日チェック済みにするルーティンの数 */
+  todayDone: number;
+  /** 祝い済みにしておく節目。undefined にすると「1.0.2 で初めての判定」扱いになるので必ず入れる */
+  celebrated: number[];
+};
+
+const repeat = (day: Day, count: number): Day[] => Array.from({ length: count }, () => day);
+
+function planFor(kind: DemoKind, routineCount: number): Plan {
+  switch (kind) {
+    case 'graduation':
+      // 昨日までに66日。今日はまだ手を付けていない
+      return { past: repeat('done', GRADUATION_STREAK_DAYS), todayDone: 0, celebrated: [...MILESTONE_DAYS] };
+    case 'progress':
+      // 23日やり切って、3日前に1回休んだ。今日は1件済み(撮影で「途中」と分かる値にする)
+      return {
+        past: [...repeat('done', 21), 'rest', ...repeat('done', 2)],
+        todayDone: 1,
+        celebrated: MILESTONE_DAYS.filter((day) => day <= 23),
+      };
+    case 'restart':
+      // 10日やり切った後に3日続けて休んだ → 昨日で数え直し
+      return { past: [...repeat('done', 10), ...repeat('rest', 3)], todayDone: 0, celebrated: [7] };
+    default: {
+      // milestone-N: 昨日までに N-1 日、今日やり切って N 日目
+      const day = Number(kind.split('-')[1]);
+      return {
+        past: repeat('done', day - 1),
+        todayDone: routineCount,
+        celebrated: MILESTONE_DAYS.filter((milestone) => milestone < day),
+      };
+    }
+  }
+}
+
 /**
- * 66日前を Day 1 とし、昨日までの66日を全部やり切った状態にする。今日はまだ手を付けていない。
- * @returns 差し替えたら true。すでにデモ状態で卒業画面が未表示なら何もせず false
- *   ⚠ 再読み込み後も同じ URL が残るため、false を返さないと再読み込みが止まらない
+ * 状態を差し替える。
+ * @returns 差し替えたら true。同じ種類を差し替え済みなら何もせず false
+ *   ⚠ 再読み込み後も同じ URL・起動引数が残るため、false を返さないと再読み込みが止まらない
  */
-export async function seedGraduationDemo(): Promise<boolean> {
-  const [routines, appState] = await Promise.all([getRoutines(), getAppState()]);
-  const isSeeded = routines.some((routine) => routine.id === 'demo-run');
-  if (isSeeded && !appState.graduatedAt) return false;
+export async function seedDemo(kind: DemoKind): Promise<boolean> {
+  if ((await getDevSeedForDevelopment()) === kind) return false;
 
   const demo = DEMO[language];
+  const routineIds = demo.routines.map((routine) => routine.id);
+  const plan = planFor(kind, routineIds.length);
+
   const start = new Date();
   start.setHours(0, 0, 0, 0);
-  start.setDate(start.getDate() - GRADUATION_STREAK_DAYS);
+  start.setDate(start.getDate() - plan.past.length);
   const startedOn = toDateKey(start);
 
-  const demoRoutines: RoutineItem[] = demo.routines.map((routine) => ({
+  const routines: RoutineItem[] = demo.routines.map((routine) => ({
     ...routine,
     createdAt: start.toISOString(),
   }));
-  const ids = demoRoutines.map((routine) => routine.id);
 
   const records: Record<string, DailyRecord> = {};
-  for (let offset = 0; offset < GRADUATION_STREAK_DAYS; offset += 1) {
-    const day = new Date(start);
-    day.setDate(start.getDate() + offset);
-    const date = toDateKey(day);
-    records[date] = { date, completedIds: ids, totalCount: ids.length, excludedIds: [] };
-  }
+  const recordFor = (date: string, completedIds: string[]): DailyRecord => ({
+    date,
+    completedIds,
+    totalCount: routineIds.length,
+    excludedIds: [],
+  });
+  plan.past.forEach((day, offset) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + offset);
+    const key = toDateKey(date);
+    records[key] = recordFor(key, day === 'done' ? routineIds : []);
+  });
+  const today = toDateKey(new Date());
+  records[today] = recordFor(today, routineIds.slice(0, plan.todayDone));
 
   // すでに書いた言葉があれば残す。無ければデモ用の1件を置く
   const existing = await getMessages();
@@ -77,12 +147,13 @@ export async function seedGraduationDemo(): Promise<boolean> {
     ? existing
     : [{ id: 'demo-word', text: demo.word }];
 
-  await replaceAllForDevelopment({
-    routines: demoRoutines,
-    records,
-    messages,
-    // graduatedAt を空にして、Today で卒業画面が出るようにする
-    appState: { startedOn, onboardedAt: startedOn },
-  });
+  // graduatedAt を空にして、卒業した状態なら Today で卒業画面が出るようにする
+  const appState: AppState = {
+    startedOn,
+    onboardedAt: startedOn,
+    celebratedMilestones: plan.celebrated,
+  };
+
+  await replaceAllForDevelopment({ routines, records, messages, appState }, kind);
   return true;
 }

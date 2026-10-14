@@ -19,6 +19,8 @@ const KEYS = {
   records: 'katsu.records',
   messages: 'katsu.messages',
   appState: 'katsu.appState',
+  /** ⚠ 開発・撮影用ビルドだけが書く。最後に差し替えたデモ状態の種類 */
+  devSeed: 'katsu.devSeed',
 } as const;
 
 /** 日付キー -> その日の記録 */
@@ -109,20 +111,31 @@ async function markRoutineChanged(dateKey: string = todayKey()): Promise<void> {
 }
 
 /**
- * ⚠ **開発ビルド専用。**卒業画面を確かめる・デモを撮るために、保存内容を丸ごと差し替える。
- *   呼び出し側は `if (__DEV__)` の中からしか呼ばない。ここでも本番では拒否する。
+ * ⚠ **開発・撮影用ビルド専用。**卒業画面や節目を確かめる・ストア用に撮るために、保存内容を丸ごと差し替える。
+ *   呼び出し側は `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中からしか呼ばない。ここでも本番では拒否する。
  */
-export async function replaceAllForDevelopment(snapshot: {
-  routines: RoutineItem[];
-  records: RecordMap;
-  messages: KatsuMessage[];
-  appState: AppState;
-}): Promise<void> {
-  if (!__DEV__) throw new Error('replaceAllForDevelopment is development only');
+export async function replaceAllForDevelopment(
+  snapshot: {
+    routines: RoutineItem[];
+    records: RecordMap;
+    messages: KatsuMessage[];
+    appState: AppState;
+  },
+  seed: string,
+): Promise<void> {
+  if (!(__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1')) {
+    throw new Error('replaceAllForDevelopment is development only');
+  }
   await writeJson(KEYS.routines, snapshot.routines);
   await writeJson(KEYS.records, snapshot.records);
   await writeJson(KEYS.messages, snapshot.messages);
   await writeJson(KEYS.appState, snapshot.appState);
+  await writeJson(KEYS.devSeed, seed);
+}
+
+/** 最後に差し替えたデモ状態の種類。開発・撮影用ビルドでしか書かれない */
+export async function getDevSeedForDevelopment(): Promise<string | null> {
+  return readJson<string | null>(KEYS.devSeed, null);
 }
 
 // --- Routines ---------------------------------------------------------------
