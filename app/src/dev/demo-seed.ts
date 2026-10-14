@@ -12,7 +12,7 @@
  *
  * 使い方:
  *   シミュレーター(確認のダイアログが出ない): `xcrun simctl launch <UDID> com.kisshi.gradhabit -katsuDevSeed progress`
- *     → 差し替えたら、アプリを一度終了して開き直す(`simctl terminate` → `simctl launch`)
+ *     → 差し替え終わるまで画面を描かないので、その起動のまま撮れる。起動のたびに差し替え直す
  *   開発ビルドなら URL でも: `app:///?katsu-dev-seed=progress`(差し替えて再読み込みする)
  *
  * ⚠ 読み込みは `_layout.tsx` の `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中からだけ行う。
@@ -25,9 +25,8 @@ import { toDateKey } from '@/lib/date';
 import { getMessages, getDevSeedForDevelopment, replaceAllForDevelopment } from '@/storage';
 import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
 
-/** URL のクエリ名(`?katsu-dev-seed=progress`)と、起動引数の名前(`-katsuDevSeed progress`) */
+/** URL のクエリ名(`?katsu-dev-seed=progress`)。起動引数の名前は `_layout.tsx` に直接書く(本番で消すため) */
 export const DEV_SEED_QUERY = 'katsu-dev-seed';
-export const DEV_SEED_ARGUMENT = 'katsuDevSeed';
 
 export const DEMO_KINDS = [
   'graduation',
@@ -105,11 +104,12 @@ function planFor(kind: DemoKind, routineCount: number): Plan {
 
 /**
  * 状態を差し替える。
+ * @param options.force 起動引数から呼ぶとき。毎回差し替える(再読み込みしないので繰り返しにならない)
  * @returns 差し替えたら true。同じ種類を差し替え済みなら何もせず false
- *   ⚠ 再読み込み後も同じ URL・起動引数が残るため、false を返さないと再読み込みが止まらない
+ *   ⚠ 再読み込み後も同じ URL が残るため、URL から呼ぶときは false を返さないと再読み込みが止まらない
  */
-export async function seedDemo(kind: DemoKind): Promise<boolean> {
-  if ((await getDevSeedForDevelopment()) === kind) return false;
+export async function seedDemo(kind: DemoKind, options: { force?: boolean } = {}): Promise<boolean> {
+  if (!options.force && (await getDevSeedForDevelopment()) === kind) return false;
 
   const demo = DEMO[language];
   const routineIds = demo.routines.map((routine) => routine.id);

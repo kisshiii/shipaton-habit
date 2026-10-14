@@ -24,8 +24,32 @@ Notifications.setNotificationHandler({
   }),
 });
 
+/**
+ * ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevSeed <種類>`(`src/dev/demo-seed.ts`)。
+ *   本番ではこの式全体が undefined に置き換わり、引数の名前もバンドルに残らない。
+ */
+const devSeedArgument: unknown =
+  __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevSeed') : undefined;
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+
+  // 起動引数で状態を作るときは、差し替え終わるまで何も描かない。
+  // 先に描くと、画面が古い状態を読んだり、新しい状態の一度きりの表示を消費したりする
+  const [isSeeding, setIsSeeding] = useState(devSeedArgument != null);
+  useEffect(() => {
+    if (__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') {
+      if (devSeedArgument == null) return;
+      // import にすると本番バンドルにも入る。ここは require でなければならない
+      const { isDemoKind, seedDemo } =
+        // eslint-disable-next-line @typescript-eslint/no-require-imports
+        require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
+      const seeding = isDemoKind(devSeedArgument)
+        ? seedDemo(devSeedArgument, { force: true })
+        : Promise.resolve(false);
+      seeding.finally(() => setIsSeeding(false));
+    }
+  }, []);
 
   // null = 判定前。ここで false を初期値にすると、既存ユーザーに一瞬
   // オンボーディングが差し込まれる
@@ -39,10 +63,11 @@ export default function TabLayout() {
   // 何を出すか決まってからスプラッシュを畳む。
   // 先に畳むと、オンボーディングが要る人に一瞬タブが見える
   useEffect(() => {
+    if (isSeeding) return;
     getAppState()
       .then((state) => setNeedsOnboarding(!state.onboardedAt))
       .finally(() => SplashScreen.hideAsync());
-  }, []);
+  }, [isSeeding]);
 
   const handleOnboarded = useCallback(() => setNeedsOnboarding(false), []);
 
@@ -55,25 +80,22 @@ export default function TabLayout() {
   const handledResponseRef = useRef<string | null>(null);
 
   /**
-   * ⚠ 開発・撮影用ビルド専用: 卒業・節目・途中の日数などの状態を作る(`src/dev/demo-seed.ts`)。
-   *   起動引数 `-katsuDevSeed progress`、または開発ビルドなら `app:///?katsu-dev-seed=progress`。
-   *   `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中で require すること。本番ビルドでは
-   *   どちらも偽に置き換わってブロックごと消え、デモ用のコードがバンドルに入らない。早期 return では消えない。
-   *   `EXPO_PUBLIC_KATSU_DEV_TOOLS` は eas.json の `screenshots` プロファイルだけが立てる。
+   * ⚠ 開発ビルド専用: `app:///?katsu-dev-seed=progress` で状態を作る(`src/dev/demo-seed.ts`)。
+   *   `if (__DEV__)` の中で require すること。本番ビルドではブロックごと消え、
+   *   デモ用のコードがバンドルに入らない。早期 return では消えない。
+   *   シミュレーターでは確認のダイアログが出ない起動引数のほう(上)を使う。
    */
   const linkingUrl = Linking.useLinkingURL();
   useEffect(() => {
-    if (__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') {
-      // import にすると本番バンドルにも入る。ここは require でなければならない
-      const { DEV_SEED_ARGUMENT, DEV_SEED_QUERY, isDemoKind, seedDemo } =
+    if (__DEV__) {
+      if (!linkingUrl) return;
+      const { DEV_SEED_QUERY, isDemoKind, seedDemo } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
-      const fromUrl = linkingUrl ? Linking.parse(linkingUrl).queryParams?.[DEV_SEED_QUERY] : undefined;
-      const kind = fromUrl ?? Settings.get(DEV_SEED_ARGUMENT);
+      const kind = Linking.parse(linkingUrl).queryParams?.[DEV_SEED_QUERY];
       if (!isDemoKind(kind)) return;
       seedDemo(kind).then((didSeed) => {
-        // 撮影用ビルド(リリース構成)では再読み込みできない。アプリを開き直して反映する
-        if (didSeed && __DEV__) DevSettings.reload();
+        if (didSeed) DevSettings.reload();
       });
     }
   }, [linkingUrl]);
@@ -89,6 +111,8 @@ export default function TabLayout() {
     // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する
     router.navigate({ pathname: '/', params: { routineId } });
   }, [lastResponse]);
+
+  if (isSeeding) return null;
 
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
