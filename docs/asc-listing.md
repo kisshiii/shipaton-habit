@@ -168,6 +168,13 @@ non-judgmental message with a link to findahelpline.com, and lets the user
 continue using the app. The check runs entirely on device and the result is
 never stored, logged, or transmitted.
 
+New in 1.0.2: on devices with Apple Intelligence, a second, softer check uses
+Apple's on-device Foundation Models to notice words that attack the person
+rather than the skipped action. It only suggests a rewrite and never blocks
+saving. It runs entirely on device (no Private Cloud Compute, no network),
+and neither the text nor the result is stored, logged, or transmitted. On
+other devices this check is simply skipped.
+
 PRIVACY
 The app has no backend. User-written text never leaves the device. The only
 network traffic is the RevenueCat SDK for subscription status.
@@ -379,6 +386,7 @@ REST API なら:
 • Rest days: graduation now means doing everything on your list on 66 days, with up to two rest days in any seven. Resting doesn't send you back to day 1.
 • See how far you are: Day 23 / 66 on Today, with your rest days for the week.
 • A quiet mark at 7, 33 and 50 days.
+• If what you write attacks you rather than what you skipped, KATSU suggests aiming it at today instead. It never stops you saving, and the check runs on your iPhone (Apple Intelligence required).
 • Adding, removing or renaming a routine starts the count over. KATSU tells you before it does.
 ```
 
@@ -388,6 +396,7 @@ REST API なら:
 ・休めるようになりました。その日のルーティンをすべてやり切った日が66日に届いたら卒業です。休みは直近7日で2回まで、休んでも1日目には戻りません。
 ・どこまで来たかが見えます。今日の画面に「66日のうち23日」と、この1週間の休みを出します。
 ・7日・33日・50日に、節目の画面を一度だけ出します。
+・書いた言葉が、やらなかったことではなくあなた自身を否定しているとき、「今日のあなた」に向けた言葉への書き直しを提案します。保存は止めません。判定は iPhone の中だけで行います(Apple Intelligence が必要です)。
 ・ルーティンを足す・消す・名前を変えると、また1日目から数えます。変える前にお知らせします。
 ```
 
