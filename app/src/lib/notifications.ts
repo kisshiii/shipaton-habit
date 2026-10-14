@@ -52,6 +52,29 @@ export async function requestNotificationPermission(): Promise<Notifications.Per
   return status;
 }
 
+// --- 試しに届ける -------------------------------------------------------------
+
+/** 試しの通知が届くまでの秒数。画面を見ている間に届く長さにする */
+const TRIAL_DELAY_SECONDS = 3;
+
+/**
+ * オンボーディングの最後に「試しに今、届けてみる」(plan §7-5)。
+ * このアプリの価値は、自分の言葉が通知で届いた瞬間に分かる。最初の時刻を待たせない。
+ *
+ * ⚠ 本文は本人が今書いた言葉そのもの。端末内のローカル通知で、どこにも送らない。
+ * ⚠ data には何も入れない(本文を入れない決まりは同じ。遷移先も要らない)。
+ * ⚠ 届く前に `syncScheduledNotifications` の cancelAll が走ると消える。秒数を短くしてある
+ */
+export async function sendTrialNotification(title: string, body: string): Promise<void> {
+  await Notifications.scheduleNotificationAsync({
+    content: { title, body, data: {} },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: TRIAL_DELAY_SECONDS,
+    },
+  });
+}
+
 // --- 予約 -------------------------------------------------------------------
 
 /**

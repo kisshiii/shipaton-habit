@@ -226,6 +226,9 @@ export const en = {
     doneBody: 'Your words stay on this device.',
     doneNote: 'Nothing you write here is sent anywhere. Nobody reads it but you.',
     begin: 'Begin',
+    /** 試しに今、自分の言葉を通知で届ける(plan §7-5) */
+    trial: 'Send my words to me now',
+    trialSent: 'On its way. This is what arrives when the time passes and it is not done.',
     next: 'Next',
   },
 

@@ -48,7 +48,11 @@ import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { Ceremony, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
-import { requestNotificationPermission, syncScheduledNotifications } from '@/lib/notifications';
+import {
+  requestNotificationPermission,
+  sendTrialNotification,
+  syncScheduledNotifications,
+} from '@/lib/notifications';
 import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import { attacksThePerson } from '@/lib/soft-guard';
 import { countChars, truncateChars } from '@/lib/text';
@@ -77,6 +81,8 @@ export function Onboarding({ onFinished }: Props) {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   /** 端末内の判定を待っている間(最大3秒)。二度押しで二重に保存させない */
   const [isChecking, setIsChecking] = useState(false);
+  const [isAllowed, setIsAllowed] = useState(false);
+  const [isTrialSent, setIsTrialSent] = useState(false);
 
   // 前のステップで出したエラーを引きずらない
   const goTo = (next: Step) => {
@@ -136,8 +142,14 @@ export function Onboarding({ onFinished }: Props) {
   };
 
   const handleAskNotifications = async () => {
-    await requestNotificationPermission();
+    setIsAllowed((await requestNotificationPermission()) === 'granted');
     goTo('done');
+  };
+
+  // 最初の1分で、自分の言葉が届く体験をさせる(plan §7-5)。許可した人だけ
+  const handleTrial = async () => {
+    await sendTrialNotification(title.trim(), words.trim());
+    setIsTrialSent(true);
   };
 
   const handleFinish = async () => {
@@ -257,6 +269,18 @@ export function Onboarding({ onFinished }: Props) {
                       <ThemedText type="small" themeColor="textSecondary">
                         {t.onboarding.doneNote}
                       </ThemedText>
+                      {isAllowed &&
+                        (isTrialSent ? (
+                          <ThemedText type="small" themeColor="textSecondary">
+                            {t.onboarding.trialSent}
+                          </ThemedText>
+                        ) : (
+                          <Button
+                            label={t.onboarding.trial}
+                            variant="secondary"
+                            onPress={handleTrial}
+                          />
+                        ))}
                     </>
                   )}
 
