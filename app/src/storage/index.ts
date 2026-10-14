@@ -95,6 +95,11 @@ export async function markMilestonesCelebrated(days: readonly number[]): Promise
   await patchAppState({ celebratedMilestones: [...celebrated].sort((a, b) => a - b) });
 }
 
+/** 評価を頼んだことを残す。二度と自分からは頼まない(plan §7-3) */
+export async function markReviewRequested(dateKey: string = todayKey()): Promise<void> {
+  await patchAppState({ reviewRequestedAt: dateKey });
+}
+
 /** 休みによる数え直しのお知らせを出したことを残す */
 export async function markRestartNoticeShown(restartOn: string): Promise<void> {
   await patchAppState({ restartNoticeShownFor: restartOn });

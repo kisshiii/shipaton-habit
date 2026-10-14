@@ -45,6 +45,8 @@ export type AppState = {
   celebratedMilestones?: number[];
   /** 休みによる数え直しのお知らせを出した、その数え直しの日。同じ数え直しで二度出さない */
   restartNoticeShownFor?: string;
+  /** 評価を頼んだ日。頼むのは一生に1回だけ(plan §7-3) */
+  reviewRequestedAt?: string;
   /**
    * オンボーディングを終えた日。
    * ⚠ `startedOn` で代用しないこと。全ルーティンを消した人にオンボーディングを
