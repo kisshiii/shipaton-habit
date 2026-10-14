@@ -29,6 +29,7 @@ import { EmptyState } from '@/components/empty-state';
 import { Paywall } from '@/components/paywall';
 import { RoutinePicker } from '@/components/routine-picker';
 import { SelfHarmNotice } from '@/components/self-harm-notice';
+import { ShareCardModal, WordsCard } from '@/components/share-card';
 import { Sheet } from '@/components/sheet';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
@@ -64,6 +65,8 @@ export default function KatsuScreen() {
   /** ピッカーを開いている言葉。null なら閉じている(課金機会③) */
   const [pickingId, setPickingId] = useState<string | null>(null);
   const [draft, setDraft] = useState<Draft | null>(null);
+  /** 言葉のカードにする本文。null なら閉じている */
+  const [cardText, setCardText] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     setMessages(await getMessages());
@@ -99,19 +102,22 @@ export default function KatsuScreen() {
     if (Platform.OS === 'ios') {
       ActionSheetIOS.showActionSheetWithOptions(
         {
-          options: [t.katsu.edit, t.katsu.delete, t.katsu.cancel],
-          destructiveButtonIndex: 1,
-          cancelButtonIndex: 2,
+          options: [t.katsu.edit, t.share.wordsAction, t.katsu.delete, t.katsu.cancel],
+          destructiveButtonIndex: 2,
+          cancelButtonIndex: 3,
         },
         (index) => {
           if (index === 0) edit();
-          if (index === 1) handleDelete(message);
+          // 言葉のカードは本人が選んだときだけ作る(plan §7-4)
+          if (index === 1) setCardText(message.text);
+          if (index === 2) handleDelete(message);
         },
       );
       return;
     }
     Alert.alert(message.text, undefined, [
       { text: t.katsu.edit, onPress: edit },
+      { text: t.share.wordsAction, onPress: () => setCardText(message.text) },
       { text: t.katsu.delete, style: 'destructive', onPress: () => handleDelete(message) },
       { text: t.katsu.cancel, style: 'cancel' },
     ]);
@@ -265,6 +271,10 @@ export default function KatsuScreen() {
           onClose={() => setPickingId(null)}
         />
       )}
+
+      <ShareCardModal visible={cardText !== null} onClose={() => setCardText(null)}>
+        <WordsCard text={cardText ?? ''} />
+      </ShareCardModal>
     </ThemedView>
   );
 }

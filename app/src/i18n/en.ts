@@ -202,6 +202,22 @@ export const en = {
     close: 'Back to today',
   },
 
+  /**
+   * 共有カード(plan §7-4)。⚠ 祝福するが、可愛くしない。感嘆符・絵文字を入れない
+   */
+  share: {
+    milestoneEyebrow: 'KATSU',
+    habitsLabel: 'Every day',
+    wordsEyebrow: 'What I wrote to myself',
+    /** 節目の画面のボタン */
+    milestoneAction: 'Share a card',
+    /** Your KATSU の「···」の項目 */
+    wordsAction: 'Share as a card',
+    share: 'Share',
+    close: 'Close',
+    note: 'The image is made on this device. Nothing leaves unless you share it.',
+  },
+
   onboarding: {
     tagline: 'A voice from the you who believed.',
     intro:

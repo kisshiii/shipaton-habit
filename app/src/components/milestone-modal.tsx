@@ -6,14 +6,18 @@
  * ⚠ 紺は節目の色。普段の画面に持ち込まない(theme.ts `Ceremony`)。
  */
 
+import { useState } from 'react';
 import { Modal, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 import { Button } from '@/components/button';
+import { MilestoneCard, ShareCardModal } from '@/components/share-card';
 import { GRADUATION_STREAK_DAYS } from '@/constants/graduation';
 import { Ceremony, Fonts, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
+import { getRoutines } from '@/storage';
+import type { RoutineItem } from '@/types';
 
 type Props = {
   /** 祝う節目。null なら閉じている */
@@ -22,6 +26,9 @@ type Props = {
 };
 
 export function MilestoneModal({ day, onClose }: Props) {
+  /** カードに載せるルーティン。null なら共有の画面は閉じている */
+  const [cardRoutines, setCardRoutines] = useState<RoutineItem[] | null>(null);
+
   return (
     <Modal visible={day !== null} animationType="fade" onRequestClose={onClose}>
       {/* ⚠ Modal の中は別のビュー階層。provider が無いと inset が 0 になる */}
@@ -44,7 +51,17 @@ export function MilestoneModal({ day, onClose }: Props) {
                 {/* ⚠ 主ボタンは画面下に固定する */}
                 <View style={styles.actions}>
                   <Button tone="ceremony" label={t.milestone.close} onPress={onClose} />
+                  {/* 外から人を連れてくる経路(plan §7-4)。押した人にだけカードを作る */}
+                  <Button
+                    tone="ceremony"
+                    variant="plain"
+                    label={t.share.milestoneAction}
+                    onPress={async () => setCardRoutines(await getRoutines())}
+                  />
                 </View>
+                <ShareCardModal visible={cardRoutines !== null} onClose={() => setCardRoutines(null)}>
+                  <MilestoneCard day={day} routines={cardRoutines ?? []} />
+                </ShareCardModal>
               </>
             )}
           </SafeAreaView>
@@ -87,6 +104,7 @@ const styles = StyleSheet.create({
     lineHeight: 24,
   },
   actions: {
+    gap: Spacing.two,
     paddingHorizontal: Spacing.four,
     paddingBottom: Spacing.three,
   },

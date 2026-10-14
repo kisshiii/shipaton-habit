@@ -157,6 +157,17 @@ export const ja: Copy = {
     close: '今日に戻る',
   },
 
+  share: {
+    milestoneEyebrow: 'KATSU',
+    habitsLabel: '毎日やっていること',
+    wordsEyebrow: '自分に書いた言葉',
+    milestoneAction: 'カードにして共有',
+    wordsAction: 'カードにして共有',
+    share: '共有する',
+    close: '閉じる',
+    note: '画像はこの端末の中で作ります。共有しない限り、どこにも出ません。',
+  },
+
   onboarding: {
     tagline: 'あの日、変わると決めた自分の声。',
     intro: 'これから、行きたくない日の自分に向けて、何と言ってほしいかを書いてもらいます。',
