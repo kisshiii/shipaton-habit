@@ -1,6 +1,6 @@
 # 引き継ぎ(会話をクリアしたあと、ここから再開する)
 
-*最終更新: 2026-10-13 / このファイルは「今どこまで進んだか」と「次に何をするか」。**判断の理由は `docs/spec.md`**、**何をどの順で入れるかは `docs/plan.md`** に書く。*
+*最終更新: 2026-10-14 / このファイルは「今どこまで進んだか」と「次に何をするか」。**判断の理由は `docs/spec.md`**、**何をどの順で入れるかは `docs/plan.md`** に書く。*
 
 ---
 
@@ -24,6 +24,16 @@
 - `c57317b` の日本語修正(1.0.1 のビルドに入っていなかったもの)
 
 ---
+
+## ⚠ 2026-10-14 の終わりの状態(ここから再開)
+
+- ブランチ `feat/growth`(`feat/soft-guard` の上)に plan §7 を全部入れた: レビュー依頼・オンボーディングの「いま届けてみる」・共有カード・ストアの名前とキーワード・ウィジェット。**どれも実機・シミュレーターで未確認**
+- **ビルド24が止まっている。**ウィジェットの App Group を EAS が Apple に設定できなかった(`Failed to patch capabilities: APP_GROUPS`)。**本人が Apple Developer で設定する:**
+  1. App Group `group.com.kisshi.gradhabit` を作る(https://developer.apple.com/account/resources/identifiers/list/applicationGroup)
+  2. `com.kisshi.gradhabit` と `com.kisshi.gradhabit.ExpoWidgetsTarget` の両方で App Groups を有効にし、1 を選ぶ
+  3. その後 `cd app && EXPO_NO_CAPABILITY_SYNC=1 npx eas-cli build -p ios --profile production --auto-submit --non-interactive --no-wait`
+- 代わりにウィジェットだけ外して 1.0.3 に回す案もある(本人の判断待ち)
+- ビルドが通ったら、撮影用ビルド(`--profile screenshots`)で新しい画面(共有カード・「いま届けてみる」)を確かめ、TestFlight で実機確認 → main にマージ → ASC へ流し込み → 提出
 
 ## 次にやること
 
