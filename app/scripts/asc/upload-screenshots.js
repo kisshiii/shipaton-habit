@@ -1,17 +1,18 @@
 #!/usr/bin/env node
 /**
- * 1.0.1 のスクリーンショットを差し替える。
- * 01/03/04/05 を新しい画像に置き換え、02(ロック画面の通知)は今のものを残す。英日とも同じ5枚・同じ順。
+ * 1.0.2 のスクリーンショットを差し替える。
+ * 01(Today: 進み具合が出るようになった)と 04(卒業: 見出しが変わった)を新しい画像に置き換え、
+ * 02/03/05 は今のものを残す。英日とも同じ5枚・同じ順。画像は ~/Desktop/katsu-shots-1.0.2/ に作った。
  */
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 const APP_ID = '6800968856';
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 // スクリーンショットの置き場所。引数で渡す: node upload-screenshots.js <dir>
 const DIR = process.argv[2] ?? path.resolve(__dirname, '..', '..', '..', 'screenshots');
-const NEW = ['01_today.png', '03_words.png', '04_graduation.png', '05_paywall.png'];
+const NEW = ['01_today.png', '04_graduation.png'];
 const ORDER = ['01_today.png', '02_notification.png', '03_words.png', '04_graduation.png', '05_paywall.png'];
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');

@@ -30,8 +30,8 @@
 0. **ビルド23が通ったか見る:** https://expo.dev/accounts/kisshi.apps/projects/app/builds/11fe53a8-07d9-42fa-a627-de44d495267f 。失敗していたらネイティブモジュール(`app/modules/katsu-soft-guard`)のコンパイルを疑う。ソフトガードを入れるかは未決なので、1.0.2 として出すのはビルド22(ソフトガードなし)でもよい
 1. **TestFlight で確かめる**(下の「1.0.2 で確かめること」)。ソフトガードは iPhone 15 Pro 以降・Apple Intelligence オンの端末でだけ動く。Your KATSU で「お前は一生変われない」のような言葉と「さっさと起きろ」のような言葉を保存して、前者だけに確認が出るかを見る
 2. 問題が無ければ `feat/graduation-rest-days` を main にマージ(先に `docs/plan-1.0.2`)
-3. **スクリーンショットを撮り直す** ── Today(上部が変わった)と卒業画面(見出しが変わった)。`docs/asc-listing.md` の「スクリーンショット」
-4. ASC: `scripts/asc/create-version.js` と `push-copy.js` の `VERSION` を `1.0.2` にしてから流し込む → 審査提出(11月初旬)
+3. ~~スクリーンショットを撮り直す~~ → **2026-10-14 に済み。**`~/Desktop/katsu-shots-1.0.2/` の `01_today.png` と `04_graduation.png`(撮影用ビルドで撮った。キャプションは前回と同じ)。02/03/05 は前回のものをそのまま使う
+4. ASC(スクリプトは 1.0.2 向けに直してある): `node scripts/asc/create-version.js <22 か 23>` → `node scripts/asc/push-copy.js` → `node scripts/asc/upload-screenshots.js ~/Desktop/katsu-shots-1.0.2` → `node scripts/asc/submit.js`(審査提出は11月初旬)
 5. **プロモーションテキストは 1.0.2 の公開と同時に差し替える**(休みの話が入っているため)
 
 ### 1.0.2 で確かめること(TestFlight)
@@ -42,7 +42,7 @@
 - 日本語と英語の両方で、案内の2行・進み具合・確認の文面が切れずに読めるか(大きい文字の設定でも)
 - 1.0.1 からの積み残し: 卒業画面と証書(開発ビルドで `app:///?katsu-dev-seed=graduation`)、日付をまたいだときの判定、購入シートの通貨表示
 
-⚠ 7・33・50日の節目の画面と、休みで数え直したお知らせは、実際の日数が要るので TestFlight ではすぐには出せない。判定はテストで確かめてある(`npm run test:graduation`、30件)。見た目を確かめるなら開発ビルドに状態を入れる入口を足す必要がある
+⚠ 7・33・50日の節目の画面と、休みで数え直したお知らせは、実際の日数が要るので TestFlight ではすぐには出せない。**2026-10-14 に撮影用ビルドで見た目を確かめた**(節目 7(日本語)・33(英語)、数え直しのお知らせ 英日、Today の進み具合、卒業画面)。Routines 画面の案内の2行と、変更前の確認ダイアログは、タップが要るのでシミュレーターでは確かめていない
 
 ### 既知の問題(直していない)
 

@@ -5,7 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const APP_ID = '6800968856';
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const LISTING = path.resolve(__dirname, '..', '..', '..', 'docs', 'asc-listing.md');
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');

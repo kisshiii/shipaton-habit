@@ -1,13 +1,13 @@
 #!/usr/bin/env node
 /**
- * 1.0.1 を審査に出す。`--check` だけなら状態を見るだけで何もしない。
+ * 1.0.2 を審査に出す。`--check` だけなら状態を見るだけで何もしない。
  * ⚠ サブスクは 1.0 で承認済みなので、提出項目はアプリのバージョン1件でよい。
  */
 const crypto = require('crypto');
 const fs = require('fs');
 
 const APP_ID = '6800968856';
-const VERSION = '1.0.1';
+const VERSION = '1.0.2';
 const CHECK_ONLY = process.argv.includes('--check');
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');

@@ -1,16 +1,19 @@
 #!/usr/bin/env node
 /**
- * 1.0.1 を用意する: バージョン作成(既にあれば再利用)→ ビルド19を紐づけ →
+ * 1.0.2 を用意する: バージョン作成(既にあれば再利用)→ 指定したビルドを紐づけ →
  * 英日の説明文・新機能・プロモーションテキストを docs/asc-listing.md から入れる。
  * 審査には出さない。
+ *   node scripts/asc/create-version.js <ビルド番号>   例: 22(ソフトガードなし)/ 23(あり)
  */
 const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
 const APP_ID = '6800968856';
-const VERSION = '1.0.1';
-const BUILD = '19';
+const VERSION = '1.0.2';
+// ⚠ どのビルドで出すかは本人が決める(ソフトガードを入れるかどうか)。決め打ちにしない
+const BUILD = process.argv[2];
+if (!/^\d+$/.test(BUILD ?? '')) throw new Error('usage: node scripts/asc/create-version.js <build number>');
 const LISTING = path.resolve(__dirname, '..', '..', '..', 'docs', 'asc-listing.md');
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
@@ -48,11 +51,13 @@ const copy = {
     promotionalText: block(/### Promotional Text \(170\)\n\n```\n([\s\S]*?)\n```/),
   },
 };
-const whatsNew = [...listing.split('## 1.0.1 の「このバージョンの新機能」')[1].matchAll(/```\n([\s\S]*?)\n```/g)].map((m) => m[1].trim());
+// 新機能は一番上(= 一番新しい版)の「このバージョンの新機能」から英・日の順に取る
+const whatsNewAt = listing.search(/^## [\d.]+ の「このバージョンの新機能」/m);
+const whatsNew = [...listing.slice(whatsNewAt).matchAll(/```\n([\s\S]*?)\n```/g)].map((m) => m[1].trim());
 copy['en-US'].whatsNew = whatsNew[0];
 copy.ja.whatsNew = whatsNew[1];
 if (!copy['en-US'].description.includes('66 days') || !copy.ja.description.includes('66日')) {
-  throw new Error('description does not look like the 1.0.1 draft');
+  throw new Error('description does not look like the current draft');
 }
 
 (async () => {
