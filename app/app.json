@@ -41,6 +41,24 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
         }
+      ],
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "KatsuProgress",
+              "displayName": "KATSU",
+              "description": "Day N / 66 and today's progress. Your words are never shown here.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "accessoryRectangular"
+                ]
+              }
+            }
+          ]
+        }
       ]
     ],
     "experiments": {

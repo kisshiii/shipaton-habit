@@ -30,7 +30,7 @@
 
 ### スコープ
 
-- **画面は3つ:** Routine setup / Today / Your KATSU
+- **画面は3つ:** Routine setup / Today / Your KATSU(ほかにウィジェットがあるが、表示だけで操作は無い。plan §7-6)
 - **実装しないもの:** 統計画面、履歴一覧、複数目標、曜日指定、ソーシャル、 AI提案、クラウド同期、アカウント機能、英語・日本語以外の言語(理由は `docs/plan.md`「やらないこと」と spec §9)
 - **入れるものは `docs/plan.md` に書いてあるものだけ。**計画にない判断が必要になったら、勝手に決めずに確認する
 
@@ -140,6 +140,9 @@ type AppState = {
   startedOn?: string;   // 最初のルーティンを保存した日 = Day 1
   graduatedAt?: string; // 卒業モーダルを表示済みなら記録(再表示しない)
   routineChangedOn?: string[]; // ルーティンを変えた日(追加・削除・名前の変更)。数え直しの起点。全部残す
+  celebratedMilestones?: number[]; // お祝いを出した節目。undefined は「1.0.2 で未判定」の目印
+  restartNoticeShownFor?: string; // 休みで数え直したお知らせを出した、その数え直しの日
+  reviewRequestedAt?: string; // 評価を頼んだ日。一生に1回だけ
   onboardedAt?: string; // オンボーディング完了日。startedOn で代用しないこと
 };
 
