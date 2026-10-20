@@ -45,6 +45,7 @@ import {
   getTodayRecord,
   markGraduated,
   markMilestonesCelebrated,
+  markOpenedToday,
   markRestartNoticeShown,
   toggleCompletion,
 } from '@/storage';
@@ -64,6 +65,8 @@ export default function TodayScreen() {
    * この画面が開いている間は出したままにする(タブを移るたびに消えたり出たりさせない)
    */
   const [isRestartNoticeOpen, setIsRestartNoticeOpen] = useState(false);
+  /** その日最初に開いたときの一言(plan §8)。この画面が開いている間は出したままにする */
+  const [dailyLine, setDailyLine] = useState<string | null>(null);
   const dateRef = useRef(todayKey());
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
@@ -78,6 +81,13 @@ export default function TodayScreen() {
     if (status?.showRestartNotice && status.progress.restRestartOn) {
       setIsRestartNoticeOpen(true);
       await markRestartNoticeShown(status.progress.restRestartOn);
+    } else if (status && !status.progress.graduatedOn && (await markOpenedToday())) {
+      // 数え直しのお知らせを出す日と、卒業した後は出さない
+      const { yesterday, doneDays, restsInWindow } = status.progress;
+      if (yesterday === 'done') setDailyLine(t.today.yesterdayDone(doneDays));
+      if (yesterday === 'rest') {
+        setDailyLine(t.today.yesterdayRest(Math.max(MAX_REST_DAYS - restsInWindow, 0), REST_WINDOW_DAYS));
+      }
     }
   }, []);
 
@@ -182,6 +192,13 @@ export default function TodayScreen() {
 
           {/* 卒業までの進み具合(plan §4)。ルーティンが無い人には出さない */}
           {hasRoutines && progress && <GraduationProgress progress={progress} />}
+
+          {/* その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。色を変えない */}
+          {hasRoutines && dailyLine && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {dailyLine}
+            </ThemedText>
+          )}
 
           {/* ⚠ 静かに一行だけ。「失敗」「リセット」と言わない。赤くしない(plan §4) */}
           {hasRoutines && isRestartNoticeOpen && (

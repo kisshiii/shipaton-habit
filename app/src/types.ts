@@ -47,6 +47,8 @@ export type AppState = {
   restartNoticeShownFor?: string;
   /** 評価を頼んだ日。頼むのは一生に1回だけ(plan §7-3) */
   reviewRequestedAt?: string;
+  /** 最後に Today を開いた日。その日最初に開いたときだけ昨日の一言を出す(plan §8) */
+  lastOpenedOn?: string;
   /**
    * オンボーディングを終えた日。
    * ⚠ `startedOn` で代用しないこと。全ルーティンを消した人にオンボーディングを

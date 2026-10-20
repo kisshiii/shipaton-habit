@@ -50,6 +50,8 @@ export type GraduationProgress = {
   restRestartOn: string | null;
   /** 初めて `GRADUATION_STREAK_DAYS` 日に達した日。まだなら null */
   graduatedOn: string | null;
+  /** 昨日がやり切った日か休みの日か。Day 1 の当日と、始まる前は null(plan §8 その日最初の一言) */
+  yesterday: 'done' | 'rest' | null;
 };
 
 export type GraduationStatus = {
@@ -100,9 +102,11 @@ export function computeProgress(
   let graduatedOn: string | null = null;
   /** 今の起点以降の休み。1日ずつ進むので、日付ではなく何日目かで持つ */
   let rests: number[] = [];
+  let yesterday: 'done' | 'rest' | null = null;
 
   const days = dateKeysBetween(startedOn, today);
   days.forEach((dateKey, index) => {
+    if (index === days.length - 2) yesterday = isAchieved(records[dateKey]) ? 'done' : 'rest';
     if (changes.has(dateKey)) {
       doneDays = 0;
       unbrokenDays = 0;
@@ -139,6 +143,7 @@ export function computeProgress(
     countStartedOn,
     restRestartOn,
     graduatedOn,
+    yesterday,
   };
 }
 

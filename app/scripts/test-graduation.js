@@ -220,6 +220,18 @@ const cases = [
     assert.strictEqual(progress(r, 30, [keys[15]], keys[20]).doneDays, 11);
   }],
 
+  // --- 昨日(その日最初に開いたときの一言。plan §8) ------------------------------
+  ['昨日やり切っていれば done、休みなら rest', () => {
+    const r = restsAt(10);
+    assert.strictEqual(progress(r, 10).yesterday, 'done');
+    assert.strictEqual(progress(r, 11).yesterday, 'rest');
+  }],
+  ['Day 1 の当日と、始まる前は null', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 0).yesterday, null);
+    assert.strictEqual(progress(r, 10, [], keys[20]).yesterday, null);
+  }],
+
   // --- 卒業後 ---------------------------------------------------------------
   ['卒業した後に何度休んでも、卒業日は変わらない', () => {
     const r = build((i, k) => (i < N ? done(k) : notDone(k)));

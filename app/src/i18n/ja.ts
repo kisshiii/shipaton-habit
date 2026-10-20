@@ -32,6 +32,11 @@ export const ja: Copy = {
     startsOn: (date: string) => `${date}が1日目です。それまでのチェックは、まだ数えません。`,
     rests: (used: number, max: number, window: number) => `直近${window}日の休み ${used}/${max}`,
     unbroken: (days: number) => `休まず${days}日`,
+    yesterdayDone: (days: number) => `昨日は全部やり切りました。ここまで${days}日です。`,
+    yesterdayRest: (left: number, window: number) =>
+      left > 0
+        ? `昨日は休みの日でした。直近${window}日で、あと${left}回休めます。`
+        : `昨日は休みの日でした。直近${window}日の休みは、これで使い切りです。`,
     restartNotice: (rests: number, window: number) =>
       `また1日目から。休みは直近${window}日で${rests}回まで使えます。`,
     fallbackMeta: '通知がオフのため、ここに出しています',

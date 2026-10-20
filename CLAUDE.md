@@ -143,6 +143,7 @@ type AppState = {
   celebratedMilestones?: number[]; // お祝いを出した節目。undefined は「1.0.2 で未判定」の目印
   restartNoticeShownFor?: string; // 休みで数え直したお知らせを出した、その数え直しの日
   reviewRequestedAt?: string; // 評価を頼んだ日。一生に1回だけ
+  lastOpenedOn?: string; // 最後に Today を開いた日。その日最初の一言を1日1回にするため(1.0.3)
   onboardedAt?: string; // オンボーディング完了日。startedOn で代用しないこと
 };
 

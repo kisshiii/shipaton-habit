@@ -35,6 +35,14 @@ export const en = {
       `Rest days in the last ${window}: ${used} of ${max}`,
     unbroken: (days: number) => (days === 1 ? '1 day without a rest' : `${days} days without a rest`),
     /**
+     * その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。残りが0でも警告にしない
+     */
+    yesterdayDone: (days: number) => `Yesterday: everything done. ${days} days so far.`,
+    yesterdayRest: (left: number, window: number) =>
+      left > 0
+        ? `Yesterday was a rest day. You can rest ${left} more ${left === 1 ? 'time' : 'times'} in the last ${window}.`
+        : `Yesterday was a rest day. That uses the rest days for the last ${window}.`,
+    /**
      * 休みで数え直した後、次に開いたとき1回だけ出す(plan §4)。
      * ⚠ 「failed」「reset」「lost」と言わない。静かに、事実と次のことだけ
      */

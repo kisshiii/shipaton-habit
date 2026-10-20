@@ -12,6 +12,7 @@
  */
 
 import { StyleSheet, View } from 'react-native';
+import Animated, { FadeInDown, ReduceMotion } from 'react-native-reanimated';
 
 import { ThemedText } from '@/components/themed-text';
 import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
@@ -55,7 +56,13 @@ export function GraduationProgress({ progress }: Props) {
       accessibilityRole="progressbar"
       accessibilityLabel={[dayLabel, ...details].join(', ')}
       accessibilityValue={{ min: 0, max: GRADUATION_STREAK_DAYS, now: day }}>
-      <ThemedText type="smallBold">{dayLabel}</ThemedText>
+      {/*
+        全部やり切った瞬間に数字が動く(plan §8)。key が変わると入れ替わって下から出る。
+        ⚠ 紙吹雪も音も無し。視差効果を減らす設定の人には動かさない
+      */}
+      <Animated.View key={day} entering={FadeInDown.duration(400).reduceMotion(ReduceMotion.System)}>
+        <ThemedText type="smallBold">{dayLabel}</ThemedText>
+      </Animated.View>
       {/* ⚠ 色は文字と同じ系統。accent は押せるもの・選ばれたものにだけ使う(theme.ts) */}
       <View style={[styles.track, { backgroundColor: theme.line }]}>
         <View

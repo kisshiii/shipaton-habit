@@ -103,6 +103,15 @@ export async function markMilestonesCelebrated(days: readonly number[]): Promise
   await patchAppState({ celebratedMilestones: [...celebrated].sort((a, b) => a - b) });
 }
 
+/**
+ * 今日 Today を開いたことを残し、今日初めてかどうかを返す(plan §8 その日最初の一言)。
+ */
+export async function markOpenedToday(dateKey: string = todayKey()): Promise<boolean> {
+  const isFirst = (await getAppState()).lastOpenedOn !== dateKey;
+  if (isFirst) await patchAppState({ lastOpenedOn: dateKey });
+  return isFirst;
+}
+
 /** 評価を頼んだことを残す。二度と自分からは頼まない(plan §7-3) */
 export async function markReviewRequested(dateKey: string = todayKey()): Promise<void> {
   await patchAppState({ reviewRequestedAt: dateKey });
