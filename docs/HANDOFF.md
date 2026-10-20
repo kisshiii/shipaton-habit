@@ -25,7 +25,15 @@
 
 ---
 
-## ⚠ 2026-10-14 の終わりの状態(ここから再開)
+## ⚠ 2026-10-20 の状態(ここから再開)
+
+- **1.0.2: ビルド27が成功し TestFlight へ送った**(`feat/growth`)。ウィジェットは外した(`feat/widget` に残してある)。ビルドが2回失敗した原因は `expo-store-review` 57.0.2 以降(`SceneGeometry`)→ 57.0.1 に固定済み
+  - 次: 本人が TestFlight で確認 → `docs/plan-1.0.2` → `feat/graduation-rest-days` → `feat/soft-guard` → `feat/growth` の順に main へマージ → ASC(`create-version.js 27` ほか)→ 提出
+- **1.0.3: 実装済み**(`feat/1.0.3-onboarding`、plan §8): 8段のオンボーディング、始める日を先にできる(12月だけ1月1日)、その日最初の一言、日数が動く表示。撮影用ビルドで全画面の見た目を確認済み(10/20)
+  - 撮影用ビルドに `-katsuDevScreen onboarding:<段> / share-milestone / share-words` を足した(タップ無しで画面を開く)
+  - 残り: ウィジェット(本人が Apple Developer で App Group を作ってから `feat/widget` を取り込む)、ASC の App 内イベント、12/15 ごろまでに提出
+
+## 2026-10-14 の終わりの状態(記録)
 
 - ブランチ `feat/growth`(`feat/soft-guard` の上)に plan §7 を入れた: レビュー依頼・オンボーディングの「いま届けてみる」・共有カード・ストアの名前とキーワード。**どれも実機・シミュレーターで未確認**
 - **2026-10-20: ウィジェットは 1.0.3 に回した**(コードは `feat/widget` に残してある)。下は 1.0.3 で再開するときの手順
