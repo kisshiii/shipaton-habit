@@ -29,6 +29,8 @@ export const en = {
      * ⚠ 休みを「missed」「lost」と言わない。残りが0でも警告にしない
      */
     dayOf: (day: number, goal: number) => `Day ${day} / ${goal}`,
+    /** 始める日を先にした人(plan §8)。その日まで日数を出さない */
+    startsOn: (date: string) => `Day 1 is ${date}. Checks before then do not count yet.`,
     rests: (used: number, max: number, window: number) =>
       `Rest days in the last ${window}: ${used} of ${max}`,
     unbroken: (days: number) => (days === 1 ? '1 day without a rest' : `${days} days without a rest`),

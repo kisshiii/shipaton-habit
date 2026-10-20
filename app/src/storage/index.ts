@@ -85,6 +85,14 @@ export async function markGraduated(dateKey: string = todayKey()): Promise<void>
   await patchAppState({ graduatedAt: dateKey });
 }
 
+/**
+ * Day 1 を選んだ日にする(オンボーディングの「いつから始めるか」。plan §8)。
+ * ⚠ オンボーディングからだけ呼ぶ。始めた後に動かすと、数えた日がずれる
+ */
+export async function setStartedOnForOnboarding(dateKey: string): Promise<void> {
+  await patchAppState({ startedOn: dateKey });
+}
+
 export async function markOnboarded(dateKey: string = todayKey()): Promise<void> {
   await patchAppState({ onboardedAt: dateKey });
 }

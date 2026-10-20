@@ -30,6 +30,11 @@ import {
 import type { DailyRecord } from '@/types';
 
 export type GraduationProgress = {
+  /**
+   * Day 1 が来ているか。オンボーディングで「明日から」「1月1日から」を選んだ人は、
+   * その日まで false(plan §8)。始まる前は日数も休みも数えない
+   */
+  hasStarted: boolean;
   /** 今の起点からやり切った日の数(今日をやり切っていれば今日も含む) */
   doneDays: number;
   /** 今の起点以降で、今日を含む直近 `REST_WINDOW_DAYS` 日の休みの回数。今日は休みに数えない */
@@ -127,6 +132,7 @@ export function computeProgress(
 
   const todayIndex = days.length - 1;
   return {
+    hasStarted: startedOn <= today,
     doneDays,
     restsInWindow: rests.filter((day) => todayIndex - day < REST_WINDOW_DAYS).length,
     unbrokenDays,

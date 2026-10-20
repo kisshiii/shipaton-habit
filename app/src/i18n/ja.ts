@@ -29,6 +29,7 @@ export const ja: Copy = {
     progress: (done: number, total: number) => `${total}件のうち${done}件`,
     allDone: '今日の分は、終わりです。',
     dayOf: (day: number, goal: number) => `${goal}日のうち${day}日`,
+    startsOn: (date: string) => `${date}が1日目です。それまでのチェックは、まだ数えません。`,
     rests: (used: number, max: number, window: number) => `直近${window}日の休み ${used}/${max}`,
     unbroken: (days: number) => `休まず${days}日`,
     restartNotice: (rests: number, window: number) =>

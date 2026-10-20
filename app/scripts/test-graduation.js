@@ -201,6 +201,25 @@ const cases = [
     assert.strictEqual(progress(r, 30, ['2025-12-31', keys[40]]).doneDays, 31);
   }],
 
+  // --- 始める日を先にした(plan §8) ---------------------------------------------
+  ['Day 1 が今日より後なら、まだ始まっていない(0日・休み0回)', () => {
+    const r = build((i, k) => done(k));
+    const p = progress(r, 10, [], keys[20]);
+    assert.strictEqual(p.hasStarted, false);
+    assert.strictEqual(p.doneDays, 0);
+    assert.strictEqual(p.restsInWindow, 0);
+    assert.strictEqual(p.graduatedOn, null);
+  }],
+  ['Day 1 の当日からは始まっている', () => {
+    const r = build((i, k) => (i < 20 ? notDone(k) : done(k)));
+    assert.strictEqual(progress(r, 20, [], keys[20]).hasStarted, true);
+    assert.strictEqual(progress(r, 20, [], keys[20]).doneDays, 1);
+  }],
+  ['始まる前のルーティンの変更は、数え直しにならない', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 30, [keys[15]], keys[20]).doneDays, 11);
+  }],
+
   // --- 卒業後 ---------------------------------------------------------------
   ['卒業した後に何度休んでも、卒業日は変わらない', () => {
     const r = build((i, k) => (i < N ? done(k) : notDone(k)));

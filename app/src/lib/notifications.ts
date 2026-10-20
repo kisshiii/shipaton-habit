@@ -17,7 +17,7 @@ import * as Notifications from 'expo-notifications';
 import { IOS_SCHEDULED_LIMIT, SCHEDULE_DAYS_AHEAD } from '@/constants/notifications';
 import { toDateKey } from '@/lib/date';
 import { isProCached } from '@/lib/purchases';
-import { getDailyRecords, getMessages, getRoutines } from '@/storage';
+import { getAppState, getDailyRecords, getMessages, getRoutines } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
 
 /** 通知に載せるデータ。**ユーザーの本文をここに入れないこと** */
@@ -126,6 +126,13 @@ function pickIndex(seed: string, count: number): number {
   return Math.abs(hash) % count;
 }
 
+/** `startedOn`("2027-01-01")をその日の 0:00 の Date にする。無ければ null */
+function parseStartDay(startedOn: string | undefined): Date | null {
+  const [year, month, day] = (startedOn ?? '').split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 /** その日のその時刻を表す Date を作る */
 function occurrenceAt(day: Date, time: string): Date {
   const [hours, minutes] = time.split(':').map(Number);
@@ -147,12 +154,17 @@ async function runSync(): Promise<number> {
   const isPaid = await isProCached();
 
   // 記録は1回だけ読む。日ごとに読むと同じキーを7回パースすることになる
-  const records = await getDailyRecords();
+  const [records, appState] = await Promise.all([getDailyRecords(), getAppState()]);
   const now = new Date();
   const planned: Notifications.NotificationRequestInput[] = [];
 
+  // 始める日を先にした人(「1月1日から」など。plan §8)には、その日より前に送らない。
+  // 予約はその日から数える ── 年末に入れてそのまま開かなくても、1月1日の分が予約されている
+  const startDay = parseStartDay(appState.startedOn);
+  const firstDay = startDay && startDay.getTime() > now.getTime() ? startDay : now;
+
   for (let offset = 0; offset < SCHEDULE_DAYS_AHEAD; offset += 1) {
-    const day = new Date(now);
+    const day = new Date(firstDay);
     day.setDate(day.getDate() + offset);
     const completedIds = records[toDateKey(day)]?.completedIds ?? [];
 

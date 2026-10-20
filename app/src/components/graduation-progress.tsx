@@ -18,6 +18,7 @@ import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/const
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
+import { formatMonthDay } from '@/lib/date';
 import type { GraduationProgress as Progress } from '@/lib/graduation';
 
 type Props = {
@@ -26,6 +27,14 @@ type Props = {
 
 export function GraduationProgress({ progress }: Props) {
   const theme = useTheme();
+  // 始める日を先にした人は、その日まで数えない(plan §8)
+  if (!progress.hasStarted) {
+    return (
+      <ThemedText type="smallBold" style={styles.container}>
+        {t.today.startsOn(formatMonthDay(progress.countStartedOn))}
+      </ThemedText>
+    );
+  }
   const isGraduated = progress.graduatedOn !== null;
   const day = isGraduated ? GRADUATION_STREAK_DAYS : Math.min(progress.doneDays, GRADUATION_STREAK_DAYS);
   const ratio = day / GRADUATION_STREAK_DAYS;
