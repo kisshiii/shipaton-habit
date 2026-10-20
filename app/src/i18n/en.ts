@@ -226,6 +226,34 @@ export const en = {
       'You are about to write down what you want said to you on the days you would rather not show up.',
     introNote: 'This app is designed for you to quit it. If it works, you stop needing it.',
     start: 'Start',
+    /**
+     * 何を変えたいか(plan §8)。選んだものの例を次の段に入れておく。
+     * ⚠ これはルーティンの例。言葉の例はアプリが用意しない(spec §1)
+     */
+    goalTitle: 'What do you want to change?',
+    goalBody: 'Pick one. You can rewrite everything on the next screen.',
+    goals: [
+      { label: 'Become a morning person', time: '06:30', title: 'After I wake up, drink a glass of water' },
+      { label: 'Move every day', time: '07:30', title: 'After breakfast, walk for 10 minutes' },
+      { label: 'Go to bed earlier', time: '22:30', title: 'At 22:30, put my phone in another room' },
+      { label: 'Learn every day', time: '21:00', title: 'After dinner, study for 10 minutes' },
+      { label: 'I will decide', time: '07:00', title: '' },
+    ],
+    /** 実行意図(「〜したら、〜する」)と、小さく始めること(plan §8) */
+    ifThen: 'Write it as “After I…, I will…”. Make it small enough for your worst day.',
+    startTitle: 'When is Day 1?',
+    startBody: 'Starting on a clean line helps. Pick the day you begin.',
+    startToday: 'Today',
+    startTomorrow: 'Tomorrow',
+    /** 12月の間だけ出す */
+    startNewYear: 'January 1',
+    ruleTitle: 'How the 66 days work',
+    ruleBody: (days: number, rests: number, window: number) =>
+      `Every day you finish everything counts. At ${days}, you graduate. You can rest up to ${rests} days in any ${window} without starting over. Missing a day is not the end.`,
+    /** 封をする(plan §8)。⚠ 約束の相手はアプリではなく未来の自分 */
+    sealEyebrow: 'To me, on the day I would rather not',
+    sealHold: 'Hold to seal',
+    sealNote: 'This is a promise to yourself, not to this app.',
     routineTitle: 'One thing, every day',
     routineBody: 'Something with a time on it, that repeats. Five minutes to an hour.',
     wordsTitle: 'Now write the hard part',

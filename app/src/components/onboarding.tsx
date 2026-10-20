@@ -19,22 +19,30 @@
  *
  * 見た目(2026-09-16 デザイン方針):
  *   - 最初の1枚は紺。起動画面と同じ色・同じ位置の「喝」から切れ目なく入る
- *   - 入力の4ステップは紙の色に戻し、上に目盛り、主ボタンは画面下に固定する
+ *   - 入力のステップは紙の色に戻し、上に目盛り、主ボタンは画面下に固定する
+ *   - 封をする段(1.0.3)も紺。約束の場面なので節目の色を使う
+ *
+ * 流れ(1.0.3、plan §8):
+ *   何を変えたいか → ルーティン(「〜したら、〜する」)→ いつから始めるか → 言葉
+ *   → 66日のしくみ → 封をする → 通知 → 完了(試しに届ける)→ 課金画面
  */
 
 import { useState } from 'react';
 import {
   Alert,
+  Animated,
   Image,
   KeyboardAvoidingView,
   Modal,
   Platform,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
   View,
 } from 'react-native';
+import * as Haptics from 'expo-haptics';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -44,6 +52,7 @@ import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimeField } from '@/components/time-field';
+import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
 import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { Ceremony, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -55,13 +64,43 @@ import {
 } from '@/lib/notifications';
 import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import { attacksThePerson } from '@/lib/soft-guard';
+import { toDateKey } from '@/lib/date';
 import { countChars, truncateChars } from '@/lib/text';
-import { addMessage, addRoutine, markOnboarded, SelfHarmTextError } from '@/storage';
+import {
+  addMessage,
+  addRoutine,
+  markOnboarded,
+  SelfHarmTextError,
+  setStartedOnForOnboarding,
+} from '@/storage';
 
-type Step = 'intro' | 'routine' | 'words' | 'notifications' | 'done';
+type Step =
+  | 'intro'
+  | 'goal'
+  | 'routine'
+  | 'start'
+  | 'words'
+  | 'rule'
+  | 'seal'
+  | 'notifications'
+  | 'done';
 
 /** 目盛りに出す手順。⚠ 順番に意味があるので番号(位置)を見せてよい */
-const STEPS: Step[] = ['routine', 'words', 'notifications', 'done'];
+const STEPS: Step[] = ['goal', 'routine', 'start', 'words', 'rule', 'seal', 'notifications', 'done'];
+
+/** 始める日の選択肢。1月1日は12月の間だけ出す(フレッシュスタート効果。plan §8) */
+function startChoices(now: Date = new Date()): { label: string; dateKey: string }[] {
+  const tomorrow = new Date(now);
+  tomorrow.setDate(now.getDate() + 1);
+  const choices = [
+    { label: t.onboarding.startToday, dateKey: toDateKey(now) },
+    { label: t.onboarding.startTomorrow, dateKey: toDateKey(tomorrow) },
+  ];
+  if (now.getMonth() === 11) {
+    choices.push({ label: t.onboarding.startNewYear, dateKey: toDateKey(new Date(now.getFullYear() + 1, 0, 1)) });
+  }
+  return choices;
+}
 
 /** 起動画面の画像幅(app.json の expo-splash-screen と揃える) */
 const SPLASH_IMAGE_WIDTH = 200;
@@ -99,9 +138,9 @@ export function Onboarding({ onFinished }: Props) {
       return;
     }
     setError(null);
-    // これが Day 1 の起点になる
+    // ここで Day 1 が今日になる。次の段で別の日を選べば、そちらに置き直す
     await addRoutine({ time, title });
-    goTo('words');
+    goTo('start');
   };
 
   const saveWords = async () => {
@@ -115,7 +154,7 @@ export function Onboarding({ onFinished }: Props) {
       }
       throw caught;
     }
-    goTo('notifications');
+    goTo('rule');
   };
 
   const handleSaveWords = async () => {
@@ -139,6 +178,18 @@ export function Onboarding({ onFinished }: Props) {
       return;
     }
     await saveWords();
+  };
+
+  // 何を変えたいか: 例を次の段に入れておく。答えそのものは保存しない
+  const handlePickGoal = (goal: { time: string; title: string }) => {
+    setTime(goal.time);
+    setTitle(goal.title);
+    goTo('routine');
+  };
+
+  const handlePickStart = async (dateKey: string) => {
+    await setStartedOnForOnboarding(dateKey);
+    goTo('words');
   };
 
   const handleAskNotifications = async () => {
@@ -165,7 +216,9 @@ export function Onboarding({ onFinished }: Props) {
       {/* ⚠ この provider を外すと先頭の文字がノッチに潜る。上のコメントを読むこと */}
       <SafeAreaProvider>
         {step === 'intro' ? (
-          <Intro onStart={() => goTo('routine')} />
+          <Intro onStart={() => goTo('goal')} />
+        ) : step === 'seal' ? (
+          <Seal words={words.trim()} onSealed={() => goTo('notifications')} />
         ) : (
           <ThemedView style={styles.fill}>
             <StatusBar style="auto" />
@@ -192,11 +245,32 @@ export function Onboarding({ onFinished }: Props) {
                   contentContainerStyle={styles.content}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode="on-drag">
+                  {step === 'goal' && (
+                    <>
+                      <ThemedText type="display">{t.onboarding.goalTitle}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.onboarding.goalBody}
+                      </ThemedText>
+                      {t.onboarding.goals.map((goal) => (
+                        <Button
+                          key={goal.label}
+                          label={goal.label}
+                          variant="secondary"
+                          onPress={() => handlePickGoal(goal)}
+                        />
+                      ))}
+                    </>
+                  )}
+
                   {step === 'routine' && (
                     <>
                       <ThemedText type="display">{t.onboarding.routineTitle}</ThemedText>
                       <ThemedText type="small" themeColor="textSecondary">
                         {t.onboarding.routineBody}
+                      </ThemedText>
+                      {/* 「〜したら、〜する」と小さく始めること(plan §8) */}
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.onboarding.ifThen}
                       </ThemedText>
                       {/* 毎日の習慣の案内(plan §2)。手順は増やさず、一言添えるだけ */}
                       <ThemedText type="small" themeColor="textSecondary">
@@ -215,6 +289,32 @@ export function Onboarding({ onFinished }: Props) {
                         maxLength={40}
                         style={inputStyle}
                       />
+                    </>
+                  )}
+
+                  {step === 'start' && (
+                    <>
+                      <ThemedText type="display">{t.onboarding.startTitle}</ThemedText>
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.onboarding.startBody}
+                      </ThemedText>
+                      {startChoices().map((choice) => (
+                        <Button
+                          key={choice.dateKey}
+                          label={choice.label}
+                          variant="secondary"
+                          onPress={() => handlePickStart(choice.dateKey)}
+                        />
+                      ))}
+                    </>
+                  )}
+
+                  {step === 'rule' && (
+                    <>
+                      <ThemedText type="display">{t.onboarding.ruleTitle}</ThemedText>
+                      <ThemedText>
+                        {t.onboarding.ruleBody(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)}
+                      </ThemedText>
                     </>
                   )}
 
@@ -299,6 +399,9 @@ export function Onboarding({ onFinished }: Props) {
                   {step === 'words' && (
                     <Button label={t.onboarding.next} onPress={handleSaveWords} busy={isChecking} />
                   )}
+                  {step === 'rule' && (
+                    <Button label={t.onboarding.next} onPress={() => goTo('seal')} />
+                  )}
                   {step === 'notifications' && (
                     <>
                       <Button label={t.onboarding.allow} onPress={handleAskNotifications} />
@@ -363,9 +466,107 @@ function Intro({ onStart }: { onStart: () => void }) {
   );
 }
 
+/**
+ * 封をする(plan §8)。書いた言葉を手紙として見せ、長押しで封をする。
+ * ⚠ 約束の相手はアプリではなく未来の自分。署名や名前は求めない。保存するものも無い
+ * ⚠ 長押しの間だけ下の線が伸びる。指を離せば戻る。急かさない
+ */
+function Seal({ words, onSealed }: { words: string; onSealed: () => void }) {
+  // ⚠ useRef にすると描画中に ref を読むことになる(lint)。値は作り直さないので state で持つ
+  const [fill] = useState(() => new Animated.Value(0));
+
+  const handlePressIn = () => {
+    Animated.timing(fill, { toValue: 1, duration: SEAL_HOLD_MS, useNativeDriver: false }).start();
+  };
+  const handlePressOut = () => {
+    Animated.timing(fill, { toValue: 0, duration: 200, useNativeDriver: false }).start();
+  };
+  const handleSealed = () => {
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+    onSealed();
+  };
+
+  return (
+    <View style={[styles.fill, { backgroundColor: Ceremony.navy }]}>
+      <StatusBar style="light" />
+      <SafeAreaView style={styles.fill} edges={['top', 'bottom']}>
+        <ScrollView contentContainerStyle={styles.sealContent}>
+          <Text style={styles.sealEyebrow}>{t.onboarding.sealEyebrow}</Text>
+          <Text style={styles.sealWords}>{words}</Text>
+        </ScrollView>
+        <View style={styles.footer}>
+          <Pressable
+            onPressIn={handlePressIn}
+            onPressOut={handlePressOut}
+            onLongPress={handleSealed}
+            delayLongPress={SEAL_HOLD_MS}
+            accessibilityRole="button"
+            accessibilityLabel={t.onboarding.sealHold}
+            // VoiceOver では長押しが難しいので、ダブルタップでも封ができるようにする
+            accessibilityActions={[{ name: 'activate' }]}
+            onAccessibilityAction={handleSealed}
+            style={styles.sealButton}>
+            <Text style={styles.sealButtonText}>{t.onboarding.sealHold}</Text>
+            <Animated.View
+              style={[
+                styles.sealFill,
+                { width: fill.interpolate({ inputRange: [0, 1], outputRange: ['0%', '100%'] }) },
+              ]}
+            />
+          </Pressable>
+          <Text style={styles.introNote}>{t.onboarding.sealNote}</Text>
+        </View>
+      </SafeAreaView>
+    </View>
+  );
+}
+
+/** 封をするまでの長押しの長さ */
+const SEAL_HOLD_MS = 1200;
+
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
+  },
+  sealContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+    gap: Spacing.three,
+    padding: Spacing.five,
+  },
+  sealEyebrow: {
+    color: Ceremony.creamSoft,
+    fontSize: 13,
+    fontWeight: 600,
+    letterSpacing: 1,
+  },
+  sealWords: {
+    color: Ceremony.cream,
+    fontFamily: Fonts?.voice,
+    fontSize: 26,
+    lineHeight: 40,
+    fontWeight: 600,
+  },
+  sealButton: {
+    minHeight: 52,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: Radius.control,
+    borderWidth: 1,
+    borderColor: Ceremony.creamSoft,
+    overflow: 'hidden',
+  },
+  sealButtonText: {
+    color: Ceremony.cream,
+    fontSize: 16,
+    fontWeight: 600,
+  },
+  sealFill: {
+    position: 'absolute',
+    left: 0,
+    bottom: 0,
+    height: 3,
+    backgroundColor: Ceremony.cream,
   },
   progress: {
     flexDirection: 'row',
