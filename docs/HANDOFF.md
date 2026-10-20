@@ -27,8 +27,9 @@
 
 ## ⚠ 2026-10-14 の終わりの状態(ここから再開)
 
-- ブランチ `feat/growth`(`feat/soft-guard` の上)に plan §7 を全部入れた: レビュー依頼・オンボーディングの「いま届けてみる」・共有カード・ストアの名前とキーワード・ウィジェット。**どれも実機・シミュレーターで未確認**
-- **ビルド24が止まっている。**ウィジェットの App Group を EAS が Apple に設定できなかった(`Failed to patch capabilities: APP_GROUPS`)。**本人が Apple Developer で設定する:**
+- ブランチ `feat/growth`(`feat/soft-guard` の上)に plan §7 を入れた: レビュー依頼・オンボーディングの「いま届けてみる」・共有カード・ストアの名前とキーワード。**どれも実機・シミュレーターで未確認**
+- **2026-10-20: ウィジェットは 1.0.3 に回した**(コードは `feat/widget` に残してある)。下は 1.0.3 で再開するときの手順
+- (1.0.3 で)**ウィジェットのビルドは止まる。**ウィジェットの App Group を EAS が Apple に設定できなかった(`Failed to patch capabilities: APP_GROUPS`)。**本人が Apple Developer で設定する:**
   1. App Group `group.com.kisshi.gradhabit` を作る(https://developer.apple.com/account/resources/identifiers/list/applicationGroup)
   2. `com.kisshi.gradhabit` と `com.kisshi.gradhabit.ExpoWidgetsTarget` の両方で App Groups を有効にし、1 を選ぶ
   3. その後 `cd app && EXPO_NO_CAPABILITY_SYNC=1 npx eas-cli build -p ios --profile production --auto-submit --non-interactive --no-wait`

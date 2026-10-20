@@ -34,7 +34,6 @@ import {
   type GraduationProgress as Progress,
 } from '@/lib/graduation';
 import { requestReviewOnce } from '@/lib/review';
-import { syncWidget } from '@/lib/widget';
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -74,8 +73,6 @@ export default function TodayScreen() {
   const checkGraduation = useCallback(async () => {
     const status = await evaluateGraduation();
     setProgress(status?.progress ?? null);
-    // ホーム画面・ロック画面のウィジェットも同じ数字にそろえる(plan §7-6)
-    syncWidget();
     if (status?.shouldOffer) setIsGraduationOpen(true);
     if (status?.milestone) setMilestone(status.milestone);
     if (status?.showRestartNotice && status.progress.restRestartOn) {
