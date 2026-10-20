@@ -195,13 +195,15 @@ export const ja: Copy = {
     startTomorrow: '明日から',
     startNewYear: '1月1日から',
     ruleTitle: '66日のしくみ',
-    ruleBody: (days: number, rests: number, window: number) =>
-      `その日のルーティンをやり切った日を数えて、${days}日で卒業です。休みは直近${window}日で${rests}回まで。休んでも、それまでの日数はなくなりません。1日休んでも、終わりではありません。`,
+    ruleLines: (days: number, rests: number, window: number) => [
+      `その日のルーティンをやり切った日を数えて、${days}日で卒業です。`,
+      `休みは直近${window}日で${rests}回まで。休んでも、それまでの日数はなくなりません。`,
+      '1日休んでも、終わりではありません。',
+    ],
     sealEyebrow: 'やりたくない日の自分へ',
     sealHold: '長押しで封をする',
     sealNote: 'これはこのアプリとではなく、自分との約束です。',
     routineTitle: '毎日ひとつ、同じ時刻に',
-    routineBody: '時刻が決まっていて、毎日繰り返すこと。5分から1時間くらいのもの。',
     wordsTitle: 'ここからが本題です',
     wordsBody:
       '時刻を過ぎてもやっていないとき、これが届きます。こちらが用意した言葉ではなく、あなたの言葉が。',

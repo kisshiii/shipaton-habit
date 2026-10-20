@@ -273,10 +273,8 @@ export function Onboarding({ onFinished, preview }: Props) {
                   {step === 'routine' && (
                     <>
                       <ThemedText type="display">{t.onboarding.routineTitle}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {t.onboarding.routineBody}
-                      </ThemedText>
-                      {/* 「〜したら、〜する」と小さく始めること(plan §8) */}
+                      {/* 「〜したら、〜する」と小さく始めること(plan §8)。
+                          ⚠ 説明はこの3つまで。1.0.3 で前からの説明文を外した(4段落は読まれない) */}
                       <ThemedText type="small" themeColor="textSecondary">
                         {t.onboarding.ifThen}
                       </ThemedText>
@@ -320,9 +318,11 @@ export function Onboarding({ onFinished, preview }: Props) {
                   {step === 'rule' && (
                     <>
                       <ThemedText type="display">{t.onboarding.ruleTitle}</ThemedText>
-                      <ThemedText>
-                        {t.onboarding.ruleBody(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)}
-                      </ThemedText>
+                      {t.onboarding
+                        .ruleLines(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)
+                        .map((line) => (
+                          <ThemedText key={line}>{line}</ThemedText>
+                        ))}
                     </>
                   )}
 

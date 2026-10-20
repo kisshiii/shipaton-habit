@@ -256,14 +256,17 @@ export const en = {
     /** 12月の間だけ出す */
     startNewYear: 'January 1',
     ruleTitle: 'How the 66 days work',
-    ruleBody: (days: number, rests: number, window: number) =>
-      `Every day you finish everything counts. At ${days}, you graduate. You can rest up to ${rests} days in any ${window} without starting over. Missing a day is not the end.`,
+    /** 3行に分けて見せる。1つの段落にすると読まれない */
+    ruleLines: (days: number, rests: number, window: number) => [
+      `Every day you finish everything counts. At ${days}, you graduate.`,
+      `You can rest up to ${rests} days in any ${window}. Your count stays.`,
+      'Missing a day is not the end.',
+    ],
     /** 封をする(plan §8)。⚠ 約束の相手はアプリではなく未来の自分 */
     sealEyebrow: 'To me, on the day I would rather not',
     sealHold: 'Hold to seal',
     sealNote: 'This is a promise to yourself, not to this app.',
     routineTitle: 'One thing, every day',
-    routineBody: 'Something with a time on it, that repeats. Five minutes to an hour.',
     wordsTitle: 'Now write the hard part',
     wordsBody:
       'This is what arrives when the time passes and you have not done it. Not our words. Yours.',
