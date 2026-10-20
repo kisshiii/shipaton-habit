@@ -31,6 +31,10 @@ Notifications.setNotificationHandler({
 const devSeedArgument: unknown =
   __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevSeed') : undefined;
 
+/** ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevScreen <画面>`(`src/dev/dev-screen.tsx`) */
+const devScreenArgument: unknown =
+  __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevScreen') : undefined;
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -118,6 +122,15 @@ export default function TabLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AppTabs />
       {needsOnboarding === true && <Onboarding onFinished={handleOnboarded} />}
+      {(__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') &&
+        typeof devScreenArgument === 'string' &&
+        (() => {
+          // import にすると本番バンドルにも入る。ここは require でなければならない
+          const { DevScreen } =
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            require('@/dev/dev-screen') as typeof import('@/dev/dev-screen');
+          return <DevScreen screen={devScreenArgument} />;
+        })()}
     </ThemeProvider>
   );
 }

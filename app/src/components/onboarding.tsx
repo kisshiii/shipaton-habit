@@ -105,22 +105,30 @@ function startChoices(now: Date = new Date()): { label: string; dateKey: string 
 /** 起動画面の画像幅(app.json の expo-splash-screen と揃える) */
 const SPLASH_IMAGE_WIDTH = 200;
 
+export type OnboardingStep = Step;
+
 type Props = {
   onFinished: () => void;
+  /**
+   * ⚠ 撮影用・開発ビルド専用(`src/dev/dev-screen.tsx`)。途中の段から始め、入力済みの値を入れておく。
+   *   本番では渡さない
+   */
+  preview?: { step: Step; title: string; words: string };
 };
 
-export function Onboarding({ onFinished }: Props) {
+export function Onboarding({ onFinished, preview }: Props) {
   const theme = useTheme();
-  const [step, setStep] = useState<Step>('intro');
+  const [step, setStep] = useState<Step>(preview?.step ?? 'intro');
   const [time, setTime] = useState('07:00');
-  const [title, setTitle] = useState('');
-  const [words, setWords] = useState('');
+  const [title, setTitle] = useState(preview?.title ?? '');
+  const [words, setWords] = useState(preview?.words ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isBlocked, setIsBlocked] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   /** 端末内の判定を待っている間(最大3秒)。二度押しで二重に保存させない */
   const [isChecking, setIsChecking] = useState(false);
-  const [isAllowed, setIsAllowed] = useState(false);
+  // 撮影用に完了の段から始めたときは、許可済みとして「試しに届ける」を見せる
+  const [isAllowed, setIsAllowed] = useState(preview?.step === 'done');
   const [isTrialSent, setIsTrialSent] = useState(false);
 
   // 前のステップで出したエラーを引きずらない
