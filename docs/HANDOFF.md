@@ -25,7 +25,15 @@
 
 ---
 
-## ⚠ 2026-10-20 の状態(ここから再開)
+## ⚠ 2026-10-27 の状態(ここから再開)
+
+- **1.0.2 を審査に出した**(`WAITING_FOR_REVIEW`、ビルド27)。main に入れて GitHub に push 済み(`f3aa2f1`)
+  - ASC の鍵: `~/Desktop/key/Apple/AuthKey_WL5MG8758W.p8`(鍵ID `WL5MG8758W`)。Issuer ID は本人に聞く。コマンドごとに3つの環境変数を付けて実行する(セッションをまたいで `export` は残らない)
+  - ⚠ スクリーンショットが Apple 側で「処理待ち(`UPLOAD_COMPLETE`)」のまま止まって見えることがある。**消して上げ直さず、待つ**(10/27 は上げ直しを繰り返して遠回りした。30分ほどで全部通った)
+  - TestFlight でプラン名が英語になるのは Sandbox の都合。日本の App Store には日本語名(まず一歩 / 本気で / オールイン)が出ていることを確認済み
+- **1.0.3**: 下の 10/20 の状態から変わらず。残りは本人の作業(App Group、App 内イベント)と、12/15 ごろの提出
+
+## 2026-10-20 の状態(記録)
 
 - **1.0.2: ビルド27が成功し TestFlight へ送った**(`feat/growth`)。ウィジェットは外した(`feat/widget` に残してある)。ビルドが2回失敗した原因は `expo-store-review` 57.0.2 以降(`SceneGeometry`)→ 57.0.1 に固定済み
   - 次: 本人が TestFlight で確認 → `docs/plan-1.0.2` → `feat/graduation-rest-days` → `feat/soft-guard` → `feat/growth` の順に main へマージ → ASC(`create-version.js 27` ほか)→ 提出
