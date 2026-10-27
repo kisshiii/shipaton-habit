@@ -433,8 +433,9 @@ certificate and shows you where to cancel.
 
 Version 1.0.3 is built for the new year. Onboarding now asks when Day 1
 should be, and in December you can choose January 1, so people who
-install during the holidays start on New Year's Day. Each morning the app
-shows how yesterday went and how many days you have. There are no
+install during the holidays start on New Year's Day. The first time you
+open the app each day, it says how yesterday went and how many days you
+have. There are no
 streaks to lose: two rest days a week are built in, and nothing is ever
 called a failure.
 
@@ -449,9 +450,11 @@ Made by one developer in Japan. English and Japanese.
 **補足(Helpful details):**
 
 ```
-Accessibility: VoiceOver labels on every control, Dynamic Type throughout,
-and reduced motion is respected. The long-press "seal" step in onboarding
-can also be done with a VoiceOver double tap.
+Accessibility: the Today list reads each routine, its time and whether it
+is done to VoiceOver, the progress line is exposed as a progress value,
+and the day-count animation follows the Reduce Motion setting. The
+long-press "seal" step in onboarding can also be done with a VoiceOver
+double tap.
 ```
 
 ⚠ 推薦は Apple が選ぶもので、出しても取り上げられるとは限らない。費用はかからない。
