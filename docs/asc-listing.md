@@ -382,6 +382,80 @@ REST API なら:
 
 **⚠ 1.0.2 では 1(Today)も撮り直す。**上部に `Day 23 / 66` と休みの残りが出るようになった(plan §5)。数字は 20〜40 日くらいの、途中だと分かる値にする。
 
+## 1.0.3(年始)向け: App 内イベントとフィーチャーの推薦 **【暫定】2026-10-27**(plan §8)
+
+**⚠ アプリの更新ではなく、ストア側の宣伝。**どちらも ASC で本人が作る(下書きはここが原本)。
+
+### 日程
+
+| いつ | 何を |
+|---|---|
+| **11月中** | **フィーチャーの推薦を出す。**Apple の決まりで、載せてほしい日の**3週間以上前**が必須。年始の特集は早く埋まるので、早いほど良い |
+| 12月10日ごろ | App 内イベントを審査に出す(アプリ本体とは別に審査がある)。承認されたら推薦に添付する |
+| 12月15日ごろ | 1.0.3 を審査に出す(「1月1日から始める」が入った版) |
+| 12月18日ごろ〜 | App 内イベントの予告を出す(始まる前から App Store に載せられる) |
+| 1月1日〜1月31日 | イベント期間 |
+
+### App 内イベント
+
+- **種類(バッジ):** Challenge
+- **目的:** 新しいユーザーを呼び込む
+- **期間:** 2027年1月1日 0:00 〜 1月31日(各地の時刻)。⚠ 最長31日(公式では未確認。ASC の画面で確かめる)
+- **文字数の上限:** 名前30 / 短い説明50 / 長い説明120(公式では未確認。ASC の画面で確かめる)
+- **画像:** カード 16:9(1920×1080 以上)と、詳細ページ 9:16。**まだ作っていない**(紺の地に「Day 1 / 66」と「1月1日」。節目の画面と同じ見た目で作る予定)
+
+| 欄 | 英語 | 日本語 |
+|---|---|---|
+| 名前 | `66 Days, Starting January 1`(27) | `1月1日から、66日`(10) |
+| 短い説明 | `Pick one habit. Day 1 is New Year's Day.`(40) | `ひとつ決めて、元日を1日目に。`(15) |
+| 長い説明 | `Pick a daily routine and write what you need to hear on the days you'd rather not. Rest days included.`(102) | `毎日のルーティンと、やりたくない日の自分に届ける言葉を決めて、元日から始めます。休める日つき。66日で卒業です。`(56) |
+
+⚠ 「Challenge」と言っても、競争やランキングにはしない。比べる相手はいない(spec §1)。
+
+### フィーチャーの推薦(Featuring Nominations)
+
+- **種類:** アプリの機能強化(App Enhancements)
+- **名前:** `KATSU 1.0.3 — Start a habit on January 1`
+- **載せてほしい時期:** 2026年12月26日 〜 2027年1月10日
+- **地域・言語:** アプリの配信地域すべて / 英語・日本語
+- **App 内イベント:** 承認されたら「1月1日から、66日」を添付する
+- **補足資料(任意、URL 5つまで):** TestFlight の公開リンク、プレスキット(あれば)
+
+**説明(英語。編集部は英語で読む):**
+
+```
+KATSU is a habit app designed to be quit. You pick up to three daily
+routines and write, in your own words, what you want to hear on the days
+you'd rather not. When the time passes and a routine isn't done, your own
+sentence arrives as a notification. Do everything on your list on 66 days
+(two rest days allowed in any seven) and you graduate: KATSU hands you a
+certificate and shows you where to cancel.
+
+Version 1.0.3 is built for the new year. Onboarding now asks when Day 1
+should be, and in December you can choose January 1, so people who
+install during the holidays start on New Year's Day. Each morning the app
+shows how yesterday went and how many days you have. There are no
+streaks to lose: two rest days a week are built in, and nothing is ever
+called a failure.
+
+Privacy: there is no server. What people write never leaves the device.
+A second, gentler safety check runs on device with Apple's Foundation
+Models to suggest rewriting words that attack the person rather than the
+skipped action; it never blocks saving and never sends text anywhere.
+
+Made by one developer in Japan. English and Japanese.
+```
+
+**補足(Helpful details):**
+
+```
+Accessibility: VoiceOver labels on every control, Dynamic Type throughout,
+and reduced motion is respected. The long-press "seal" step in onboarding
+can also be done with a VoiceOver double tap.
+```
+
+⚠ 推薦は Apple が選ぶもので、出しても取り上げられるとは限らない。費用はかからない。
+
 ## 1.0.2 の「このバージョンの新機能」 **【暫定】2026-10-13**
 
 **⚠ 説明文・プロモーションテキストも上の版に差し替えること。**新機能の欄では研究に触れない(9/22 と同じ理由)。
