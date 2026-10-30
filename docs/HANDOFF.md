@@ -25,7 +25,18 @@
 
 ---
 
-## ⚠ 2026-10-27 の状態(ここから再開)
+## ⚠ 2026-10-30 の状態(ここから再開)
+
+- **公開中: 1.0.2**(10/28 公開)
+- **1.0.3**(`feat/1.0.3-onboarding`、version 1.0.3): 実装はほぼ完了。**ビルド29が TestFlight に送られた**(新しいオンボーディング、昨日の一言、1日目のお祝いと共有カード、通知のボタン「やった ✓」「10分後にもう一度」、ホーム画面のクイックアクション)
+  - 次: 本人が TestFlight で確認(特に「10分後にもう一度」がアプリを開かずに動くか)→ main にマージ → 提出(11月中旬〜下旬)
+  - 1.0.3 を出すときにキーワード欄を差し替える案: `docs/aso/custom-product-pages.md` §1
+- **ASC に下書きを作った(未提出)**: App 内イベント「1月1日から、66日」(`app/scripts/asc/in-app-event.js`)、フィーチャーの推薦(`app/scripts/asc/nomination.js`)。本人が ASC で読んでから、推薦は11月中に提出、イベントは1.0.3と一緒に審査へ
+- **マーケティングの資料**: `docs/marketing/tiktok.md`(30本の台本と年始の計画)、`docs/aso/custom-product-pages.md`(6ページ。先に「新年」と「朝」)、`docs/aso/asc-api-capabilities.md`(API でできること。⚠ スクショのアップロードは 2026 年の API で App Asset Library に変わった。`upload-screenshots.js` は古い方法のまま)
+- **撮影用ビルド**(EAS `4fc38932`)が作成中だった。できたら `-katsuDevTheme morning` などで、「新年」「朝」のページのスクショを撮る
+- **本人の答え待ち**: 通知の c(サブタイトルに日数)と d(長押しの専用画面)/ App Group の作成 / TikTok で本人が11/18から66日を始めるか
+
+## 2026-10-27 の状態(記録)
 
 - **1.0.2 は審査を通過した(2026-10-30 に本人から報告)**。ビルド27。main に入れて GitHub に push 済み(`f3aa2f1`)
   - ASC の鍵: `~/Desktop/key/Apple/AuthKey_WL5MG8758W.p8`(鍵ID `WL5MG8758W`)。Issuer ID は本人に聞く。コマンドごとに3つの環境変数を付けて実行する(セッションをまたいで `export` は残らない)
