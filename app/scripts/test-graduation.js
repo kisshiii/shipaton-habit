@@ -54,6 +54,7 @@ const {
   REST_WINDOW_DAYS: W,
   MAX_REST_DAYS: R,
   MILESTONE_DAYS: M,
+  REVIEW_MILESTONE,
 } = require(path.join(OUT, 'constants.js'));
 
 const START = '2026-01-01';
@@ -255,17 +256,29 @@ const cases = [
   // --- 節目 -----------------------------------------------------------------
   ['節目に届いた日に、その節目を出す', () => {
     const r = build((i, k) => done(k));
-    assert.strictEqual(pickMilestone(progress(r, M[0] - 2), []), null);
-    assert.strictEqual(pickMilestone(progress(r, M[0] - 1), []), M[0]);
+    const week = REVIEW_MILESTONE;
+    assert.strictEqual(pickMilestone(progress(r, week - 2), [1]), null);
+    assert.strictEqual(pickMilestone(progress(r, week - 1), [1]), week);
   }],
   ['一度祝った節目は、数え直して同じ日数に届いても出さない', () => {
     const r = build((i, k) => done(k));
-    assert.strictEqual(pickMilestone(progress(r, M[0] + 20, [keys[20]]), [M[0]]), null);
+    assert.strictEqual(pickMilestone(progress(r, 7 + 20, [keys[20]]), [1, 7]), null);
   }],
   ['いくつも越えていたら一番大きいものだけ。済みにするのはそれ以下全部', () => {
     const r = build((i, k) => done(k));
-    assert.strictEqual(pickMilestone(progress(r, M[1] - 1), []), M[1]);
-    assert.deepStrictEqual(milestonesUpTo(M[1]), [M[0], M[1]]);
+    assert.strictEqual(pickMilestone(progress(r, 33 - 1), []), 33);
+    assert.deepStrictEqual(milestonesUpTo(33), M.filter((d) => d <= 33));
+  }],
+  ['1日目は、やり切ったその場でだけ出す(後から開いた2日目以降には出さない)', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(pickMilestone(progress(r, 0), []), 1);
+    assert.strictEqual(pickMilestone(progress(r, 2), []), null);
+    // 1日目を祝ったあとは、次の節目まで何も出ない
+    assert.strictEqual(pickMilestone(progress(r, 3), [1]), null);
+  }],
+  ['評価を頼む節目は7日で、1日目ではない', () => {
+    assert.strictEqual(REVIEW_MILESTONE, 7);
+    assert.ok(M.includes(1));
   }],
   ['卒業した後は節目を出さない', () => {
     const r = build((i, k) => done(k));

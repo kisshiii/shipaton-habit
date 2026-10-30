@@ -157,7 +157,8 @@ export const ja: Copy = {
   },
 
   milestone: {
-    title: (day: number, goal: number) => (day * 2 === goal ? '折り返しです。' : `${day}日。`),
+    title: (day: number, goal: number) =>
+      day === 1 ? '1日目。' : day * 2 === goal ? '折り返しです。' : `${day}日。`,
     body: (day: number, goal: number) =>
       `${goal}日のうち${day}日、やり切りました。あと${goal - day}日、一日ずつです。`,
     close: '今日に戻る',

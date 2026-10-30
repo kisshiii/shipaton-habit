@@ -7,7 +7,7 @@
  * 状態の種類(`DemoKind`):
  *   - `graduation`  66日やり切った。Today で卒業画面が開く
  *   - `progress`    23日目・直近7日の休み1回。Today の進み具合と、1件チェック済みの今日(撮影用)
- *   - `milestone-7` / `milestone-33` / `milestone-50`  その日数に届いた。Today で節目の画面が開く
+ *   - `milestone-1` / `milestone-7` / `milestone-33` / `milestone-50`  その日数に届いた。Today で節目の画面が開く
  *   - `restart`     3回目の休みで数え直した直後。Today に数え直しのお知らせが出る
  *
  * 使い方:
@@ -31,6 +31,7 @@ export const DEV_SEED_QUERY = 'katsu-dev-seed';
 export const DEMO_KINDS = [
   'graduation',
   'progress',
+  'milestone-1',
   'milestone-7',
   'milestone-33',
   'milestone-50',

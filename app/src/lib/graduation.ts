@@ -157,7 +157,11 @@ export function pickMilestone(
 ): number | null {
   if (progress.graduatedOn !== null) return null;
   const reached = MILESTONE_DAYS.filter(
-    (day) => day <= progress.doneDays && !celebrated.includes(day),
+    (day) =>
+      day <= progress.doneDays &&
+      !celebrated.includes(day) &&
+      // 1日目は、やり切ったその場でだけ。2日目以降に開いた人に「1日目」を祝わない
+      (day !== 1 || progress.doneDays === 1),
   );
   return reached.length > 0 ? Math.max(...reached) : null;
 }

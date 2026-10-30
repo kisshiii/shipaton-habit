@@ -23,7 +23,7 @@ import { MilestoneModal } from '@/components/milestone-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
-import { MAX_REST_DAYS, MILESTONE_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
+import { MAX_REST_DAYS, REST_WINDOW_DAYS, REVIEW_MILESTONE } from '@/constants/graduation';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
@@ -148,8 +148,8 @@ export default function TodayScreen() {
     if (milestone === null) return;
     setMilestone(null);
     await markMilestonesCelebrated(milestonesUpTo(milestone));
-    // 最初の節目を閉じたときに一度だけ評価を頼む(plan §7-3)
-    if (milestone === MILESTONE_DAYS[0]) await requestReviewOnce();
+    // 7日の節目を閉じたときに一度だけ評価を頼む(plan §7-3)
+    if (milestone === REVIEW_MILESTONE) await requestReviewOnce();
   };
 
   const handleEnableNotifications = async () => {

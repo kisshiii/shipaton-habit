@@ -206,7 +206,8 @@ export const en = {
    * ⚠ 祝福するが、可愛くしない。感嘆符・絵文字・「Congratulations!」を入れない
    */
   milestone: {
-    title: (day: number, goal: number) => (day * 2 === goal ? 'Halfway.' : `${day} days.`),
+    title: (day: number, goal: number) =>
+      day === 1 ? 'Day 1.' : day * 2 === goal ? 'Halfway.' : `${day} days.`,
     body: (day: number, goal: number) =>
       `${day} of ${goal} days, everything done. ${goal - day} to go, one day at a time.`,
     close: 'Back to today',
