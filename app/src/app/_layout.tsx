@@ -40,6 +40,10 @@ Notifications.setNotificationHandler({
 const devSeedArgument: unknown =
   __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevSeed') : undefined;
 
+/** ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevTheme <テーマ>`(撮るルーティンの組み合わせ) */
+const devThemeArgument: unknown =
+  __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevTheme') : undefined;
+
 /** ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevScreen <画面>`(`src/dev/dev-screen.tsx`) */
 const devScreenArgument: unknown =
   __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevScreen') : undefined;
@@ -57,11 +61,14 @@ export default function TabLayout() {
     if (__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') {
       if (devSeedArgument == null) return;
       // import にすると本番バンドルにも入る。ここは require でなければならない
-      const { isDemoKind, seedDemo } =
+      const { isDemoKind, isDemoTheme, seedDemo } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
       const seeding = isDemoKind(devSeedArgument)
-        ? seedDemo(devSeedArgument, { force: true })
+        ? seedDemo(devSeedArgument, {
+            force: true,
+            theme: isDemoTheme(devThemeArgument) ? devThemeArgument : undefined,
+          })
         : Promise.resolve(false);
       seeding.finally(() => setIsSeeding(false));
     }

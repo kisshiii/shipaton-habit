@@ -12,6 +12,7 @@
  *
  * 使い方:
  *   シミュレーター(確認のダイアログが出ない): `xcrun simctl launch <UDID> com.kisshi.gradhabit -katsuDevSeed progress`
+ *     ルーティンを差し替えるなら `-katsuDevTheme morning` も付ける(DEMO_THEMES)
  *     → 差し替え終わるまで画面を描かないので、その起動のまま撮れる。起動のたびに差し替え直す
  *   開発ビルドなら URL でも: `app:///?katsu-dev-seed=progress`(差し替えて再読み込みする)
  *
@@ -43,23 +44,91 @@ export function isDemoKind(value: unknown): value is DemoKind {
   return typeof value === 'string' && (DEMO_KINDS as readonly string[]).includes(value);
 }
 
-const DEMO = {
-  ja: {
-    routines: [
+/**
+ * 撮影するルーティンの組み合わせ(カスタムプロダクトページごと。docs/aso/custom-product-pages.md)。
+ * 起動引数 `-katsuDevTheme <テーマ>`。指定が無ければ `default`(今までの例)。
+ */
+export const DEMO_THEMES = ['default', 'morning', 'workout', 'sleep', 'study', 'phone'] as const;
+export type DemoTheme = (typeof DEMO_THEMES)[number];
+
+export function isDemoTheme(value: unknown): value is DemoTheme {
+  return typeof value === 'string' && (DEMO_THEMES as readonly string[]).includes(value);
+}
+
+type DemoRoutine = { id: string; time: string; title: string };
+
+const ROUTINES: Record<DemoTheme, { ja: DemoRoutine[]; en: DemoRoutine[] }> = {
+  default: {
+    ja: [
       { id: 'demo-run', time: '06:30', title: 'ランニングに行く' },
       { id: 'demo-english', time: '20:00', title: '英語を15分やる' },
       { id: 'demo-journal', time: '22:00', title: '寝る前に日記を書く' },
     ],
-    word: 'やるって決めたのは、お前だろう。',
-  },
-  en: {
-    routines: [
+    en: [
       { id: 'demo-run', time: '06:30', title: 'Go for a run' },
       { id: 'demo-english', time: '20:00', title: 'Study English for 15 minutes' },
       { id: 'demo-journal', time: '22:00', title: 'Write in my journal before bed' },
     ],
-    word: 'You decided to do this. Nobody else did.',
   },
+  morning: {
+    ja: [
+      { id: 'demo-water', time: '06:30', title: '起きたら、水を一杯飲む' },
+      { id: 'demo-curtain', time: '06:40', title: '起きたら、カーテンを開ける' },
+      { id: 'demo-stretch', time: '07:00', title: 'コーヒーの後、5分ストレッチする' },
+    ],
+    en: [
+      { id: 'demo-water', time: '06:30', title: 'After I wake up, drink a glass of water' },
+      { id: 'demo-curtain', time: '06:40', title: 'After I get up, open the curtains' },
+      { id: 'demo-stretch', time: '07:00', title: 'After coffee, stretch for 5 minutes' },
+    ],
+  },
+  workout: {
+    ja: [
+      { id: 'demo-walk', time: '07:30', title: '朝ごはんの後、10分歩く' },
+      { id: 'demo-pushups', time: '18:30', title: '仕事の後、腕立てを20回' },
+    ],
+    en: [
+      { id: 'demo-walk', time: '07:30', title: 'After breakfast, walk for 10 minutes' },
+      { id: 'demo-pushups', time: '18:30', title: 'After work, do 20 push-ups' },
+    ],
+  },
+  sleep: {
+    ja: [
+      { id: 'demo-clothes', time: '21:30', title: '歯を磨いたら、明日の服を出す' },
+      { id: 'demo-light', time: '22:30', title: '22時半になったら、照明を落とす' },
+      { id: 'demo-bed', time: '23:00', title: '布団に入ったら、スマホを伏せる' },
+    ],
+    en: [
+      { id: 'demo-clothes', time: '21:30', title: "After brushing my teeth, lay out tomorrow's clothes" },
+      { id: 'demo-light', time: '22:30', title: 'At 22:30, turn off the big light' },
+      { id: 'demo-bed', time: '23:00', title: 'Get into bed, phone face down' },
+    ],
+  },
+  study: {
+    ja: [
+      { id: 'demo-train', time: '07:15', title: '電車に乗ったら、単語を5つ見る' },
+      { id: 'demo-study', time: '21:00', title: '夕食の後、10分勉強する' },
+    ],
+    en: [
+      { id: 'demo-train', time: '07:15', title: 'On the train, review 5 words' },
+      { id: 'demo-study', time: '21:00', title: 'After dinner, study for 10 minutes' },
+    ],
+  },
+  phone: {
+    ja: [
+      { id: 'demo-phone', time: '22:30', title: '22時半になったら、スマホを別の部屋に置く' },
+      { id: 'demo-read', time: '22:40', title: 'スマホを置いたら、本を10ページ読む' },
+    ],
+    en: [
+      { id: 'demo-phone', time: '22:30', title: 'At 22:30, put my phone in another room' },
+      { id: 'demo-read', time: '22:40', title: 'After the phone is away, read 10 pages' },
+    ],
+  },
+};
+
+const WORD = {
+  ja: 'やるって決めたのは、お前だろう。',
+  en: 'You decided to do this. Nobody else did.',
 } as const;
 
 /** 1日分の作り方。`done` は全部やり切った日、`rest` は何もしなかった日 */
@@ -109,11 +178,14 @@ function planFor(kind: DemoKind, routineCount: number): Plan {
  * @returns 差し替えたら true。同じ種類を差し替え済みなら何もせず false
  *   ⚠ 再読み込み後も同じ URL が残るため、URL から呼ぶときは false を返さないと再読み込みが止まらない
  */
-export async function seedDemo(kind: DemoKind, options: { force?: boolean } = {}): Promise<boolean> {
+export async function seedDemo(
+  kind: DemoKind,
+  options: { force?: boolean; theme?: DemoTheme } = {},
+): Promise<boolean> {
   if (!options.force && (await getDevSeedForDevelopment()) === kind) return false;
 
-  const demo = DEMO[language];
-  const routineIds = demo.routines.map((routine) => routine.id);
+  const demoRoutines = ROUTINES[options.theme ?? 'default'][language];
+  const routineIds = demoRoutines.map((routine) => routine.id);
   const plan = planFor(kind, routineIds.length);
 
   const start = new Date();
@@ -121,7 +193,7 @@ export async function seedDemo(kind: DemoKind, options: { force?: boolean } = {}
   start.setDate(start.getDate() - plan.past.length);
   const startedOn = toDateKey(start);
 
-  const routines: RoutineItem[] = demo.routines.map((routine) => ({
+  const routines: RoutineItem[] = demoRoutines.map((routine) => ({
     ...routine,
     createdAt: start.toISOString(),
   }));
@@ -146,7 +218,7 @@ export async function seedDemo(kind: DemoKind, options: { force?: boolean } = {}
   const existing = await getMessages();
   const messages: KatsuMessage[] = existing.length
     ? existing
-    : [{ id: 'demo-word', text: demo.word }];
+    : [{ id: 'demo-word', text: WORD[language] }];
 
   // graduatedAt を空にして、卒業した状態なら Today で卒業画面が出るようにする
   const appState: AppState = {
