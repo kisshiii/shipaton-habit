@@ -17,6 +17,7 @@ import {
   syncScheduledNotifications,
 } from '@/lib/notifications';
 import { configurePurchases } from '@/lib/purchases';
+import { addQuickActionListener, initialQuickAction, routineIdFromQuickAction } from '@/lib/quick-actions';
 import { getAppState, markCompletedToday } from '@/storage';
 
 SplashScreen.preventAutoHideAsync();
@@ -42,6 +43,9 @@ const devSeedArgument: unknown =
 /** ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevScreen <画面>`(`src/dev/dev-screen.tsx`) */
 const devScreenArgument: unknown =
   __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevScreen') : undefined;
+
+/** 冷起動のクイックアクションを処理したか。画面の再マウントをまたいで覚える */
+let handledInitialQuickAction = false;
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -138,6 +142,32 @@ export default function TabLayout() {
       router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
     })();
   }, [lastResponse]);
+
+  // アイコンを長押しした項目から開いたとき(1.0.3、plan §8 追加)。
+  // 冷起動は initialQuickAction、起動中はリスナーで拾う。
+  // ⚠ 冷起動では iOS が両方の経路で知らせることがある。チェックは付いていれば何もしないので、
+  //   二重に来ても Today を開き直すだけで済む
+  useEffect(() => {
+    const handle = async (routineId: string) => {
+      await markCompletedToday(routineId);
+      await syncScheduledNotifications();
+      // ⚠ opened を毎回変えて、Today がすでに開いていても読み直させる(項目も Today が差し替える)
+      router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
+    };
+
+    const initialId = routineIdFromQuickAction(initialQuickAction);
+    // ⚠ initialQuickAction は JS が動いている間ずっと同じ値を返す。開発中の再読み込みで二度目を処理しない
+    if (initialId && !handledInitialQuickAction) {
+      handledInitialQuickAction = true;
+      handle(initialId).catch(() => {});
+    }
+
+    const subscription = addQuickActionListener((action) => {
+      const routineId = routineIdFromQuickAction(action);
+      if (routineId) handle(routineId).catch(() => {});
+    });
+    return () => subscription.remove();
+  }, []);
 
   // 通知を長押ししたときのボタン(1.0.3)。言語が変わっても合うよう、起動のたびに登録し直す
   useEffect(() => {
