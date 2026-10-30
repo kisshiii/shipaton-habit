@@ -169,6 +169,10 @@ export const ja: Copy = {
     snooze: (minutes: number) => `${minutes}分後にもう一度`,
   },
 
+  quickActions: {
+    title: (time: string, title: string) => `${time} ${title}`,
+  },
+
   share: {
     milestoneEyebrow: 'KATSU',
     habitsLabel: '毎日やっていること',

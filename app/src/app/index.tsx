@@ -39,6 +39,7 @@ import {
   requestNotificationPermission,
   syncScheduledNotifications,
 } from '@/lib/notifications';
+import { syncQuickActions } from '@/lib/quick-actions';
 import {
   getMessages,
   getRoutines,
@@ -105,6 +106,8 @@ export default function TodayScreen() {
     setPermission(nextPermission);
     // 開くたびに予約を引き直す。7日開かなくても通知が尽きない
     await syncScheduledNotifications();
+    // アイコン長押しの項目も今日の状態に合わせる(plan §8 追加)
+    await syncQuickActions(nextRoutines, nextRecord);
     await checkGraduation();
   }, [checkGraduation]);
 
@@ -137,9 +140,12 @@ export default function TodayScreen() {
       ? Haptics.selectionAsync()
       : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
     ).catch(() => {});
-    setRecord(await toggleCompletion(routineId));
+    const nextRecord = await toggleCompletion(routineId);
+    setRecord(nextRecord);
     // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
     await syncScheduledNotifications();
+    // 済んだ項目をアイコン長押しから外す。外したチェックなら戻す
+    await syncQuickActions(routines, nextRecord);
     // その日の最後の1件を押した瞬間に条件を満たすことがある。
     // 次にタブを開き直すまで待たせない
     await checkGraduation();

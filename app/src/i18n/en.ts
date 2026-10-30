@@ -220,6 +220,14 @@ export const en = {
   },
 
   /**
+   * アイコンを長押ししたときの項目(1.0.3、plan §8 追加)。今日まだのルーティンだけ。
+   * ⚠ ルーティン名だけを出す。書いた言葉(KatsuMessage)は入れない。全部済んだら何も出さない
+   */
+  quickActions: {
+    title: (time: string, title: string) => `${time} ${title}`,
+  },
+
+  /**
    * 共有カード(plan §7-4)。⚠ 祝福するが、可愛くしない。感嘆符・絵文字を入れない
    */
   share: {
