@@ -164,6 +164,11 @@ export const ja: Copy = {
     close: '今日に戻る',
   },
 
+  notifications: {
+    done: 'やった ✓',
+    snooze: (minutes: number) => `${minutes}分後にもう一度`,
+  },
+
   share: {
     milestoneEyebrow: 'KATSU',
     habitsLabel: '毎日やっていること',

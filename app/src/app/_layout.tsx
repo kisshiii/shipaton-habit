@@ -7,9 +7,17 @@ import { DevSettings, Settings, useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding';
-import { routineIdFromResponse } from '@/lib/notifications';
+import { ACTION_DONE, ACTION_SNOOZE } from '@/constants/notifications';
+import { todayKey } from '@/lib/date';
+import {
+  deliveredOn,
+  registerNotificationActions,
+  routineIdFromResponse,
+  snoozeNotification,
+  syncScheduledNotifications,
+} from '@/lib/notifications';
 import { configurePurchases } from '@/lib/purchases';
-import { getAppState } from '@/storage';
+import { getAppState, markCompletedToday } from '@/storage';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -112,9 +120,29 @@ export default function TabLayout() {
 
     const routineId = routineIdFromResponse(lastResponse);
     if (!routineId) return;
-    // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する
-    router.navigate({ pathname: '/', params: { routineId } });
+
+    // 「10分後にもう一度」: アプリは開かない。届け直しを予約するだけ
+    if (lastResponse.actionIdentifier === ACTION_SNOOZE) {
+      snoozeNotification(lastResponse).catch(() => {});
+      return;
+    }
+
+    (async () => {
+      // 「やった ✓」: 届いた日のうちならチェックを付けてから開く。昨日の通知なら開くだけ
+      if (lastResponse.actionIdentifier === ACTION_DONE && deliveredOn(lastResponse) === todayKey()) {
+        await markCompletedToday(routineId);
+        await syncScheduledNotifications();
+      }
+      // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する。
+      // ⚠ opened を毎回変えて、Today がすでに開いていても読み直させる
+      router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
+    })();
   }, [lastResponse]);
+
+  // 通知を長押ししたときのボタン(1.0.3)。言語が変わっても合うよう、起動のたびに登録し直す
+  useEffect(() => {
+    registerNotificationActions().catch(() => {});
+  }, []);
 
   if (isSeeding) return null;
 

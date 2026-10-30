@@ -213,6 +213,12 @@ export const en = {
     close: 'Back to today',
   },
 
+  /** 通知を長押ししたときのボタン(1.0.3、plan §8 追加) */
+  notifications: {
+    done: 'Done ✓',
+    snooze: (minutes: number) => `Again in ${minutes} min`,
+  },
+
   /**
    * 共有カード(plan §7-4)。⚠ 祝福するが、可愛くしない。感嘆符・絵文字を入れない
    */

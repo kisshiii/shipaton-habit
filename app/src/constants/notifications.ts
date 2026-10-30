@@ -17,3 +17,17 @@ export const IOS_SCHEDULED_LIMIT = 64;
  * アプリを開くたびに引き直すので、7日開かなくても通知が尽きない。
  */
 export const SCHEDULE_DAYS_AHEAD = 7;
+
+/**
+ * 通知のボタン(1.0.3、plan §8 追加)。通知を長押しすると出る。
+ * ⚠ カテゴリの ID に `:` と `-` を使わないこと(expo-notifications の決まり)
+ */
+export const ROUTINE_CATEGORY = 'katsuRoutine';
+export const ACTION_DONE = 'done';
+export const ACTION_SNOOZE = 'snooze';
+
+/** 「もう一度」で届け直すまでの分 */
+export const SNOOZE_MINUTES = 10;
+
+/** 「もう一度」の予約の ID の頭。引き直し(全消し)のときに、これだけは残す */
+export const SNOOZE_ID_PREFIX = 'katsuSnooze';

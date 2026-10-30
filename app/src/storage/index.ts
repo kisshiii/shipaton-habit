@@ -357,6 +357,17 @@ export async function getDailyRecords(): Promise<Record<string, DailyRecord>> {
 }
 
 /**
+ * 今日のチェックを付ける(付いていれば何もしない)。通知の「やった ✓」から呼ぶ。
+ * ⚠ 付け外しではない。通知を2回押しても外れないようにする
+ */
+export async function markCompletedToday(routineId: string): Promise<void> {
+  const [today, routines] = await Promise.all([getTodayRecord(), getRoutines()]);
+  if (today.completedIds.includes(routineId)) return;
+  if (!routines.some((routine) => routine.id === routineId)) return;
+  await toggleCompletion(routineId);
+}
+
+/**
  * 今日のチェックを付け外しする。
  * チェックした時刻は記録しない(spec §2: その日のうちなら何時でも達成)。
  * 分母から外していた項目にチェックが付いたら、その項目は分母にも入る。

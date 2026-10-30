@@ -70,7 +70,7 @@ export default function TodayScreen() {
   const dateRef = useRef(todayKey());
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
-  const { routineId: focusedId } = useLocalSearchParams<{ routineId?: string }>();
+  const { routineId: focusedId, opened } = useLocalSearchParams<{ routineId?: string; opened?: string }>();
 
   // 毎日判定する。やり切った日が66日に達した日に一度だけ卒業を出す(spec §2 卒業の扱い)
   const checkGraduation = useCallback(async () => {
@@ -113,6 +113,14 @@ export default function TodayScreen() {
       refresh();
     }, [refresh]),
   );
+
+  // 通知の「やった ✓」から開かれたとき。Today がすでに開いていても読み直す
+  useEffect(() => {
+    if (!opened) return;
+    // ⚠ effect の中で同期的に state を変えない(lint)。次の周回で読み直す
+    const timer = setTimeout(refresh, 0);
+    return () => clearTimeout(timer);
+  }, [opened, refresh]);
 
   // 日付をまたいだ状態でアプリに戻ってきたとき、昨日のチェックを出したままにしない
   useEffect(() => {

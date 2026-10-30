@@ -14,7 +14,16 @@
 
 import * as Notifications from 'expo-notifications';
 
-import { IOS_SCHEDULED_LIMIT, SCHEDULE_DAYS_AHEAD } from '@/constants/notifications';
+import {
+  ACTION_DONE,
+  ACTION_SNOOZE,
+  IOS_SCHEDULED_LIMIT,
+  ROUTINE_CATEGORY,
+  SCHEDULE_DAYS_AHEAD,
+  SNOOZE_ID_PREFIX,
+  SNOOZE_MINUTES,
+} from '@/constants/notifications';
+import { t } from '@/i18n';
 import { toDateKey } from '@/lib/date';
 import { isProCached } from '@/lib/purchases';
 import { getAppState, getDailyRecords, getMessages, getRoutines } from '@/storage';
@@ -50,6 +59,56 @@ export async function getNotificationPermission(): Promise<Notifications.Permiss
 export async function requestNotificationPermission(): Promise<Notifications.PermissionStatus> {
   const { status } = await Notifications.requestPermissionsAsync();
   return status;
+}
+
+// --- 通知のボタン(1.0.3、plan §8 追加) ------------------------------------------
+
+/**
+ * 通知を長押ししたときのボタンを登録する。起動のたびに呼んでよい(上書きされる)。
+ *   - やった ✓      アプリが開き、そのルーティンにチェックが付く
+ *   - 10分後にもう一度  アプリを開かずに、同じ言葉を10分後に届け直す
+ * ⚠ 「もう一度」はアプリを開かない。iOS が裏で処理を走らせるかは実機で確かめること
+ *   (expo-notifications のドキュメントに書かれていない。2026-10-30)
+ */
+export async function registerNotificationActions(): Promise<void> {
+  await Notifications.setNotificationCategoryAsync(ROUTINE_CATEGORY, [
+    {
+      identifier: ACTION_DONE,
+      buttonTitle: t.notifications.done,
+      options: { opensAppToForeground: true },
+    },
+    {
+      identifier: ACTION_SNOOZE,
+      buttonTitle: t.notifications.snooze(SNOOZE_MINUTES),
+      options: { opensAppToForeground: false },
+    },
+  ]);
+}
+
+/** 通知が届いた日(ローカル)。届いた日のうちだけ「やった」でチェックを付ける */
+export function deliveredOn(response: Notifications.NotificationResponse): string {
+  const raw = response.notification.date;
+  // 秒で来ることもあるので、ミリ秒にそろえる
+  return toDateKey(new Date(raw < 1e12 ? raw * 1000 : raw));
+}
+
+/**
+ * 同じ通知を、`SNOOZE_MINUTES` 分後にもう一度届ける。
+ * ⚠ 本文は本人が書いた言葉そのもの(届いた通知の中身をそのまま使う)。端末の外には出ない
+ */
+export async function snoozeNotification(response: Notifications.NotificationResponse): Promise<void> {
+  const { title, body } = response.notification.request.content;
+  const routineId = routineIdFromResponse(response);
+  if (!routineId || !body) return;
+  const payload: KatsuNotificationData = { routineId };
+  await Notifications.scheduleNotificationAsync({
+    identifier: `${SNOOZE_ID_PREFIX}.${routineId}.${Date.now()}`,
+    content: { title: title ?? undefined, body, data: payload, categoryIdentifier: ROUTINE_CATEGORY },
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
+      seconds: SNOOZE_MINUTES * 60,
+    },
+  });
 }
 
 // --- 試しに届ける -------------------------------------------------------------
@@ -141,10 +200,29 @@ function occurrenceAt(day: Date, time: string): Date {
   return at;
 }
 
-async function runSync(): Promise<number> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+/**
+ * 予約を消す。「もう一度」の予約だけは、そのルーティンが今日まだ終わっていなければ残す
+ * (全消しすると、アプリを開いただけで「10分後にもう一度」が消えてしまう)。
+ */
+async function cancelPlanned(keepSnoozeFor: (routineId: string) => boolean): Promise<void> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  await Promise.all(
+    scheduled
+      .filter((request) => {
+        if (!request.identifier.startsWith(SNOOZE_ID_PREFIX)) return true;
+        const routineId = (request.content.data as Partial<KatsuNotificationData> | undefined)?.routineId;
+        return !routineId || !keepSnoozeFor(routineId);
+      })
+      .map((request) => Notifications.cancelScheduledNotificationAsync(request.identifier)),
+  );
+}
 
+async function runSync(): Promise<number> {
   const [routines, messages] = await Promise.all([getRoutines(), getMessages()]);
+  const todayDone = (await getDailyRecords())[toDateKey(new Date())]?.completedIds ?? [];
+  await cancelPlanned(
+    (routineId) => routines.some((routine) => routine.id === routineId) && !todayDone.includes(routineId),
+  );
   if (routines.length === 0 || messages.length === 0) return 0;
 
   const status = await getNotificationPermission();
@@ -178,7 +256,7 @@ async function runSync(): Promise<number> {
 
       const data: KatsuNotificationData = { routineId: routine.id };
       planned.push({
-        content: { title: routine.title, body: message.text, data },
+        content: { title: routine.title, body: message.text, data, categoryIdentifier: ROUTINE_CATEGORY },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
       });
     }
