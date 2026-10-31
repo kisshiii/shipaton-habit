@@ -433,8 +433,9 @@ certificate and shows you where to cancel.
 
 Version 1.0.3 is built for the new year. Onboarding asks when Day 1
 should be, and in December you can choose January 1. Day 1 gets its own
-quiet celebration and a card to share. Notifications have a Done button.
-Nothing is ever called a failure.
+quiet celebration and a card to share. Notifications have a Done button,
+and a home and lock screen widget shows the day count. Nothing is ever
+called a failure.
 
 There is no server: what people write never leaves the device. An
 on-device check with Apple's Foundation Models suggests rewriting words
