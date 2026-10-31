@@ -14,9 +14,9 @@ export type DailyRecord = {
   completedIds: string[];
   totalCount: number; // その日終了時点のルーティン数(分母を固定するため)
   /**
-   * Day 1 で分母から外すと確定した項目(登録時に時刻が既に過ぎていたもの)。
+   * 追加した日に分母から外すと確定した項目(追加した時点で時刻が既に過ぎていたもの)。
    * 判定は登録時の1回だけで、以後は再計算しない(spec §2 判定の細部)。
-   * Day 2 以降は常に空。
+   * ルーティンを追加しなかった日は空。
    */
   excludedIds?: string[];
 };
@@ -28,7 +28,7 @@ export type KatsuMessage = {
 };
 
 export type AppState = {
-  startedOn?: string; // 最初のルーティンを保存した日 = Day 1
+  startedOn?: string; // Day 1。オンボーディングで選んだ日(未来の日のこともある。plan §8)
   graduatedAt?: string; // 卒業モーダルを表示済みなら記録(再表示しない)
   /**
    * ルーティンを変えた日(追加・削除・名前の変更)。その日が卒業の数え直しの起点になる(plan §1)。
