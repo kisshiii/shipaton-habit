@@ -10,7 +10,7 @@ import { Onboarding } from '@/components/onboarding';
 import { ACTION_DONE, ACTION_SNOOZE } from '@/constants/notifications';
 import { todayKey } from '@/lib/date';
 import {
-  deliveredOn,
+  dayOfResponse,
   registerNotificationActions,
   routineIdFromResponse,
   snoozeNotification,
@@ -143,15 +143,19 @@ export default function TabLayout() {
     }
 
     (async () => {
-      // 「やった ✓」: 届いた日のうちならチェックを付けてから開く。昨日の通知なら開くだけ
-      if (lastResponse.actionIdentifier === ACTION_DONE && deliveredOn(lastResponse) === todayKey()) {
-        await markCompletedToday(routineId);
-        await syncScheduledNotifications();
+      try {
+        // 「やった ✓」: その通知の日が今日ならチェックを付けてから開く。昨日の分なら開くだけ
+        // (「10分後にもう一度」で0時をまたいでも、届いた日ではなく通知の日で決める)
+        if (lastResponse.actionIdentifier === ACTION_DONE && dayOfResponse(lastResponse) === todayKey()) {
+          await markCompletedToday(routineId);
+          await syncScheduledNotifications();
+        }
+      } finally {
+        // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する。
+        // ⚠ opened を毎回変えて、Today がすでに開いていても読み直させる。保存に失敗しても開く
+        router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
       }
-      // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する。
-      // ⚠ opened を毎回変えて、Today がすでに開いていても読み直させる
-      router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
-    })();
+    })().catch(() => {});
   }, [lastResponse]);
 
   // アイコンを長押しした項目から開いたとき(1.0.3、plan §8 追加)。

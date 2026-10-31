@@ -11,6 +11,7 @@
 import * as QuickActions from 'expo-quick-actions';
 
 import { t } from '@/i18n';
+import { getAppState } from '@/storage';
 import type { DailyRecord, RoutineItem } from '@/types';
 
 /** 項目の種類。ほかの種類を足したときに取り違えないよう前置きを付ける */
@@ -39,7 +40,10 @@ export function quickActionsFor(routines: RoutineItem[], today: DailyRecord): Qu
 /** 項目を今の状態に合わせて差し替える。失敗しても画面の動作は止めない */
 export async function syncQuickActions(routines: RoutineItem[], today: DailyRecord): Promise<void> {
   try {
-    await QuickActions.setItems(quickActionsFor(routines, today));
+    // 1日目がまだ来ていない人(1月1日から、など)には出さない。押しても数えないため
+    const { startedOn } = await getAppState();
+    const notStarted = !!startedOn && startedOn > today.date;
+    await QuickActions.setItems(notStarted ? [] : quickActionsFor(routines, today));
   } catch {
     // 項目が古いままになるだけ。次に Today を開いたときに直る
   }

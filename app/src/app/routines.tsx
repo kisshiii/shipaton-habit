@@ -31,10 +31,12 @@ import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { evaluateGraduation } from '@/lib/graduation';
 import { syncScheduledNotifications } from '@/lib/notifications';
+import { syncQuickActions } from '@/lib/quick-actions';
 import {
   addRoutine,
   deleteRoutine,
   getRoutines,
+  getTodayRecord,
   RoutineLimitError,
   updateRoutine,
 } from '@/storage';
@@ -80,9 +82,12 @@ export default function RoutinesScreen() {
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
 
   const refresh = useCallback(async () => {
-    setRoutines(await getRoutines());
+    const [nextRoutines, today] = await Promise.all([getRoutines(), getTodayRecord()]);
+    setRoutines(nextRoutines);
     // 時刻・件数が変われば予約集合も変わる。引き直しは冪等なので毎回でよい
     await syncScheduledNotifications();
+    // ホーム画面のクイックアクションも、足した・消した・名前を変えたルーティンにそろえる
+    await syncQuickActions(nextRoutines, today);
   }, []);
 
   // 画面に戻るたびに読み直す(Today 画面での操作を反映するため)
