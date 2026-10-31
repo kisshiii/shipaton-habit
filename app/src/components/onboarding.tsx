@@ -113,13 +113,13 @@ type Props = {
    * ⚠ 撮影用・開発ビルド専用(`src/dev/dev-screen.tsx`)。途中の段から始め、入力済みの値を入れておく。
    *   本番では渡さない
    */
-  preview?: { step: Step; title: string; words: string };
+  preview?: { step: Step; time: string; title: string; words: string };
 };
 
 export function Onboarding({ onFinished, preview }: Props) {
   const theme = useTheme();
   const [step, setStep] = useState<Step>(preview?.step ?? 'intro');
-  const [time, setTime] = useState('07:00');
+  const [time, setTime] = useState(preview?.time ?? '07:00');
   const [title, setTitle] = useState(preview?.title ?? '');
   const [words, setWords] = useState(preview?.words ?? '');
   const [error, setError] = useState<string | null>(null);

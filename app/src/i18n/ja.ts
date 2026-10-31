@@ -133,7 +133,8 @@ export const ja: Copy = {
   },
 
   graduation: {
-    title: 'もう、これは要らないかもしれません。',
+    /** ⚠ 改行の位置を決めておく。決めないと「かもしれませ / ん。」のように折り返す */
+    title: 'もう、これは\n要らないかもしれません。',
     note: 'このアプリは、あなたが使わなくなることを目指して作られています。準備ができたかどうかを決めるのはこちらではありません。分かるのはあなただけです。',
     end: '購読を終了する',
     notYet: 'まだ続ける',
@@ -148,7 +149,8 @@ export const ja: Copy = {
 
   certificate: {
     eyebrow: '卒業証書',
-    headline: (days: number) => `${days}日、やり切りました。`,
+    /** ⚠ 改行の位置を決めておく。決めないと「やり切りまし / た。」と折り返す(証書は人に見せる画像) */
+    headline: (days: number) => `${days}日、\nやり切りました。`,
     habitsLabel: '身につけたこと',
     started: '始めた日',
     graduated: '卒業した日',

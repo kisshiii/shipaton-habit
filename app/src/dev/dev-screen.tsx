@@ -53,7 +53,7 @@ export function DevScreen({ screen }: { screen: string }) {
     return (
       <Onboarding
         onFinished={close}
-        preview={{ step, title: goal.title, words: messages[0]?.text ?? t.katsu.placeholder }}
+        preview={{ step, time: goal.time, title: goal.title, words: messages[0]?.text ?? t.katsu.placeholder }}
       />
     );
   }
