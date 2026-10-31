@@ -166,6 +166,10 @@ export const ja: Copy = {
     close: '今日に戻る',
   },
 
+  widget: {
+    startsOn: (date: string) => `${date}が1日目`,
+  },
+
   notifications: {
     done: 'やった ✓',
     snooze: (minutes: number) => `${minutes}分後にもう一度`,

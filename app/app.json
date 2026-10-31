@@ -42,7 +42,25 @@
           "imageWidth": 200
         }
       ],
-      "expo-quick-actions"
+      "expo-quick-actions",
+      [
+        "expo-widgets",
+        {
+          "widgets": [
+            {
+              "name": "KatsuProgress",
+              "displayName": "KATSU",
+              "description": "Day N / 66 and today's progress. Your words are never shown here.",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "accessoryRectangular"
+                ]
+              }
+            }
+          ]
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

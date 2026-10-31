@@ -213,6 +213,11 @@ export const en = {
     close: 'Back to today',
   },
 
+  /** ホーム画面・ロック画面のウィジェット(plan §7-6)。⚠ 言葉は載せない */
+  widget: {
+    startsOn: (date: string) => `Day 1 is ${date}`,
+  },
+
   /** 通知を長押ししたときのボタン(1.0.3、plan §8 追加) */
   notifications: {
     done: 'Done ✓',
