@@ -33,7 +33,8 @@
   - 1.0.3 を出すときにキーワード欄を差し替える案: `docs/aso/custom-product-pages.md` §1
 - **ASC に下書きを作った(未提出)**: App 内イベント「1月1日から、66日」(`app/scripts/asc/in-app-event.js`)、フィーチャーの推薦(`app/scripts/asc/nomination.js`)。本人が ASC で読んでから、推薦は11月中に提出、イベントは1.0.3と一緒に審査へ
 - **マーケティングの資料**: `docs/marketing/tiktok.md`(30本の台本と年始の計画)、`docs/aso/custom-product-pages.md`(6ページ。先に「新年」と「朝」)、`docs/aso/asc-api-capabilities.md`(API でできること。⚠ スクショのアップロードは 2026 年の API で App Asset Library に変わった。`upload-screenshots.js` は古い方法のまま)
-- **撮影用ビルド**(EAS `4fc38932`)が作成中だった。できたら `-katsuDevTheme morning` などで、「新年」「朝」のページのスクショを撮る
+- **カスタムプロダクトページのスクショ(10/31)**: `~/Desktop/katsu-cpp/{morning,newyear}/{en,ja}/02.png, 03.png`(キャプション付き、1290×2796、透明度なし)。**01 はまだ**: 朝の 01 はロック画面の通知なので本人が実機で撮る / 新年の 01(「1月1日から」の選択肢)は12月に入ってから撮る
+- **ビルド30**(1.0.3。卒業画面の日本語の改行を直した)が TestFlight へ。**EAS の iOS ビルドは10月分(15回)を使い切った。11/1 9:00(日本時間)に戻る**。11月はまとめて直してからビルドする
 - **本人の答え待ち**: 通知の c(サブタイトルに日数)と d(長押しの専用画面)/ App Group の作成 / TikTok で本人が11/18から66日を始めるか
 
 ## 2026-10-27 の状態(記録)
