@@ -27,7 +27,7 @@ const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment
     return (
       <VStack alignment="leading">
         <Text modifiers={[font({ weight: 'semibold', size: 15 })]}>{props.dayLabel}</Text>
-        <ProgressView value={props.ratio} />
+        <ProgressView value={props.ratio ?? 0} />
         <Text modifiers={[font({ size: 13 }), foregroundStyle({ type: 'hierarchical', style: 'secondary' })]}>
           {props.todayLabel}
         </Text>
@@ -40,7 +40,7 @@ const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment
         KATSU
       </Text>
       <Text modifiers={[font({ weight: 'bold', design: 'serif', size: 22 })]}>{props.dayLabel}</Text>
-      <ProgressView value={props.ratio} />
+      <ProgressView value={props.ratio ?? 0} />
       <Text modifiers={[font({ size: 13 }), foregroundStyle({ type: 'hierarchical', style: 'secondary' })]}>
         {props.todayLabel}
       </Text>

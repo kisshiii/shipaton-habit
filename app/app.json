@@ -46,6 +46,8 @@
       [
         "expo-widgets",
         {
+          "bundleIdentifier": "com.kisshi.gradhabit.ExpoWidgetsTarget",
+          "groupIdentifier": "group.com.kisshi.gradhabit",
           "widgets": [
             {
               "name": "KatsuProgress",
