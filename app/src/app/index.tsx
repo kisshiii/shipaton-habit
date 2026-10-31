@@ -68,7 +68,7 @@ export default function TodayScreen() {
    */
   const [isRestartNoticeOpen, setIsRestartNoticeOpen] = useState(false);
   /** その日最初に開いたときの一言(plan §8)。この画面が開いている間は出したままにする */
-  const [dailyLine, setDailyLine] = useState<string | null>(null);
+  const [dailyLine, setDailyLine] = useState<{ text: string; countStartedOn: string } | null>(null);
   const dateRef = useRef(todayKey());
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
@@ -82,15 +82,24 @@ export default function TodayScreen() {
     syncWidget();
     if (status?.shouldOffer) setIsGraduationOpen(true);
     if (status?.milestone) setMilestone(status.milestone);
+    // ルーティンを変えて数え直したら、出していた昨日の一言は引っ込める(数字が合わなくなる)
+    setDailyLine((line) =>
+      line && line.countStartedOn !== status?.progress.countStartedOn ? null : line,
+    );
     if (status?.showRestartNotice && status.progress.restRestartOn) {
       setIsRestartNoticeOpen(true);
       await markRestartNoticeShown(status.progress.restRestartOn);
+      // ⚠ 今日はもう開いたことにする。しないと、タブを移って戻ったときに昨日の一言が重なる
+      await markOpenedToday();
     } else if (status && !status.progress.graduatedOn && (await markOpenedToday())) {
       // 数え直しのお知らせを出す日と、卒業した後は出さない
-      const { yesterday, doneDays, restsInWindow } = status.progress;
-      if (yesterday === 'done') setDailyLine(t.today.yesterdayDone(doneDays));
+      const { yesterday, doneDays, restsInWindow, countStartedOn } = status.progress;
+      if (yesterday === 'done') setDailyLine({ text: t.today.yesterdayDone(doneDays), countStartedOn });
       if (yesterday === 'rest') {
-        setDailyLine(t.today.yesterdayRest(Math.max(MAX_REST_DAYS - restsInWindow, 0), REST_WINDOW_DAYS));
+        setDailyLine({
+          text: t.today.yesterdayRest(Math.max(MAX_REST_DAYS - restsInWindow, 0), REST_WINDOW_DAYS),
+          countStartedOn,
+        });
       }
     }
   }, []);
@@ -213,7 +222,7 @@ export default function TodayScreen() {
           {/* その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。色を変えない */}
           {hasRoutines && dailyLine && (
             <ThemedText type="small" themeColor="textSecondary">
-              {dailyLine}
+              {dailyLine.text}
             </ThemedText>
           )}
 

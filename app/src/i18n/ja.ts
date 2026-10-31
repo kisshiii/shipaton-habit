@@ -34,9 +34,7 @@ export const ja: Copy = {
     unbroken: (days: number) => `休まず${days}日`,
     yesterdayDone: (days: number) => `昨日は全部やり切りました。ここまで${days}日です。`,
     yesterdayRest: (left: number, window: number) =>
-      left > 0
-        ? `昨日は休みの日でした。直近${window}日で、あと${left}回休めます。`
-        : `昨日は休みの日でした。直近${window}日の休みは、これで使い切りです。`,
+      left > 0 ? `昨日は休みの日でした。直近${window}日で、あと${left}回休めます。` : '昨日は休みの日でした。',
     restartNotice: (rests: number, window: number) =>
       `また1日目から。休みは直近${window}日で${rests}回まで使えます。`,
     fallbackMeta: '通知がオフのため、ここに出しています',
@@ -213,12 +211,15 @@ export const ja: Copy = {
     ruleTitle: '66日のしくみ',
     ruleLines: (days: number, rests: number, window: number) => [
       `その日のルーティンをやり切った日を数えて、${days}日で卒業です。`,
-      `休みは直近${window}日で${rests}回まで。休んでも、それまでの日数はなくなりません。`,
+      `休みは直近${window}日で${rests}回まで。それまでなら日数はそのまま。${rests + 1}回目で、また1日目から数えます。`,
       '1日休んでも、終わりではありません。',
     ],
     sealEyebrow: 'やりたくない日の自分へ',
     sealHold: '長押しで封をする',
     sealNote: 'これはこのアプリとではなく、自分との約束です。',
+    sealHint: 'ダブルタップで封をします',
+    back: '戻る',
+    titlePlaceholder: '起きたら、水を一杯飲む',
     routineTitle: '毎日ひとつ、同じ時刻に',
     wordsTitle: 'ここからが本題です',
     wordsBody:

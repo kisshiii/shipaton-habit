@@ -37,11 +37,13 @@ export const en = {
     /**
      * その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。残りが0でも警告にしない
      */
-    yesterdayDone: (days: number) => `Yesterday: everything done. ${days} days so far.`,
+    yesterdayDone: (days: number) =>
+      `Yesterday: everything done. ${days} ${days === 1 ? 'day' : 'days'} so far.`,
+    /** ⚠ 残りが0でも警告にしない。事実だけを言う */
     yesterdayRest: (left: number, window: number) =>
       left > 0
-        ? `Yesterday was a rest day. You can rest ${left} more ${left === 1 ? 'time' : 'times'} in the last ${window}.`
-        : `Yesterday was a rest day. That uses the rest days for the last ${window}.`,
+        ? `Yesterday was a rest day. You have ${left} more in these ${window} days.`
+        : 'Yesterday was a rest day.',
     /**
      * 休みで数え直した後、次に開いたとき1回だけ出す(plan §4)。
      * ⚠ 「failed」「reset」「lost」と言わない。静かに、事実と次のことだけ
@@ -279,13 +281,18 @@ export const en = {
     /** 3行に分けて見せる。1つの段落にすると読まれない */
     ruleLines: (days: number, rests: number, window: number) => [
       `Every day you finish everything counts. At ${days}, you graduate.`,
-      `You can rest up to ${rests} days in any ${window}. Your count stays.`,
-      'Missing a day is not the end.',
+      `Rest up to ${rests} days in any ${window} and your count stays. One more rest in those ${window} days starts the count again from day 1.`,
+      'A rest day is not the end.',
     ],
     /** 封をする(plan §8)。⚠ 約束の相手はアプリではなく未来の自分 */
     sealEyebrow: 'To me, on the day I would rather not',
     sealHold: 'Hold to seal',
     sealNote: 'This is a promise to yourself, not to this app.',
+    /** VoiceOver では長押しの代わりにダブルタップで封ができる */
+    sealHint: 'Double-tap to seal',
+    back: 'Back',
+    /** 「〜したら、〜する」の形の例(言葉ではなく、ルーティンの例) */
+    titlePlaceholder: 'After I wake up, drink a glass of water',
     routineTitle: 'One thing, every day',
     wordsTitle: 'Now write the hard part',
     wordsBody:

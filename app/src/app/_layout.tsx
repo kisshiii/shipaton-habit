@@ -92,7 +92,11 @@ export default function TabLayout() {
       .finally(() => SplashScreen.hideAsync());
   }, [isSeeding]);
 
-  const handleOnboarded = useCallback(() => setNeedsOnboarding(false), []);
+  // ⚠ Today はオンボーディングの下で、まだ何も無い状態のまま描かれている。閉じたら読み直させる
+  const handleOnboarded = useCallback(() => {
+    setNeedsOnboarding(false);
+    router.navigate({ pathname: '/', params: { opened: String(Date.now()) } });
+  }, []);
 
   // 通知タップで起動・復帰したときの遷移。
   // 冷起動も含めて拾えるよう、リスナーではなくこのフックを使う。

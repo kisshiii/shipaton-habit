@@ -4,6 +4,10 @@
  * ⚠ ここは「決意したとき」の場面そのもの。
  *   サボっている未来の自分に宛てた手紙を、ここで書かせる(spec §1 差別化の核)。
  *
+ * ⚠ **保存するのは最後(課金画面を閉じたとき)に1回だけ。**途中の段では何も保存しない。
+ *   段ごとに保存していたころ(1.0.2 まで)は、途中でやめてやり直すと、見えないところで
+ *   ルーティンと言葉が二重になり、3回やり直すと上限に当たって先へ進めなくなった(2026-10-31 のレビューで発覚)。
+ *
  * ⚠ 最初のルーティンと最初の言葉を必須にしてある。理由は2つ:
  *   1. 最初のルーティンを保存した日が Day 1 (`startedOn`) の起点。ここで立てないと
  *      卒業判定が始まらない
@@ -66,11 +70,13 @@ import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import { attacksThePerson } from '@/lib/soft-guard';
 import { toDateKey } from '@/lib/date';
 import { countChars, truncateChars } from '@/lib/text';
+import { evaluateGraduation } from '@/lib/graduation';
 import {
   addMessage,
   addRoutine,
+  getRoutines,
   markOnboarded,
-  SelfHarmTextError,
+  RoutineLimitError,
   setStartedOnForOnboarding,
 } from '@/storage';
 
@@ -96,8 +102,10 @@ function startChoices(now: Date = new Date()): { label: string; dateKey: string 
     { label: t.onboarding.startToday, dateKey: toDateKey(now) },
     { label: t.onboarding.startTomorrow, dateKey: toDateKey(tomorrow) },
   ];
-  if (now.getMonth() === 11) {
-    choices.push({ label: t.onboarding.startNewYear, dateKey: toDateKey(new Date(now.getFullYear() + 1, 0, 1)) });
+  const newYear = toDateKey(new Date(now.getFullYear() + 1, 0, 1));
+  // ⚠ 12月31日は「明日」と「1月1日」が同じ日になる。同じ意味の選択肢を2つ並べない
+  if (now.getMonth() === 11 && newYear !== choices[1].dateKey) {
+    choices.push({ label: t.onboarding.startNewYear, dateKey: newYear });
   }
   return choices;
 }
@@ -130,11 +138,21 @@ export function Onboarding({ onFinished, preview }: Props) {
   // 撮影用に完了の段から始めたときは、許可済みとして「試しに届ける」を見せる
   const [isAllowed, setIsAllowed] = useState(preview?.step === 'done');
   const [isTrialSent, setIsTrialSent] = useState(false);
+  /** 1日目にする日。今日のままなら置き直さない */
+  const [startOn, setStartOn] = useState(() => toDateKey(new Date()));
+  /** 最後の保存・試しの通知の最中。二度押しで二重に走らせない */
+  const [isSaving, setIsSaving] = useState(false);
 
   // 前のステップで出したエラーを引きずらない
   const goTo = (next: Step) => {
     setError(null);
     setStep(next);
+  };
+
+  // 戻る。入力はすべてこの画面の中にあるので、戻っても何も消えない・二重にならない
+  const goBack = () => {
+    const index = STEPS.indexOf(step);
+    goTo(index <= 0 ? 'intro' : STEPS[index - 1]);
   };
 
   const inputStyle = [styles.input, { color: theme.text, borderColor: theme.line }];
@@ -146,46 +164,35 @@ export function Onboarding({ onFinished, preview }: Props) {
       return;
     }
     setError(null);
-    // ここで Day 1 が今日になる。次の段で別の日を選べば、そちらに置き直す
-    await addRoutine({ time, title });
+    // ⚠ ここでは保存しない。最後にまとめて保存する(上のコメント)
     goTo('start');
   };
 
-  const saveWords = async () => {
-    try {
-      await addMessage(words);
-    } catch (caught) {
-      if (caught instanceof SelfHarmTextError) {
-        // ⚠ 弾いた文言は消さない。オンボーディングでも閉じ込めない
-        setIsBlocked(true);
-        return;
-      }
-      throw caught;
-    }
-    goTo('rule');
-  };
-
   const handleSaveWords = async () => {
+    if (isChecking) return;
     if (!words.trim()) {
       setError(t.onboarding.wordsRequired);
       return;
     }
     setError(null);
-    // Tier 2: 人格・存在を否定する言葉なら一度だけ言い換えを提案する。止めはしない(spec §2)
-    let isAttack = false;
-    if (!containsSelfHarmText(words)) {
-      setIsChecking(true);
-      isAttack = await attacksThePerson(words);
-      setIsChecking(false);
+    // Tier 1: 自傷・希死念慮に類する言葉は先へ進ませない(保存側と同じ判定)。
+    // ⚠ 弾いた文言は消さない。オンボーディングでも閉じ込めない
+    if (containsSelfHarmText(words)) {
+      setIsBlocked(true);
+      return;
     }
+    // Tier 2: 人格・存在を否定する言葉なら一度だけ言い換えを提案する。止めはしない(spec §2)
+    setIsChecking(true);
+    const isAttack = await attacksThePerson(words);
+    setIsChecking(false);
     if (isAttack) {
       Alert.alert(t.katsu.softGuardTitle, t.katsu.softGuardBody, [
         { text: t.katsu.softGuardRewrite, style: 'cancel' },
-        { text: t.katsu.softGuardKeep, onPress: saveWords },
+        { text: t.katsu.softGuardKeep, onPress: () => goTo('rule') },
       ]);
       return;
     }
-    await saveWords();
+    goTo('rule');
   };
 
   // 何を変えたいか: 例を次の段に入れておく。答えそのものは保存しない
@@ -195,8 +202,8 @@ export function Onboarding({ onFinished, preview }: Props) {
     goTo('routine');
   };
 
-  const handlePickStart = async (dateKey: string) => {
-    await setStartedOnForOnboarding(dateKey);
+  const handlePickStart = (dateKey: string) => {
+    setStartOn(dateKey);
     goTo('words');
   };
 
@@ -207,14 +214,46 @@ export function Onboarding({ onFinished, preview }: Props) {
 
   // 最初の1分で、自分の言葉が届く体験をさせる(plan §7-5)。許可した人だけ
   const handleTrial = async () => {
-    await sendTrialNotification(title.trim(), words.trim());
-    setIsTrialSent(true);
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      await sendTrialNotification(title.trim(), words.trim());
+      setIsTrialSent(true);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
+  /**
+   * 課金画面を閉じたとき。ここで初めて、ルーティン・1日目・言葉をまとめて保存する。
+   * ⚠ 1.0.2 以前に途中まで保存してやめた人は、同じルーティンが残っていることがある。二重に足さない
+   */
   const handleFinish = async () => {
-    await markOnboarded();
-    await syncScheduledNotifications();
-    onFinished();
+    if (isSaving) return;
+    setIsSaving(true);
+    try {
+      const existing = await getRoutines();
+      const isSame = existing.some((routine) => routine.time === time && routine.title === title.trim());
+      if (!isSame) {
+        try {
+          // これが Day 1 の起点。登録した時点で時刻が過ぎていれば、その日だけ分母から外れる
+          await addRoutine({ time, title });
+        } catch (caught) {
+          // 途中まで保存した古い版の名残で上限に当たっても、オンボーディングは終わらせる
+          if (!(caught instanceof RoutineLimitError)) throw caught;
+        }
+      }
+      if (startOn !== toDateKey(new Date())) await setStartedOnForOnboarding(startOn);
+      await addMessage(words);
+      await markOnboarded();
+      // 1.0.2 以降の初めての判定をここで済ませておく。済ませないと、最初の判定が
+      // 「更新前に越えた節目」として1日目のお祝いを黙って済みにしてしまうことがある
+      await evaluateGraduation();
+      await syncScheduledNotifications();
+      onFinished();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const current = STEPS.indexOf(step);
@@ -226,7 +265,7 @@ export function Onboarding({ onFinished, preview }: Props) {
         {step === 'intro' ? (
           <Intro onStart={() => goTo('goal')} />
         ) : step === 'seal' ? (
-          <Seal words={words.trim()} onSealed={() => goTo('notifications')} />
+          <Seal words={words.trim()} onSealed={() => goTo('notifications')} onBack={goBack} />
         ) : (
           <ThemedView style={styles.fill}>
             <StatusBar style="auto" />
@@ -290,7 +329,7 @@ export function Onboarding({ onFinished, preview }: Props) {
                       <TextInput
                         value={title}
                         onChangeText={setTitle}
-                        placeholder={t.routines.titlePlaceholder}
+                        placeholder={t.onboarding.titlePlaceholder}
                         placeholderTextColor={theme.textSecondary}
                         maxLength={40}
                         style={inputStyle}
@@ -422,7 +461,15 @@ export function Onboarding({ onFinished, preview }: Props) {
                   )}
                   {/* ⚠ 課金機会①: オンボーディング最後。閉じられること */}
                   {step === 'done' && (
-                    <Button label={t.onboarding.begin} onPress={() => setIsPaywallOpen(true)} />
+                    <Button
+                      label={t.onboarding.begin}
+                      onPress={() => setIsPaywallOpen(true)}
+                      busy={isSaving}
+                    />
+                  )}
+                  {/* 戻る。選び間違えた1日目や、書き間違えた言葉を直せるように(何も保存していないので安全) */}
+                  {step !== 'goal' && (
+                    <Button label={t.onboarding.back} variant="plain" onPress={goBack} />
                   )}
                 </View>
               </KeyboardAvoidingView>
@@ -479,7 +526,15 @@ function Intro({ onStart }: { onStart: () => void }) {
  * ⚠ 約束の相手はアプリではなく未来の自分。署名や名前は求めない。保存するものも無い
  * ⚠ 長押しの間だけ下の線が伸びる。指を離せば戻る。急かさない
  */
-function Seal({ words, onSealed }: { words: string; onSealed: () => void }) {
+function Seal({
+  words,
+  onSealed,
+  onBack,
+}: {
+  words: string;
+  onSealed: () => void;
+  onBack: () => void;
+}) {
   // ⚠ useRef にすると描画中に ref を読むことになる(lint)。値は作り直さないので state で持つ
   const [fill] = useState(() => new Animated.Value(0));
 
@@ -510,6 +565,7 @@ function Seal({ words, onSealed }: { words: string; onSealed: () => void }) {
             delayLongPress={SEAL_HOLD_MS}
             accessibilityRole="button"
             accessibilityLabel={t.onboarding.sealHold}
+            accessibilityHint={t.onboarding.sealHint}
             // VoiceOver では長押しが難しいので、ダブルタップでも封ができるようにする
             accessibilityActions={[{ name: 'activate' }]}
             onAccessibilityAction={handleSealed}
@@ -523,6 +579,7 @@ function Seal({ words, onSealed }: { words: string; onSealed: () => void }) {
             />
           </Pressable>
           <Text style={styles.introNote}>{t.onboarding.sealNote}</Text>
+          <Button tone="ceremony" variant="plain" label={t.onboarding.back} onPress={onBack} />
         </View>
       </SafeAreaView>
     </View>
