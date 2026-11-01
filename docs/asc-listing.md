@@ -172,6 +172,12 @@ non-judgmental message with a link to findahelpline.com, and lets the user
 continue using the app. The check runs entirely on device and the result is
 never stored, logged, or transmitted.
 
+WIDGET AND QUICK ACTIONS (new in 1.0.3)
+The home/lock screen widget shows only the day count and today's progress
+(never the user's words). Please open the app once before adding the
+widget; until the app has run, the widget has nothing to show. Long-pressing
+the app icon offers today's unchecked routines as quick actions.
+
 New in 1.0.2: on devices with Apple Intelligence, a second, softer check uses
 Apple's on-device Foundation Models to notice words that attack the person
 rather than the skipped action. It only suggests a rewrite and never blocks
@@ -381,6 +387,32 @@ REST API なら:
 **⚠ 順番に意味がある。**1〜2で「何のアプリか」、4で「なぜ他と違うか」を出す。 逆にすると、ただの習慣アプリのスクショに見える。
 
 **⚠ 1.0.2 では 1(Today)も撮り直す。**上部に `Day 23 / 66` と休みの残りが出るようになった(plan §5)。数字は 20〜40 日くらいの、途中だと分かる値にする。
+
+## 1.0.3 の「このバージョンの新機能」 **【暫定】2026-11-01**
+
+**⚠ ウィジェットは、一度アプリを開いてから置いてもらう。**開く前に置くと、`expo-widgets` の仕様で赤い「Error」が出ることがある(2026-10-31 のレビューで発覚)。新機能の欄と審査メモの両方に書く。
+
+### 英語
+
+```
+• A new start: onboarding now asks when Day 1 should be. In December you can choose January 1.
+• Your first day gets its own quiet moment, and a Day 1 card you can share if you want.
+• Each day, the first time you open KATSU, it tells you how yesterday went.
+• Notifications have buttons: "Done ✓" checks it off, "Again in 10 min" brings your words back later.
+• Long-press the app icon to check off today's routines.
+• A home and lock screen widget shows your day count. Open KATSU once before adding it.
+```
+
+### 日本語
+
+```
+・新しい始め方:オンボーディングで1日目をいつにするか選べます。12月なら1月1日も選べます。
+・初めての1日をやり切ったとき、静かなお祝いと、共有できる「1日目」のカードが出ます。
+・その日はじめて開いたとき、昨日どうだったかを一行でお知らせします。
+・通知にボタンが付きました。「やった ✓」でチェック、「10分後にもう一度」で同じ言葉をもう一度。
+・アプリのアイコンを長押しすると、今日のルーティンにチェックできます。
+・ホーム画面とロック画面のウィジェットで日数が見られます。置く前に、一度アプリを開いてください。
+```
 
 ## 1.0.3(年始)向け: App 内イベントとフィーチャーの推薦 **【暫定】2026-10-27**(plan §8)
 

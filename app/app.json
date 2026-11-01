@@ -52,7 +52,7 @@
             {
               "name": "KatsuProgress",
               "displayName": "KATSU",
-              "description": "Day N / 66 and today's progress. Your words are never shown here.",
+              "description": "Day N / 66",
               "ios": {
                 "supportedFamilies": [
                   "systemSmall",
