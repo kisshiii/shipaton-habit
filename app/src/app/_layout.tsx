@@ -18,6 +18,7 @@ import {
 } from '@/lib/notifications';
 import { configurePurchases } from '@/lib/purchases';
 import { addQuickActionListener, initialQuickAction, routineIdFromQuickAction } from '@/lib/quick-actions';
+import { applyWidgetChecks } from '@/lib/widget';
 import { getAppState, markCompletedToday } from '@/storage';
 
 SplashScreen.preventAutoHideAsync();
@@ -81,6 +82,12 @@ export default function TabLayout() {
   // キーが無ければ何もしない。課金は後付けの層であって、起動の前提ではない
   useEffect(() => {
     configurePurchases();
+  }, []);
+
+  // アプリが動いていない間にウィジェットで押したチェックを、起動したらすぐ記録へ移す(plan §7-6)。
+  // Today も読み直すたびに同じことをする。重なっても1回ずつ順に処理される
+  useEffect(() => {
+    applyWidgetChecks().catch(() => {});
   }, []);
 
   // 何を出すか決まってからスプラッシュを畳む。

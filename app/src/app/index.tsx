@@ -34,7 +34,7 @@ import {
   type GraduationProgress as Progress,
 } from '@/lib/graduation';
 import { requestReviewOnce } from '@/lib/review';
-import { syncWidget } from '@/lib/widget';
+import { applyWidgetChecks, syncWidget } from '@/lib/widget';
 import {
   getNotificationPermission,
   requestNotificationPermission,
@@ -105,6 +105,8 @@ export default function TodayScreen() {
   }, []);
 
   const refresh = useCallback(async () => {
+    // ウィジェットで押したチェックを先に記録へ移す(plan §7-6)。読み直す前に済ませる
+    await applyWidgetChecks();
     const [nextRoutines, nextRecord, nextMessages, nextPermission] = await Promise.all([
       getRoutines(),
       getTodayRecord(),
@@ -137,10 +139,16 @@ export default function TodayScreen() {
     return () => clearTimeout(timer);
   }, [opened, refresh]);
 
-  // 日付をまたいだ状態でアプリに戻ってきたとき、昨日のチェックを出したままにしない
+  // 日付をまたいだ状態でアプリに戻ってきたとき、昨日のチェックを出したままにしない。
+  // ウィジェットでチェックしてから戻ってきたときも読み直す(Today が開いたままだとフォーカスは変わらない)
   useEffect(() => {
     const subscription = RNAppState.addEventListener('change', (status: AppStateStatus) => {
-      if (status === 'active' && dateRef.current !== todayKey()) refresh();
+      if (status !== 'active') return;
+      applyWidgetChecks()
+        .then((applied) => {
+          if (applied > 0 || dateRef.current !== todayKey()) refresh();
+        })
+        .catch(() => {});
     });
     return () => subscription.remove();
   }, [refresh]);
