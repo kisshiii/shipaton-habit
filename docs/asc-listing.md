@@ -65,10 +65,10 @@ Habits take time. In one study, the median was 66 days. KATSU carries you throug
 ## Keywords (100, カンマ区切り・スペースなし)
 
 ```
-streak,discipline,motivation,accountability,morning,daily,goal,promise,checklist,productivity,gym
+morning,wake,workout,gym,sleep,bedtime,study,phone,screen,detox,resolution,new,year,goal,motivation
 ```
 
-(97文字)
+(99文字。**2026-11-01 に 1.0.3 向けに差し替え**: カスタムプロダクトページに割り当てる語(朝・運動・睡眠・勉強・スマホ・新年)を入れた。外した語の理由は `docs/aso/custom-product-pages.md` §1)
 
 **⚠ アプリ名・サブタイトルと重複する語を入れない**(Apple が別途索引する)。`habit` は名前の `Habits`、`reminder` はサブタイトルで索引される。 `katsu` は入れないこと ── 料理の検索結果に混ざりに行くことになる。
 
@@ -220,8 +220,10 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Keywords (100, カンマ区切り・スペースなし)
 
 ```
-朝活,早起き,継続,目標,自己管理,リマインダー,毎日,やる気,三日坊主,筋トレ,日課,習慣トラッカー,モーニングルーティン,自己啓発,記録
+朝活,早起き,朝型,モーニングルーティン,筋トレ,運動,早寝,睡眠,夜更かし,勉強,資格,スマホ依存,デジタルデトックス,スクリーンタイム,目標,抱負,新年,継続,三日坊主,自己管理,やる気,日課
 ```
+
+**2026-11-01 に 1.0.3 向けに差し替え**(98文字): カスタムプロダクトページに割り当てる語を入れた。`夜更かし` は `三日坊主` と同じく、キーワード欄にだけ置き、見える文面には出さない。外した語の理由は `docs/aso/custom-product-pages.md` §1。⚠ ASC が日本語の上限を文字で数えるか(10/27 は70文字で通った)を、流し込むときに確かめる
 
 **⚠ `KATSU` `喝` を入れないこと。**アプリ名は Apple が別途索引する。 サブタイトルに「習慣」を入れたので、キーワードから `習慣` を外してある(重複)。 旧版の `通知` `卒業` は検索されにくいので外し、`筋トレ` `日課` を足した(2026-09-22)。
 
