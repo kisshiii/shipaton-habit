@@ -122,7 +122,7 @@
 ```sh
 cd app
 npx tsc --noEmit          # 0件であること
-npm run test:graduation   # 卒業判定 30件。TZ=America/New_York でも回す
+npm run test:graduation   # 卒業判定 42件。TZ=America/New_York でも回す
 npm run test:storage      # 保存レイヤ 27件(同時書き込み・分母・言葉の関門)。TZ=America/New_York でも回す
 npm run lint:safe         # 既知の2件だけであること
 ```
