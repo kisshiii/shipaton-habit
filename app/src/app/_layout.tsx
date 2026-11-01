@@ -13,7 +13,6 @@ import {
   dayOfResponse,
   registerNotificationActions,
   routineIdFromResponse,
-  snoozeNotification,
   syncScheduledNotifications,
 } from '@/lib/notifications';
 import { configurePurchases } from '@/lib/purchases';
@@ -136,11 +135,9 @@ export default function TabLayout() {
     const routineId = routineIdFromResponse(lastResponse);
     if (!routineId) return;
 
-    // 「10分後にもう一度」: アプリは開かない。届け直しを予約するだけ
-    if (lastResponse.actionIdentifier === ACTION_SNOOZE) {
-      snoozeNotification(lastResponse).catch(() => {});
-      return;
-    }
+    // 「10分後にもう一度」: アプリは開かない。届け直しはネイティブが予約済み
+    // (modules/katsu-notification-actions)。ここで予約すると二重になる
+    if (lastResponse.actionIdentifier === ACTION_SNOOZE) return;
 
     (async () => {
       try {
