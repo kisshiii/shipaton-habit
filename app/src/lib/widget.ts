@@ -48,8 +48,21 @@ function widgetRoutines(routines: RoutineItem[], record?: DailyRecord): WidgetRo
 export function syncWidget(): Promise<void> {
   return serialized(async () => {
     await takeWidgetChecks();
-    await writeWidget();
+    await writeWidgetAfterChecks();
   });
+}
+
+/**
+ * 書く直前にもう一度、押した分が増えていないかを見る。増えていれば拾ってから書き直す。
+ * ⚠ アプリとウィジェットは別々に「読む → 直す → 書く」をするので、間に押された分を上書きで消しかねない。
+ *   完全には防げない(expo-widgets 側に手を入れないと無理)が、すき間をごく短くする
+ */
+async function writeWidgetAfterChecks(): Promise<void> {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    await writeWidget();
+    const more = await takeWidgetChecks();
+    if (!more) return;
+  }
 }
 
 /**
@@ -68,7 +81,7 @@ export function applyWidgetChecks(): Promise<number> {
   return serialized(async () => {
     const taken = await takeWidgetChecks();
     if (taken === null) return 0;
-    await writeWidget();
+    await writeWidgetAfterChecks();
     return taken;
   });
 }
@@ -81,7 +94,13 @@ function serialized<T>(task: () => Promise<T>): Promise<T> {
   return run;
 }
 
-/** 押した分を今日の記録に付ける。付けた件数を返す。押した分が1つも無ければ null */
+/**
+ * 拾い済みの項目(`forDay:id`)。書き直しに失敗して `checkedIds` が残っても、二度は付けない。
+ * 付けたあとに本人が Today で外したのを、ウィジェットの古い記録で付け直さないため
+ */
+const consumed = new Set<string>();
+
+/** 押した分を今日の記録に付ける。付けた件数を返す。新しく押した分が1つも無ければ null */
 async function takeWidgetChecks(): Promise<number | null> {
   try {
     const today = todayKey();
@@ -89,10 +108,13 @@ async function takeWidgetChecks(): Promise<number | null> {
     let hasAny = false;
     const ids = new Set<string>();
     for (const { props } of entries) {
-      const checkedIds = props?.checkedIds ?? [];
-      if (checkedIds.length === 0) continue;
-      hasAny = true;
-      if (props.forDay === today) checkedIds.forEach((id) => ids.add(id));
+      for (const id of props?.checkedIds ?? []) {
+        const key = props.forDay + ':' + id;
+        if (consumed.has(key)) continue;
+        hasAny = true;
+        consumed.add(key);
+        if (props.forDay === today) ids.add(id);
+      }
     }
     if (!hasAny) return null;
     // ⚠ 付けるだけ。付け外しではない(markCompletedToday は付いていれば何もしない)
@@ -119,6 +141,7 @@ async function writeWidget(): Promise<void> {
     }
     const { progress } = status;
     const labels = progressLabels();
+    const spoken = { doneText: t.today.doneHint, notDoneText: t.today.notDoneHint };
     // 始める日を先にした人(plan §8)。その日まで日数もボタンも出さない
     if (!progress.hasStarted) {
       // 1日目の 0:00 に、アプリを開かなくても `Day 0 / 66` に切り替わるようにしておく
@@ -145,6 +168,20 @@ async function writeWidget(): Promise<void> {
             routines: widgetRoutines(routines),
             checkedIds: [],
             progressLabels: labels,
+            dayLabelDone: t.today.dayOf(1, GRADUATION_STREAK_DAYS),
+            ratioDone: 1 / GRADUATION_STREAK_DAYS,
+            ...spoken,
+          },
+        },
+        {
+          // 1日目を開かずに過ぎたら、ボタンを引っ込める(押しても、その日の分として記録できないため)
+          date: new Date(year, month - 1, date + 1),
+          props: {
+            dayLabel: t.today.dayOf(0, GRADUATION_STREAK_DAYS),
+            todayLabel: '',
+            ratio: 0,
+            routines: [],
+            checkedIds: [],
           },
         },
       ]);
@@ -154,11 +191,23 @@ async function writeWidget(): Promise<void> {
       progress.graduatedOn !== null
         ? GRADUATION_STREAK_DAYS
         : Math.min(progress.doneDays, GRADUATION_STREAK_DAYS);
-    const base: Pick<KatsuProgressProps, 'dayLabel' | 'ratio' | 'progressLabels' | 'checkedIds'> = {
+    const base: Pick<
+      KatsuProgressProps,
+      'dayLabel' | 'ratio' | 'progressLabels' | 'checkedIds' | 'doneText' | 'notDoneText'
+    > = {
       dayLabel: t.today.dayOf(day, GRADUATION_STREAK_DAYS),
       ratio: day / GRADUATION_STREAK_DAYS,
       progressLabels: labels,
       checkedIds: [],
+      ...spoken,
+    };
+    // ウィジェットで今日を全部やり切ったときの日数。今日がまだなら1つ進む(卒業後は 66 / 66 のまま)
+    const todayDone = progress.todayDoneByHand || record.completedIds.length >= Math.max(record.totalCount, 1);
+    const dayIfDone =
+      progress.graduatedOn !== null || todayDone ? day : Math.min(day + 1, GRADUATION_STREAK_DAYS);
+    const doneExtras = {
+      dayLabelDone: t.today.dayOf(dayIfDone, GRADUATION_STREAK_DAYS),
+      ratioDone: dayIfDone / GRADUATION_STREAK_DAYS,
     };
     const midnight = new Date();
     midnight.setHours(24, 0, 0, 0);
@@ -172,6 +221,7 @@ async function writeWidget(): Promise<void> {
           todayLabel: t.today.progress(record.completedIds.length, record.totalCount),
           forDay: record.date,
           routines: widgetRoutines(routines, record),
+          ...doneExtras,
         },
       },
       // 日付が変わったら今日の件数は 0 から。日数は次に開いたときに引き直す。

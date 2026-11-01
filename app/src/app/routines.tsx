@@ -32,6 +32,7 @@ import { t } from '@/i18n';
 import { evaluateGraduation } from '@/lib/graduation';
 import { syncScheduledNotifications } from '@/lib/notifications';
 import { syncQuickActions } from '@/lib/quick-actions';
+import { syncWidget } from '@/lib/widget';
 import {
   addRoutine,
   deleteRoutine,
@@ -88,6 +89,8 @@ export default function RoutinesScreen() {
     await syncScheduledNotifications();
     // ホーム画面のクイックアクションも、足した・消した・名前を変えたルーティンにそろえる
     await syncQuickActions(nextRoutines, today);
+    // ウィジェットの項目・日数も同じ。足した・消したルーティンを Today に戻る前に反映する
+    await syncWidget().catch(() => {});
   }, []);
 
   // 画面に戻るたびに読み直す(Today 画面での操作を反映するため)

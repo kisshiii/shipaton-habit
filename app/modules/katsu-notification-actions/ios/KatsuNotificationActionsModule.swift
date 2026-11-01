@@ -70,12 +70,19 @@ final class KatsuSnoozeDelegate: NotificationDelegate, @unchecked Sendable { // 
     let content = original.content
     guard let routineId = content.userInfo["routineId"] as? String, !routineId.isEmpty else { return }
     guard !content.body.isEmpty else { return }
-    // 昨日の分は届け直さない(終わった日の分で煽らない)。forDay の無い古い通知はそのまま扱う
-    if let forDay = content.userInfo["forDay"] as? String, forDay != Self.todayKey() { return }
+    lock.lock()
+    let seconds = snoozeSeconds
+    lock.unlock()
+
+    // 昨日の分は届け直さない(終わった日の分で煽らない)。forDay の無い古い通知は今日の分として扱う。
+    // ⚠ 届く時刻で見る。23時55分に押すと、届くのは翌日。終わった日の分を翌日に届けない(2026-11-01 のレビュー)
+    let forDay = (content.userInfo["forDay"] as? String) ?? Self.dateKey(Date())
+    guard forDay == Self.dateKey(Date()), forDay == Self.dateKey(Date().addingTimeInterval(seconds)) else { return }
+    // ウィジェットでもうチェックした項目には届け直さない(アプリを開くまで、アプリの記録には入っていないため)
+    if Self.isCheckedOnWidget(routineId: routineId, forDay: forDay) { return }
 
     lock.lock()
     let isFirst = handledRequests.insert(original.identifier).inserted
-    let seconds = snoozeSeconds
     lock.unlock()
     if !isFirst { return }
 
@@ -106,11 +113,33 @@ final class KatsuSnoozeDelegate: NotificationDelegate, @unchecked Sendable { // 
     }
   }
 
-  /// JS の `toDateKey` と同じ、端末のローカル日付の "yyyy-MM-dd"
-  private static func todayKey() -> String {
+  /// JS の `toDateKey` と同じ、端末のローカル日付の "yyyy-MM-dd"(和暦・仏暦の設定でも西暦で)
+  private static func dateKey(_ date: Date) -> String {
     let calendar = Calendar(identifier: .gregorian)
-    let parts = calendar.dateComponents(in: TimeZone.current, from: Date())
+    let parts = calendar.dateComponents(in: TimeZone.current, from: date)
     return String(format: "%04d-%02d-%02d", parts.year ?? 0, parts.month ?? 0, parts.day ?? 0)
+  }
+
+  /// ウィジェット(expo-widgets)のタイムラインの名前。`src/widgets/katsu-progress.tsx` の createWidget と同じ
+  private static let widgetName = "KatsuProgress"
+
+  /**
+   * ウィジェットで、その日のその項目にもうチェックが付いているか。
+   * expo-widgets はボタンで押した結果を App Group のタイムライン(props の `checkedIds`)に残す。
+   * App Group の ID は expo-widgets が Info.plist に書く `ExpoWidgetsAppGroupIdentifier` から読む
+   */
+  private static func isCheckedOnWidget(routineId: String, forDay: String) -> Bool {
+    guard let group = Bundle.main.object(forInfoDictionaryKey: "ExpoWidgetsAppGroupIdentifier") as? String,
+          let defaults = UserDefaults(suiteName: group),
+          let entries = defaults.array(forKey: "__expo_widgets_\(widgetName)_timeline") as? [[String: Any]]
+    else { return false }
+    return entries.contains { entry in
+      guard let props = entry["props"] as? [String: Any],
+            props["forDay"] as? String == forDay,
+            let checked = props["checkedIds"] as? [String]
+      else { return false }
+      return checked.contains(routineId)
+    }
   }
 
   private static func beginBackgroundTask() -> UIBackgroundTaskIdentifier {

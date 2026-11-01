@@ -168,10 +168,14 @@ export default function TabLayout() {
   //   二重に来ても Today を開き直すだけで済む
   useEffect(() => {
     const handle = async (routineId: string) => {
-      await markCompletedToday(routineId);
-      await syncScheduledNotifications();
-      // ⚠ opened を毎回変えて、Today がすでに開いていても読み直させる(項目も Today が差し替える)
-      router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
+      try {
+        await markCompletedToday(routineId);
+        await syncScheduledNotifications();
+      } finally {
+        // ⚠ 保存に失敗しても Today は開く(押したのに何も起きない、を避ける)。
+        // opened を毎回変えて、Today がすでに開いていても読み直させる(項目も Today が差し替える)
+        router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
+      }
     };
 
     const initialId = routineIdFromQuickAction(initialQuickAction);

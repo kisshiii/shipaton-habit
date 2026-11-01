@@ -17,7 +17,15 @@
  */
 
 import { Button, HStack, Image, ProgressView, Spacer, Text, VStack } from '@expo/ui/swift-ui';
-import { buttonStyle, font, foregroundStyle, lineLimit } from '@expo/ui/swift-ui/modifiers';
+import {
+  accessibilityHidden,
+  accessibilityLabel,
+  buttonStyle,
+  font,
+  foregroundStyle,
+  lineLimit,
+  minimumScaleFactor,
+} from '@expo/ui/swift-ui/modifiers';
 import { createWidget, type WidgetEnvironment } from 'expo-widgets';
 
 /** 今日のルーティン1件。⚠ 書いた言葉(KatsuMessage)は入れない */
@@ -45,6 +53,12 @@ export type KatsuProgressProps = {
   checkedIds?: string[];
   /** `todayLabel` の作り置き。`progressLabels[分母][分子]`。ウィジェットの中では t() が使えないため */
   progressLabels?: string[][];
+  /** ウィジェットで今日を全部やり切ったときに出す日数(`Day 23 / 66` が `Day 24 / 66` に)とバーの割合 */
+  dayLabelDone?: string;
+  ratioDone?: number;
+  /** VoiceOver で項目のあとに読む状態(「完了」/「まだ」)。ウィジェットの中では t() が使えないため */
+  doneText?: string;
+  notDoneText?: string;
 };
 
 const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment) => {
@@ -100,17 +114,26 @@ const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment
     const total = next.filter((routine) => routine.done || !routine.excluded).length;
     const label = props.progressLabels?.[total]?.[done];
     const checkedIds = props.checkedIds ?? [];
+    // 今日を全部やり切ったら、日数も1つ進めて見せる(アプリを開けば同じ数字になる)
+    const isAllDone = total > 0 && done >= total;
     return {
       routines: next,
       checkedIds: checkedIds.includes(id) ? checkedIds : [...checkedIds, id],
       todayLabel: label ?? props.todayLabel,
+      ...(isAllDone && props.dayLabelDone ? { dayLabel: props.dayLabelDone, ratio: props.ratioDone ?? props.ratio } : {}),
     };
   };
 
   return (
     <VStack alignment="leading" spacing={isMedium ? 6 : 5}>
       <HStack>
-        <Text modifiers={[font({ weight: 'bold', design: 'serif', size: isMedium ? 18 : 15 }), lineLimit(1)]}>
+        {/* ⚠ 日本語の「66日のうち23日」は小さいウィジェットだと幅いっぱい。切れるより縮める */}
+        <Text
+          modifiers={[
+            font({ weight: 'bold', design: 'serif', size: isMedium ? 18 : 15 }),
+            lineLimit(1),
+            minimumScaleFactor(0.7),
+          ]}>
           {props.dayLabel}
         </Text>
         <Spacer />
@@ -123,7 +146,11 @@ const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment
         {routines.map((routine) => {
           const row = (
             <HStack spacing={6}>
-              <Image systemName={routine.done ? 'checkmark.circle.fill' : 'circle'} size={isMedium ? 18 : 16} />
+              <Image
+                systemName={routine.done ? 'checkmark.circle.fill' : 'circle'}
+                size={isMedium ? 18 : 16}
+                modifiers={[accessibilityHidden(true)]}
+              />
               {isMedium ? <Text modifiers={[font({ size: 12 }), secondary, lineLimit(1)]}>{routine.time}</Text> : null}
               <Text
                 modifiers={
@@ -136,13 +163,22 @@ const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment
               <Spacer />
             </HStack>
           );
+          // VoiceOver では丸印が読めない。「何時の何を、済ませたか」を項目が名乗る
+          const spoken =
+            routine.time + ' ' + routine.title + ', ' + (routine.done ? props.doneText ?? '' : props.notDoneText ?? '');
           // 済んだ項目はボタンにしない(押しても外れない。外すのはアプリの Today で)
-          if (routine.done) return <VStack key={routine.id}>{row}</VStack>;
+          if (routine.done) {
+            return (
+              <VStack key={routine.id} modifiers={[accessibilityLabel(spoken)]}>
+                {row}
+              </VStack>
+            );
+          }
           return (
             <Button
               key={routine.id}
               target={routine.id}
-              modifiers={[buttonStyle('plain')]}
+              modifiers={[buttonStyle('plain'), accessibilityLabel(spoken)]}
               onPress={() => check(routine.id)}>
               {row}
             </Button>

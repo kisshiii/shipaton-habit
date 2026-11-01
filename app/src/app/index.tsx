@@ -70,6 +70,8 @@ export default function TodayScreen() {
   /** その日最初に開いたときの一言(plan §8)。この画面が開いている間は出したままにする */
   const [dailyLine, setDailyLine] = useState<{ text: string; countStartedOn: string } | null>(null);
   const dateRef = useRef(todayKey());
+  /** 裏で起こされたとき(通知のボタンなど)に、一言・お知らせを出さずに済ませた。前に出たら読み直す */
+  const isGreetingPendingRef = useRef(false);
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
   const { routineId: focusedId, opened } = useLocalSearchParams<{ routineId?: string; opened?: string }>();
@@ -86,6 +88,13 @@ export default function TodayScreen() {
     setDailyLine((line) =>
       line && line.countStartedOn !== status?.progress.countStartedOn ? null : line,
     );
+    // ⚠ アプリが前に出ていないときは「出した」「今日はもう開いた」と記録しない。
+    // 本人が見ていない一言・お知らせを、見たことにしてしまうため(2026-11-01 のレビュー)
+    if (RNAppState.currentState !== 'active') {
+      isGreetingPendingRef.current = true;
+      return;
+    }
+    isGreetingPendingRef.current = false;
     if (status?.showRestartNotice && status.progress.restRestartOn) {
       setIsRestartNoticeOpen(true);
       await markRestartNoticeShown(status.progress.restRestartOn);
@@ -146,7 +155,7 @@ export default function TodayScreen() {
       if (status !== 'active') return;
       applyWidgetChecks()
         .then((applied) => {
-          if (applied > 0 || dateRef.current !== todayKey()) refresh();
+          if (applied > 0 || dateRef.current !== todayKey() || isGreetingPendingRef.current) refresh();
         })
         .catch(() => {});
     });
