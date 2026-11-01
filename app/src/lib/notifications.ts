@@ -14,6 +14,8 @@
 
 import * as Notifications from 'expo-notifications';
 
+import NotificationActions from '../../modules/katsu-notification-actions';
+
 import {
   ACTION_DONE,
   ACTION_SNOOZE,
@@ -79,10 +81,12 @@ export async function requestNotificationPermission(): Promise<Notifications.Per
  * 通知を長押ししたときのボタンを登録する。起動のたびに呼んでよい(上書きされる)。
  *   - やった ✓      アプリが開き、そのルーティンにチェックが付く
  *   - 10分後にもう一度  アプリを開かずに、同じ言葉を10分後に届け直す
- * ⚠ 「もう一度」はアプリを開かない。iOS が裏で処理を走らせるかは実機で確かめること
- *   (expo-notifications のドキュメントに書かれていない。2026-10-30)
+ * ⚠ 「もう一度」の予約は**ネイティブ**(`modules/katsu-notification-actions`)がする。
+ *   expo-notifications は応答の完了をすぐ iOS に返すので、裏で止まっている・終了している
+ *   アプリでは JS が動く前に止められ、JS で予約すると消える。ここでは分数を渡すだけ
  */
 export async function registerNotificationActions(): Promise<void> {
+  NotificationActions?.configure(SNOOZE_MINUTES * 60);
   await Notifications.setNotificationCategoryAsync(ROUTINE_CATEGORY, [
     {
       identifier: ACTION_DONE,
@@ -102,31 +106,6 @@ export function deliveredOn(response: Notifications.NotificationResponse): strin
   const raw = response.notification.date;
   // 秒で来ることもあるので、ミリ秒にそろえる
   return toDateKey(new Date(raw < 1e12 ? raw * 1000 : raw));
-}
-
-/**
- * 同じ通知を、`SNOOZE_MINUTES` 分後にもう一度届ける。
- * ⚠ 本文は本人が書いた言葉そのもの(届いた通知の中身をそのまま使う)。端末の外には出ない
- */
-export async function snoozeNotification(response: Notifications.NotificationResponse): Promise<void> {
-  const { title, body } = response.notification.request.content;
-  const routineId = routineIdFromResponse(response);
-  if (!routineId || !body) return;
-  const forDay = dayOfResponse(response);
-  // ⚠ 済んだ・消した・昨日の分のルーティンには届け直さない(終わっているのに煽られる、を防ぐ)
-  const [routines, records] = await Promise.all([getRoutines(), getDailyRecords()]);
-  if (forDay !== toDateKey(new Date())) return;
-  if (!routines.some((routine) => routine.id === routineId)) return;
-  if (records[forDay]?.completedIds.includes(routineId)) return;
-  const payload: KatsuNotificationData = { routineId, forDay };
-  await Notifications.scheduleNotificationAsync({
-    identifier: `${SNOOZE_ID_PREFIX}.${routineId}.${Date.now()}`,
-    content: { title: title ?? undefined, body, data: payload, categoryIdentifier: ROUTINE_CATEGORY },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
-      seconds: SNOOZE_MINUTES * 60,
-    },
-  });
 }
 
 // --- 試しに届ける -------------------------------------------------------------
