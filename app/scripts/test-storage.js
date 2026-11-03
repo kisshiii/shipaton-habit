@@ -196,6 +196,57 @@ const cases = [
     assert.strictEqual(results[1].value, true);
   }],
 
+  // --- ウィジェットで押した分を、押した日に付ける(2026-11-03) ------------------------
+  ['開かなかった日の分は、その日のルーティンで分母を作って付ける', async () => {
+    setClock(2026, 10, 30);
+    const [a, b] = await addN(2);
+    setClock(2026, 11, 1);
+    // 10/31 は一度も開かなかった。ウィジェットで2つとも押した
+    assert.strictEqual(records()[YESTERDAY], undefined);
+    assert.strictEqual(await storage.markCompletedOnDay(YESTERDAY, [a.id, b.id]), 2);
+    assert.deepStrictEqual(records()[YESTERDAY], {
+      date: YESTERDAY, completedIds: [a.id, b.id], totalCount: 2, excludedIds: [],
+    });
+  }],
+  ['その日の記録があれば、分母は変えずにチェックだけ足す', async () => {
+    setClock(2026, 10, 30);
+    const [a, b] = await addN(2);
+    store.set('katsu.records', JSON.stringify({
+      [YESTERDAY]: { date: YESTERDAY, completedIds: [a.id], totalCount: 2, excludedIds: [] },
+    }));
+    setClock(2026, 11, 1);
+    assert.strictEqual(await storage.markCompletedOnDay(YESTERDAY, [a.id, b.id]), 1);
+    assert.deepStrictEqual(records()[YESTERDAY].completedIds, [a.id, b.id]);
+    assert.strictEqual(records()[YESTERDAY].totalCount, 2);
+  }],
+  ['分母から外していた項目に付いたら、その日の分母に入る', async () => {
+    setClock(2026, 10, 30);
+    const [a, b] = await addN(2);
+    store.set('katsu.records', JSON.stringify({
+      [YESTERDAY]: { date: YESTERDAY, completedIds: [a.id], totalCount: 1, excludedIds: [b.id] },
+    }));
+    setClock(2026, 11, 1);
+    await storage.markCompletedOnDay(YESTERDAY, [b.id]);
+    assert.strictEqual(records()[YESTERDAY].totalCount, 2);
+  }],
+  ['その日より後に作ったルーティン・消したルーティンには付けない', async () => {
+    setClock(2026, 10, 30);
+    const [a] = await addN(1);
+    setClock(2026, 11, 1);
+    const [later] = await addN(1);
+    await storage.markCompletedOnDay(YESTERDAY, [a.id, later.id, 'gone']);
+    assert.deepStrictEqual(records()[YESTERDAY], {
+      date: YESTERDAY, completedIds: [a.id], totalCount: 1, excludedIds: [],
+    });
+  }],
+  ['今日の分は今日のチェックと同じ。先の日には付けない', async () => {
+    const [a] = await addN(1);
+    assert.strictEqual(await storage.markCompletedOnDay(TODAY, [a.id, a.id]), 1);
+    assert.deepStrictEqual(todayRecord().completedIds, [a.id]);
+    assert.strictEqual(await storage.markCompletedOnDay('2026-11-02', [a.id]), 0);
+    assert.strictEqual(records()['2026-11-02'], undefined);
+  }],
+
   // --- 削除 -----------------------------------------------------------------
   ['削除すると、今日のチェックと分母から外した印の両方から消える', async () => {
     const past = await storage.addRoutine({ time: PAST, title: 'past' });

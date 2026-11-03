@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { MAX_ROUTINES } from '@/constants/routines';
-import { normalizeTime, todayKey, toTimeKey } from '@/lib/date';
+import { normalizeTime, toDateKey, todayKey, toTimeKey } from '@/lib/date';
 import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import { countChars } from '@/lib/text';
 import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
@@ -375,6 +375,52 @@ async function markCompletedTodayUnlocked(routineId: string): Promise<void> {
 }
 
 /**
+ * ウィジェットで押したチェックを、**押した日**の記録に付ける(付けるだけ。外さない)。付けた件数を返す。
+ *
+ * その日に一度もアプリを開かなかった人の分を、次に開いたときに移すため(2026-11-03 に決定。spec §2)。
+ * ⚠ 本人が過去日を直す手段ではない。ウィジェットは押したその日の表示でしか押せない
+ *   (`katsu-progress.tsx` の check())。その日のうちに押した記録を、あとから写すだけ。
+ * - 今日なら `markCompletedToday` と同じ。先の日は何もしない
+ * - その日の記録があれば分母は変えない(過去日は再計算しない)。ただし分母から外していた項目に
+ *   付いたら、今日と同じく分母に入れる
+ * - 記録が無ければ(その日アプリを開かなかった)、その日にあったルーティンで分母を作る。
+ *   開かなければルーティンは変えられないので、今のルーティンのうちその日までに作ったものが、その日の分
+ */
+async function markCompletedOnDayUnlocked(date: string, routineIds: string[]): Promise<number> {
+  const today = todayKey();
+  if (date > today) return 0;
+  if (date === today) {
+    const before = (await getTodayRecordUnlocked()).completedIds.length;
+    for (const id of routineIds) await markCompletedTodayUnlocked(id);
+    return (await getTodayRecordUnlocked()).completedIds.length - before;
+  }
+
+  const [routines, records] = await Promise.all([getRoutines(), readJson<RecordMap>(KEYS.records, {})]);
+  const onThatDay = routines.filter((routine) => toDateKey(new Date(routine.createdAt)) <= date);
+  const current = records[date];
+  const additions = routineIds.filter(
+    (id, index) =>
+      routineIds.indexOf(id) === index &&
+      onThatDay.some((routine) => routine.id === id) &&
+      !(current?.completedIds.includes(id) ?? false),
+  );
+  if (additions.length === 0) return 0;
+
+  if (current) {
+    const excluded = new Set(current.excludedIds ?? []);
+    records[date] = {
+      ...current,
+      completedIds: [...current.completedIds, ...additions],
+      totalCount: current.totalCount + additions.filter((id) => excluded.has(id)).length,
+    };
+  } else {
+    records[date] = { date, completedIds: additions, totalCount: onThatDay.length, excludedIds: [] };
+  }
+  await writeJson(KEYS.records, records);
+  return additions.length;
+}
+
+/**
  * 今日のチェックを付け外しする。
  * チェックした時刻は記録しない(spec §2: その日のうちなら何時でも達成)。
  * 分母から外していた項目にチェックが付いたら、その項目は分母にも入る。
@@ -507,6 +553,9 @@ export function getTodayRecord(...args: Parameters<typeof getTodayRecordUnlocked
 }
 export function markCompletedToday(...args: Parameters<typeof markCompletedTodayUnlocked>): ReturnType<typeof markCompletedTodayUnlocked> {
   return serialized(() => markCompletedTodayUnlocked(...args)) as ReturnType<typeof markCompletedTodayUnlocked>;
+}
+export function markCompletedOnDay(...args: Parameters<typeof markCompletedOnDayUnlocked>): ReturnType<typeof markCompletedOnDayUnlocked> {
+  return serialized(() => markCompletedOnDayUnlocked(...args)) as ReturnType<typeof markCompletedOnDayUnlocked>;
 }
 export function toggleCompletion(...args: Parameters<typeof toggleCompletionUnlocked>): ReturnType<typeof toggleCompletionUnlocked> {
   return serialized(() => toggleCompletionUnlocked(...args)) as ReturnType<typeof toggleCompletionUnlocked>;

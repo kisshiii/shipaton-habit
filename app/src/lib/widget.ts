@@ -18,7 +18,7 @@ import { t } from '@/i18n';
 import { formatMonthDay, toDateKey, todayKey } from '@/lib/date';
 import { evaluateGraduation } from '@/lib/graduation';
 import { syncScheduledNotifications } from '@/lib/notifications';
-import { getRoutines, getTodayRecord, markCompletedToday } from '@/storage';
+import { getRoutines, getTodayRecord, markCompletedOnDay } from '@/storage';
 import type { DailyRecord, RoutineItem } from '@/types';
 import KatsuProgress, { type KatsuProgressProps, type WidgetRoutine } from '@/widgets/katsu-progress';
 
@@ -70,8 +70,10 @@ async function writeWidgetAfterChecks(): Promise<void> {
  *
  * アプリが動いていない間に押されても、押した項目はタイムラインの props(`checkedIds`)に残っている
  * (expo-widgets 57.0.9: ボタンの onPress が返した値を、ウィジェット側が App Group のタイムラインに上書きする)。
- * それを読み、**その表示の日(`forDay`)が今日のものだけ**付ける(昨日の表示を押した分は捨てる。
- * 過去日の遡り修正はしない)。付けたら通知の予約を引き直し、ウィジェットを書き直して `checkedIds` を空に戻す。
+ * それを読み、**押した日(`forDay`)の記録に**付ける。その日に一度もアプリを開かなかった人でも、
+ * ウィジェットでやり切った日は「やった日」になる(2026-11-03 に決定。spec §2)。
+ * ウィジェットは表示の日と押した日が同じときしか押せない(katsu-progress.tsx の check())ので、
+ * 本人が過去日を直す手段にはならない。付けたら通知の予約を引き直し、ウィジェットを書き直して `checkedIds` を空に戻す。
  * 押したイベント(`addUserInteractionListener`)は使わない ── ウィジェット側の別プロセスで出るため、
  * アプリには届かず、溜めてもおかれない。
  *
@@ -100,27 +102,29 @@ function serialized<T>(task: () => Promise<T>): Promise<T> {
  */
 const consumed = new Set<string>();
 
-/** 押した分を今日の記録に付ける。付けた件数を返す。新しく押した分が1つも無ければ null */
+/** 押した分を押した日の記録に付ける。付けた件数を返す。新しく押した分が1つも無ければ null */
 async function takeWidgetChecks(): Promise<number | null> {
   try {
-    const today = todayKey();
     const entries = await KatsuProgress.getTimeline();
     let hasAny = false;
-    const ids = new Set<string>();
+    const byDay = new Map<string, string[]>();
     for (const { props } of entries) {
-      for (const id of props?.checkedIds ?? []) {
+      // forDay の無い表示(1.0.3 より前の書き方)は、いつ押したか分からないので付けない
+      if (!props?.forDay) continue;
+      for (const id of props.checkedIds ?? []) {
         const key = props.forDay + ':' + id;
         if (consumed.has(key)) continue;
         hasAny = true;
         consumed.add(key);
-        if (props.forDay === today) ids.add(id);
+        byDay.set(props.forDay, [...(byDay.get(props.forDay) ?? []), id]);
       }
     }
     if (!hasAny) return null;
-    // ⚠ 付けるだけ。付け外しではない(markCompletedToday は付いていれば何もしない)
-    for (const id of ids) await markCompletedToday(id);
-    if (ids.size > 0) await syncScheduledNotifications();
-    return ids.size;
+    // ⚠ 付けるだけ。付け外しではない(付いていれば何もしない)
+    let applied = 0;
+    for (const [day, ids] of byDay) applied += await markCompletedOnDay(day, ids);
+    if (byDay.has(todayKey())) await syncScheduledNotifications();
+    return applied;
   } catch {
     // 黙る。ウィジェットの都合で画面を止めない
     return null;

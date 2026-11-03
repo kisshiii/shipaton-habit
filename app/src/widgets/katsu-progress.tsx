@@ -105,8 +105,9 @@ const KatsuProgress = (props: KatsuProgressProps, environment: WidgetEnvironment
       String(now.getMonth() + 1).padStart(2, '0') +
       '-' +
       String(now.getDate()).padStart(2, '0');
-    // 何日も開いていない人の、昨日の表示を押しても今日の記録にしない
-    if (props.forDay && props.forDay !== today) return undefined;
+    // 何日も開いていない人の、昨日の表示を押しても何も付けない(昨日にも今日にも)。
+    // アプリは押した分を forDay の日に付けるので、押せるのは表示の日と今日が同じときだけ
+    if (props.forDay !== today) return undefined;
     const target = routines.find((routine) => routine.id === id);
     if (!target || target.done) return undefined;
     const next = routines.map((routine) => (routine.id === id ? { ...routine, done: true } : routine));
