@@ -25,7 +25,32 @@
 
 ---
 
-## ⚠ 2026-11-01 の状態(ここから再開)
+## ⚠ 2026-11-03 の状態(ここから再開)
+
+- **1.0.3 のビルド36が TestFlight に出た(VALID)。**ブランチ `feat/1.0.3-widget`(push はまだ)。EAS は11月 15回のうち2回使用
+- この日に入れたもの: ウィジェットで押した分を、アプリを開かなかった日でも押した日の記録に入れる(spec §2)/ アプリ内の文章を英日とも書き直し(spec §9-13 の決まり)/ 卒業の画面の問いを「習慣になったなら、もう課金は要りません」に(購読者のみ。無課金の人は別の文)/ Today の通知のお願いを1行に / ストア文面の書き直し(`docs/asc-listing.md`。研究は著者名と「18〜254日」を書かない)
+- **本人が TestFlight で見ること:** 課金した状態の卒業の画面 / ホーム画面のウィジェット(見た目・チェック・最後の1件で日数が進む・ルーティン画面の変更が出る)/ 通知の「10分後」(ウィジェットでチェック済みなら来ない、23時台は来ない)/ アイコンの長押し / 起動にかかる時間(シミュレーターでは約10秒だった)
+- **次にやること: ストア用スクショの撮り直し(文章が古いまま写っている)。**決まったこと(2026-11-03、本人OK):
+  - **日本語の5枚を新しく作る**(今は日本語ページにも英語の5枚が出ている)
+  - 見出し 英語: 01 `Day 23 of 66.` / `Three routines at most.` ・ 02 `Skip it, and your` / `own words show up.` ・ 03 `You write every word` / `it sends you.` ・ 04 `66 days, and` / `you graduate.` ・ 05 `You set the price.`(そのまま)
+  - 見出し 日本語: 01「66日のうち23日。」/「ルーティンは3つまで。」・ 02「やらなかったら、」/「自分の言葉が届く。」・ 03「言葉は全部、」/「自分で書く。」・ 04「66日やり切ったら、」/「卒業。」・ 05「値段は、」/「自分で決める。」
+  - カスタムページ: 朝 02 `Start with` / `a glass of water.`・「まずは、」/「水を一杯飲むだけ。」/ 新年 02 `Day 1 / 66.` / `Share it if you like.`・「元日が1日目。」/「カードにして共有もできる。」/ 朝 03・新年 03 はそのまま(`~/Desktop/katsu-cpp/`)
+  - 言葉の画面と課金の画面はタップが要るので、`-katsuDevScreen` に2つ足して撮る(撮影用ビルドだけ)。02 の日本語版(ロック画面の通知)は本人が実機で撮る
+  - 見出しも「AI っぽい言い回しを使わない」決まり(spec §9-13)に合わせた
+- 通知の c(小見出しに日数)と d(長押しの専用画面)は入れない(先の日の日数が予約時に決まらない / ネイティブ部品とビルドが増える)
+- そのあと: main にマージ → ASC に流し込み(説明文・新機能・キーワード・審査メモ・スクショ)→ 提出 → 推薦の説明を ASC で差し替え(期限 12/4)
+
+### この Mac でシミュレーター向けにビルドする(EAS の回数を使わない)
+
+2026-11-03 にできるようにした。撮影や確認はこちらで済ませ、EAS は提出用だけに使う。
+
+- CocoaPods は Homebrew の Ruby で `~/.katsu-gems` に入れた(`brew install cocoapods` はこの Mac だとソースから組み立てになり何時間もかかるので使わない)。使うとき: `R=/usr/local/Homebrew/Library/Homebrew/vendor/portable-ruby/4.0.9/bin; export GEM_HOME=~/.katsu-gems GEM_PATH=~/.katsu-gems PATH=$R:~/.katsu-gems/bin:$PATH LANG=en_US.UTF-8`
+- `EXPO_NO_CAPABILITY_SYNC=1 npx expo prebuild --platform ios --clean --no-install` → `cd ios && pod install`
+- ⚠ Xcode 26.3 だと `node_modules/expo-modules-jsi/.../JavaScriptCodable+Date.swift` の `abs(milliseconds)` が「曖昧」で止まる。ビルドの間だけ `Swift.abs(milliseconds)` に書き換え、終わったら戻す(EAS では起きない)
+- `EXPO_PUBLIC_KATSU_DEV_TOOLS=1 xcodebuild -workspace KATSU.xcworkspace -scheme KATSU -configuration Release -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath <dir> CODE_SIGNING_ALLOWED=NO build`(初回30分ほど)
+- App Group を使うには、できた .app を entitlements 付きで署名し直す(`codesign -f -s - --entitlements ExpoWidgetsTarget/ExpoWidgetsTarget.entitlements .../PlugIns/ExpoWidgetsTarget.appex`、本体は `KATSU/KATSU.entitlements` から `aps-environment` を除いたもの)。シミュレーターでは App Group の UserDefaults がアプリ自身の Preferences に入る(ウィジェットとは共有されない)ので、ウィジェットの押下は `defaults import` でそこへ書いて確かめた
+
+## 2026-11-01 の状態(記録)
 
 - **1.0.3 のビルド34が成功し、TestFlight へ送った**(ブランチ `feat/1.0.3-widget`)。10/31 に決めた4つは全部入れた: 「10分後にもう一度」を iOS 側で予約(`app/modules/katsu-notification-actions`)/ ウィジェットから直接チェック / 保存まわりのテスト(`npm run test:storage`、27件)/ ウィジェットの赤い Error の注意書きと、説明を「Day N / 66」に
 - **ウィジェット用のプロビジョニングプロファイルは本人が作った**(Claude Code の外のターミナルで `eas build` を対話で実行。`!` では対話できず止まる)。次からは `EXPO_NO_CAPABILITY_SYNC=1 npx eas-cli build ... --non-interactive` で通るはず
