@@ -237,6 +237,14 @@ async function writeWidget(): Promise<void> {
           todayLabel: t.today.progress(0, routines.length),
           forDay: toDateKey(midnight),
           routines: widgetRoutines(routines),
+          // 明日をウィジェットだけで全部やり切ったときも、日数を1つ進めて見せる(2026-11-03、シミュレーターで発見)。
+          // 今日がやり切りでも休みでも、明日やり切れば今の日数 + 1(休みで数え直す日だけは、開いたときに引き直す)
+          ...(progress.graduatedOn !== null
+            ? {}
+            : {
+                dayLabelDone: t.today.dayOf(Math.min(day + 1, GRADUATION_STREAK_DAYS), GRADUATION_STREAK_DAYS),
+                ratioDone: Math.min(day + 1, GRADUATION_STREAK_DAYS) / GRADUATION_STREAK_DAYS,
+              }),
         },
       },
       // 2日以上開いていないときは、ボタンを引っ込めて日数だけにする。
