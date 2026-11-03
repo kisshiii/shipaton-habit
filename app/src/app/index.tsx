@@ -11,10 +11,9 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
-import { AppState as RNAppState, type AppStateStatus, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState as RNAppState, type AppStateStatus, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/button';
 import { CheckMark } from '@/components/check-mark';
 import { EmptyState } from '@/components/empty-state';
 import { GraduationModal } from '@/components/graduation-modal';
@@ -260,15 +259,18 @@ export default function TodayScreen() {
             </ThemedView>
           )}
 
+          {/* 通知のお願いは1行に収める。カードにするとルーティンが画面の下に押し出される(2026-11-03) */}
           {isBlocked && hasWords && (
-            <EmptyState
-              symbol="bell.badge"
-              title={t.today.notificationsTitle}
-              body={t.today.notificationsBody}
-              action={
-                <Button label={t.today.notificationsAction} onPress={handleEnableNotifications} />
-              }
-            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t.today.notificationsTitle + '. ' + t.today.notificationsBody}
+              onPress={handleEnableNotifications}
+              style={({ pressed }) => [styles.notify, { borderColor: theme.line, opacity: pressed ? 0.6 : 1 }]}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.notifyText}>
+                {t.today.notificationsBody}
+              </ThemedText>
+              <ThemedText type="smallBold">{t.today.notificationsAction}</ThemedText>
+            </Pressable>
           )}
 
           {hasRoutines && !hasWords && (
@@ -336,6 +338,18 @@ const styles = StyleSheet.create({
   header: {
     gap: Spacing.half,
     paddingTop: Spacing.two,
+  },
+  notify: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  notifyText: {
+    flex: 1,
   },
   letter: {
     gap: Spacing.two,

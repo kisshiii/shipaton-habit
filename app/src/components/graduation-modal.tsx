@@ -3,7 +3,9 @@
  *
  * 2つの顔を持つ(spec §2 卒業の扱い):
  *   - **卒業した人**(やり切った日が66日): 紺一色の画面。証書をこの画面にそのまま置き、
- *     「もう要らないかもしれない」と問う。受け取るを押すと画像になって共有シートが開く
+ *     購読している人には「習慣になったなら、もう課金は要らない」と伝え、解約の画面への道を置く
+ *     (2026-11-03 に文言を書き直し。「もう要らないかもしれない」では何を聞かれているか分からなかった)。
+ *     受け取るを押すと画像になって共有シートが開く
  *   - **まだの人**(`I don't need this anymore` から): 紙の色の小さなシートで、
  *     やめてかまわないと伝える。⚠ **卒業とは呼ばない。証書も出さない。**責めない・引き止めない
  *
@@ -127,8 +129,9 @@ function Graduated({
 
           {/* 問いは画像に入れない。証書は記録で、問いはこの瞬間の本人に向けたもの */}
           <View style={styles.question}>
-            <Text style={styles.questionTitle}>{t.graduation.title}</Text>
-            <Text style={styles.questionNote}>{t.graduation.note}</Text>
+            {/* 購読している人には「もう課金は要らない」、していない人には「続けても終えてもいい」(2026-11-03) */}
+            <Text style={styles.questionTitle}>{isPaid ? t.graduation.title : t.graduation.titleFree}</Text>
+            <Text style={styles.questionNote}>{isPaid ? t.graduation.note : t.graduation.noteFree}</Text>
           </View>
 
           {/* ⚠ 重みは 受け取る > 解約 > まだ続ける。解約を勧めすぎず、隠しもしない */}
@@ -150,9 +153,6 @@ function Graduated({
             />
           </View>
 
-          <Text style={styles.footnote}>
-            {isPaid ? t.graduation.stillWorks : t.graduation.freeNote}
-          </Text>
           <Text style={styles.footnote}>{t.certificate.note}</Text>
         </ScrollView>
       </SafeAreaView>
