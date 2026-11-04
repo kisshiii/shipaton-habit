@@ -45,11 +45,19 @@ bg.setFill()
 NSRect(x: 0, y: 0, width: W, height: H).fill()
 
 // 見出し(2行・中央揃え)
-let font = NSFont(name: "HelveticaNeue", size: 118) ?? NSFont.systemFont(ofSize: 118)
+// ⚠ 長い行(日本語の11文字以上など)は折り返して3行目が切れる。一番長い行が幅に収まるまで小さくする(2026-11-04)
+let maxWidth = W - 120
+var size: CGFloat = 118
+func font(_ size: CGFloat) -> NSFont { NSFont(name: "HelveticaNeue", size: size) ?? NSFont.systemFont(ofSize: size) }
+while size > 60 {
+  let widest = [line1, line2].map { NSAttributedString(string: $0, attributes: [.font: font(size)]).size().width }.max() ?? 0
+  if widest <= maxWidth { break }
+  size -= 2
+}
 let para = NSMutableParagraphStyle()
 para.alignment = .center
 para.lineSpacing = 0
-let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: ink, .paragraphStyle: para]
+let attrs: [NSAttributedString.Key: Any] = [.font: font(size), .foregroundColor: ink, .paragraphStyle: para]
 let caption = NSAttributedString(string: "\(line1)\n\(line2)", attributes: attrs)
 let captionTop: CGFloat = 120
 let captionHeight: CGFloat = 300
