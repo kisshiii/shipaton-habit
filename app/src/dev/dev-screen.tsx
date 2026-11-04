@@ -8,6 +8,8 @@
  *   - `share-words`      言葉のカード(最初の言葉)
  *   - `katsu`            「自分の言葉」のタブを開く(ストアのスクショ 03)
  *   - `paywall`          課金の画面(ストアのスクショ 05。価格はストアから読む)
+ *   - `paywall:jp`       課金の画面を日本の値段で(シミュレーターは米国のストアにつながるため)。
+ *                        値と名前は App Store Connect の登録どおり(2026-11-04 に API で確認)。変えたらここも直す
  *
  * 状態(`-katsuDevSeed`)と一緒に使う。例: `-katsuDevSeed progress -katsuDevScreen share-words`
  * ⚠ 読み込みは `_layout.tsx` の `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中からだけ。
@@ -22,6 +24,20 @@ import { MilestoneCard, ShareCardModal, WordsCard } from '@/components/share-car
 import { t } from '@/i18n';
 import { getMessages, getRoutines } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
+import type { PurchasesPackage } from 'react-native-purchases';
+
+/** App Store Connect の日本の値段と日本語の表示名(2026-11-04 時点) */
+const JP_PACKAGES = [
+  { id: 'gradhabit.monthly.tier1', title: 'まず一歩', price: 800 },
+  { id: 'gradhabit.monthly.tier2', title: '本気で', price: 1500 },
+  { id: 'gradhabit.monthly.tier3', title: 'オールイン', price: 3000 },
+].map(
+  ({ id, title, price }) =>
+    ({
+      identifier: id,
+      product: { identifier: id, title, price, priceString: '¥' + price.toLocaleString('ja-JP'), currencyCode: 'JPY' },
+    }) as unknown as PurchasesPackage,
+);
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
   'goal',
@@ -77,6 +93,9 @@ export function DevScreen({ screen }: { screen: string }) {
   }
   if (screen === 'paywall') {
     return <Paywall visible onClose={close} />;
+  }
+  if (screen === 'paywall:jp') {
+    return <Paywall visible onClose={close} previewPackages={JP_PACKAGES} />;
   }
   if (screen === 'share-words') {
     return (
