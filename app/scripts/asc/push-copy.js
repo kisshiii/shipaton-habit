@@ -5,7 +5,8 @@ const fs = require('fs');
 const path = require('path');
 
 const APP_ID = '6800968856';
-const VERSION = '1.0.2';
+// 版は app.json から読む(1.0.2 のときは直書きだった。上げ忘れて古い版に流し込まないため)
+const VERSION = require('../../app.json').expo.version;
 const LISTING = path.resolve(__dirname, '..', '..', '..', 'docs', 'asc-listing.md');
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
