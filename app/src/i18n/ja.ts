@@ -61,7 +61,7 @@ export const ja: Copy = {
     save: '保存',
     cancel: 'やめる',
     deleteAction: 'このルーティンを削除',
-    graduate: 'もう要らない',
+    graduate: 'KATSU をやめたいとき',
     missingTitle: 'やることを書いてください',
     missingTitleBody: 'その時刻に何をするかを書いてください。',
     limitTitle: '3件までです',

@@ -40,6 +40,7 @@ const JP_PACKAGES = [
 );
 
 const ONBOARDING_STEPS: OnboardingStep[] = [
+  'intro',
   'goal',
   'routine',
   'start',
@@ -64,8 +65,8 @@ export function DevScreen({ screen }: { screen: string }) {
 
   // タブは画面の上に重ねず、そのタブへ移るだけ(描画は通常どおり)
   useEffect(() => {
-    if (screen !== 'katsu') return;
-    const timer = setTimeout(() => router.navigate('/katsu'), 0);
+    if (screen !== 'katsu' && screen !== 'routines') return;
+    const timer = setTimeout(() => router.navigate(screen === 'katsu' ? '/katsu' : '/routines'), 0);
     return () => clearTimeout(timer);
   }, [screen]);
 
