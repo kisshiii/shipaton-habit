@@ -81,6 +81,7 @@ export const ja: Copy = {
 
   katsu: {
     title: '自分の言葉',
+    meaning: '',
     intro: 'ルーティンの時刻を過ぎてもやっていないとき、この言葉が通知で届きます。自分に向けて書いてください。',
     writeTitle: '言葉を書く',
     editTitle: '言葉を直す',

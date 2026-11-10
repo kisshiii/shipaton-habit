@@ -101,6 +101,11 @@ export const en = {
 
   katsu: {
     title: 'Your KATSU',
+    /**
+     * 「喝」の意味を英語で一度だけ説明する(2026-11-10)。英語圏の人はこの語を知らず、
+     * タブ名だけが浮いて見えていた。日本語では出さない(空文字)
+     */
+    meaning: 'Katsu (喝): a shout that wakes you up.',
     intro:
       'When a routine’s time passes and it isn’t done, these words arrive as a notification. Write them to yourself.',
     writeTitle: 'Write your words',
