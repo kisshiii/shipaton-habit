@@ -31,6 +31,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { evaluateGraduation } from '@/lib/graduation';
 import { syncScheduledNotifications } from '@/lib/notifications';
+import { isPro, openManageSubscriptions } from '@/lib/purchases';
 import { syncQuickActions } from '@/lib/quick-actions';
 import { syncWidget } from '@/lib/widget';
 import {
@@ -81,10 +82,19 @@ export default function RoutinesScreen() {
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
   const [sheet, setSheet] = useState<SheetTarget | null>(null);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
+  const [isGraduated, setIsGraduated] = useState(false);
+  const [isPaid, setIsPaid] = useState(false);
 
   const refresh = useCallback(async () => {
     const [nextRoutines, today] = await Promise.all([getRoutines(), getTodayRecord()]);
     setRoutines(nextRoutines);
+    // 下のボタンの出し分け。課金の状態が取れなくても画面は止めない
+    evaluateGraduation()
+      .then((status) => setIsGraduated(!!status?.progress.graduatedOn))
+      .catch(() => {});
+    isPro()
+      .then(setIsPaid)
+      .catch(() => {});
     // 時刻・件数が変われば予約集合も変わる。引き直しは冪等なので毎回でよい
     await syncScheduledNotifications();
     // ホーム画面のクイックアクションも、足した・消した・名前を変えたルーティンにそろえる
@@ -182,15 +192,27 @@ export default function RoutinesScreen() {
             タブバーの高さを定数で足すと、機種・iOS のタブバーの形・文字サイズで食い違い、
             ボタンがタブバーに重なる(iPhone 15 の実機で発覚 2026-09-22)。
         */}
-        <SafeAreaView edges={['bottom']}>
-          <View style={styles.footer}>
-            <Button
-              label={t.routines.graduate}
-              variant="secondary"
-              onPress={() => setIsGraduationOpen(true)}
-            />
-          </View>
-        </SafeAreaView>
+        {/* ボタンの名前と、押して起きることを同じにする(2026-11-10。plan §10)。
+            卒業した人には証書、購読している人には解約。どちらでもない人には何も出さない */}
+        {(isGraduated || isPaid) && (
+          <SafeAreaView edges={['bottom']}>
+            <View style={styles.footer}>
+              {isGraduated ? (
+                <Button
+                  label={t.routines.certificate}
+                  variant="secondary"
+                  onPress={() => setIsGraduationOpen(true)}
+                />
+              ) : (
+                <Button
+                  label={t.graduation.end}
+                  variant="secondary"
+                  onPress={() => openManageSubscriptions().catch(() => {})}
+                />
+              )}
+            </View>
+          </SafeAreaView>
+        )}
       </SafeAreaView>
 
       {/* ⚠ key で開くたびに作り直す。前回の入力を持ち越さない */}
@@ -246,8 +268,8 @@ function RoutineSheet({
         throw error;
       }
     };
-    // 時刻だけの変更では数え直さない。名前の変更と追加は数え直す(plan §1)
-    const isRestarting = !editing || title.trim() !== editing.title;
+    // 数え直すのは追加(と削除)だけ。名前・時刻の変更では数え直さない(plan §10)
+    const isRestarting = !editing;
     await (isRestarting ? confirmRestart(save) : save());
   };
 

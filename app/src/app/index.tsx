@@ -22,7 +22,7 @@ import { MilestoneModal } from '@/components/milestone-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
-import { MAX_REST_DAYS, REST_WINDOW_DAYS, REVIEW_MILESTONE } from '@/constants/graduation';
+import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS, REVIEW_MILESTONE } from '@/constants/graduation';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
@@ -234,6 +234,13 @@ export default function TodayScreen() {
 
           {/* 卒業までの進み具合(plan §4)。ルーティンが無い人には出さない */}
           {hasRoutines && progress && <GraduationProgress progress={progress} />}
+
+          {/* 66日のしくみ。まだ1日もやり切っていない間だけ(オンボーディングから移した。plan §10) */}
+          {hasRoutines && progress && progress.doneDays === 0 && !progress.graduatedOn && !isRestartNoticeOpen && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.today.rule(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)}
+            </ThemedText>
+          )}
 
           {/* その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。色を変えない */}
           {hasRoutines && dailyLine && (

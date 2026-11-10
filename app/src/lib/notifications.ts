@@ -27,6 +27,7 @@ import {
 } from '@/constants/notifications';
 import { t } from '@/i18n';
 import { toDateKey } from '@/lib/date';
+import { FREE_MESSAGE_LIMIT } from '@/constants/messages';
 import { isProCached } from '@/lib/purchases';
 import { getAppState, getDailyRecords, getMessages, getRoutines } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
@@ -142,8 +143,8 @@ export async function sendTrialNotification(title: string, body: string): Promis
  * そのルーティンに使う文言を選ぶ。
  *
  * 項目ごとの出し分けは有料(課金機会③)。
- * ⚠ **無料のときは先頭1件を全ルーティン共通で使う。**
- *   画面側は2つ目以降を「Locked ── still yours」と表示して触らせないのに、
+ * ⚠ **無料のときは先頭 `FREE_MESSAGE_LIMIT` 件を、全ルーティン共通で日替わりに使う**(2026-11-10。plan §10)。
+ *   画面側はそれより後ろを「ロック中」と表示して触らせないのに、
  *   通知だけがそれを鳴らしていると、ロックが嘘になり ②③ が課金機会として成立しない。
  *   ロック済みの言葉は**消さない**(spec §2)。使わないだけで、再課金すれば戻る。
  */
@@ -158,7 +159,10 @@ function messageFor(
   //   「特定のルーティン用に書いた言葉が全ルーティンで鳴る」ことになる。
   //   共通のものが1つも無ければ先頭に落とす(鳴らさないよりは本人の言葉を届ける)。
   if (!isPaid) {
-    return messages.find((message) => message.routineId === undefined) ?? messages[0];
+    const unlocked = messages.slice(0, FREE_MESSAGE_LIMIT);
+    const common = unlocked.filter((message) => message.routineId === undefined);
+    if (common.length === 0) return unlocked[0];
+    return common[pickIndex(`${dayKey}:${routine.id}`, common.length)];
   }
 
   // そのルーティン専用があればその中から。無ければ共通の中から

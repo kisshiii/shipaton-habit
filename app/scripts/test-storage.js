@@ -300,10 +300,11 @@ const cases = [
     assert.strictEqual(appState().routineChangedOn, undefined);
     assert.strictEqual((await storage.getRoutines())[0].time, '09:05');
   }],
-  ['名前を変えたら、変えた日に今日が入る', async () => {
+  // 2026-11-10: 名前の変更では数え直さない(大きすぎたルーティンを小さく直すのを罰しない)
+  ['名前を変えても、変えた日は増えない', async () => {
     const [a] = await addN(1);
     await storage.updateRoutine(a.id, { title: '  Read  ' });
-    assert.deepStrictEqual(appState().routineChangedOn, [TODAY]);
+    assert.strictEqual(appState().routineChangedOn, undefined);
     assert.strictEqual((await storage.getRoutines())[0].title, 'Read');
   }],
   ['前後の空白だけ違う同じ名前なら、変えた日は増えない', async () => {

@@ -235,17 +235,15 @@ async function updateRoutineUnlocked(
     if (!time) throw new Error('Invalid time');
     target.time = time;
   }
-  // 名前を変えたら数え直す。名前を書き換えて中身ごと差し替える抜け道を塞ぐ(plan §1)。
-  // 時刻の変更では数え直さない
-  let isRenamed = false;
+  // 名前・時刻の変更では数え直さない(2026-11-10 に変更。plan §10)。
+  // 「ランニング」を「靴を履く」に小さく直すのは習慣づくりで一番大事な直しで、それを罰しない。
+  // 数え直すのは追加と削除だけ
   if (patch.title !== undefined) {
     const title = patch.title.trim();
     if (!title) throw new Error('Empty title');
-    isRenamed = title !== target.title;
     target.title = title;
   }
   await saveRoutines(routines);
-  if (isRenamed) await markRoutineChanged();
 }
 
 /**

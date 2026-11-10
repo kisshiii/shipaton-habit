@@ -58,6 +58,9 @@ export const en = {
     notificationsTitle: 'Notifications are off',
     notificationsBody: 'Turn them on to get your words when a routine’s time passes.',
     notificationsAction: 'Turn on',
+    /** 66日のしくみ。まだ1日もやり切っていない間だけ、進み具合の下に出す(2026-11-10。オンボーディングから移した) */
+    rule: (days: number, rests: number, window: number) =>
+      `Each day you finish everything counts. At ${days}, you graduate. You can rest up to ${rests} days in any ${window}.`,
   },
 
   routines: {
@@ -74,7 +77,8 @@ export const en = {
     save: 'Save',
     cancel: 'Cancel',
     deleteAction: 'Delete this routine',
-    graduate: 'I don’t need this anymore',
+    /** 卒業した人にだけ出す(2026-11-10。「I don’t need this anymore」のボタンはやめた。plan §10) */
+    certificate: 'See your certificate',
     missingTitle: 'Add what you’ll do',
     missingTitleBody: 'Write what you’ll do at that time.',
     limitTitle: 'That’s three',
@@ -84,14 +88,14 @@ export const en = {
     /** ⚠ 曜日指定は入れない。週に数回のことは毎日の形に言い換えてもらう(plan §2) */
     dailyHint:
       'Pick things you’ll do every day. For something you do a few times a week, make a daily version: “gym” becomes “move for 10 minutes.”',
-    changeNote: 'Adding, deleting or renaming a routine later starts the count over.',
+    changeNote: 'Adding or deleting a routine later starts the count over. Renaming one or changing its time doesn’t.',
     /**
      * ルーティンを変えると数え直しになるときの確認(plan §1・§4)。
      * ⚠ 「リセット」「失う」と言わない。何が起きるかを事実だけ伝え、決めるのは本人
      */
     restartTitle: 'Start the count over?',
     restartBody: (days: number, goal: number) =>
-      `You’re on day ${days} of ${goal}. Changing your routines starts the count over.`,
+      `You’re on day ${days} of ${goal}. Adding or deleting a routine starts the count over.`,
     restartConfirm: 'Change it',
   },
 
@@ -112,7 +116,7 @@ export const en = {
     forPrefix: 'For:',
     allRoutines: 'All routines',
     anotherTitle: 'Add another',
-    anotherBody: 'One is free. Two or more come with the paid plan.',
+    anotherBody: 'Three are free. More come with the paid plan.',
     anotherAction: 'See plans',
     emptyTitle: 'Nothing written yet',
     emptyBody: 'What do you want to hear at that moment?',
@@ -139,7 +143,7 @@ export const en = {
     title: 'What’s this app worth to you each month?',
     /** ⚠ 価格の上に一度だけ言う。これが無いと3つの価格が松竹梅に見える */
     sameTitle: 'All three plans include the same features',
-    sameItems: ['More than one set of words', 'Different words for different routines'],
+    sameItems: ['More than three sets of words', 'Different words for different routines'],
     unreachable: 'Couldn’t reach the App Store. Try again later. The rest of the app works as usual.',
     /** ⚠ RevenueCat に current の Offering が無い。ダッシュボード側の設定漏れ */
     noOffering: 'Plans aren’t available yet. The rest of the app works as usual.',
@@ -174,23 +178,13 @@ export const en = {
      * ⚠ 購読している人と、していない人で分ける。無課金の人に「課金は要らない」と言っても意味がない
      */
     title: 'If it’s a habit now, you don’t need to pay anymore.',
-    note: 'Cancel your subscription and the app keeps working for free. Your first set of words keeps arriving.',
+    note: 'Cancel your subscription and the app keeps working for free. Your first three sets of words keep arriving.',
     titleFree: 'You can stop here or keep going.',
     noteFree: 'The app keeps working as it is. Delete it whenever you like.',
     end: 'Cancel subscription',
     notYet: 'Keep going',
     close: 'Close',
-    stillWorks: 'Either way, the app keeps working.',
-    freeNote: 'Delete the app whenever you like.',
     certificate: 'Get your certificate',
-    /**
-     * ⚠ 卒業前にやめようとした人向け。**卒業とは呼ばない**が、責めない・引き止めない。
-     *   やめるかどうかは本人が決める
-     */
-    leaveTitle: 'You can stop anytime.',
-    /** ⚠ 「in a row」と言わない。休みがあるので連続ではない(plan §3) */
-    leaveBody: (days: number, rests: number, window: number) =>
-      `You graduate after finishing everything on ${days} days (up to ${rests} rest days in any ${window}). Stopping before then isn’t graduating, but it’s your call. Your words won’t be deleted.`,
   },
 
   /**
@@ -256,38 +250,26 @@ export const en = {
   },
 
   onboarding: {
-    tagline: 'Push yourself, in your own words.',
+    tagline: 'The voice that brings you back.',
     intro:
-      'You’ll write a few words to yourself for the days you don’t feel like it. They arrive when you skip.',
+      'When the time you set passes, the words you wrote arrive.',
     introNote: 'KATSU is an app you graduate from once the habit sticks.',
     start: 'Start',
-    /**
-     * 何を変えたいか(plan §8)。選んだものの例を次の段に入れておく。
-     * ⚠ これはルーティンの例。言葉の例はアプリが用意しない(spec §1)
-     */
-    goalTitle: 'What do you want to change?',
-    goalBody: 'Pick one. You can change the details next.',
+    /** 例。押すと時刻とやることに入る。⚠ これはルーティンの例。言葉の例はアプリが用意しない(spec §1) */
+    goalBody: 'Or start from an example:',
     goals: [
       { label: 'Become a morning person', time: '06:30', title: 'After I wake up, drink a glass of water' },
       { label: 'Move every day', time: '07:30', title: 'After breakfast, walk for 10 minutes' },
       { label: 'Go to bed earlier', time: '22:30', title: 'At 22:30, put my phone in another room' },
       { label: 'Learn every day', time: '21:00', title: 'After dinner, study for 10 minutes' },
-      { label: 'Something else', time: '07:00', title: '' },
     ],
     /** 実行意図(「〜したら、〜する」)と、小さく始めること(plan §8) */
     ifThen: 'Write it as “After I…, I’ll…”. Keep it small enough to do on a bad day.',
-    startTitle: 'When is Day 1?',
-    startBody: 'Picking tomorrow gives you tonight to get ready.',
+    startTitle: 'Day 1',
     startToday: 'Today',
     startTomorrow: 'Tomorrow',
     /** 12月の間だけ出す */
     startNewYear: 'January 1',
-    ruleTitle: 'How the 66 days work',
-    /** 3行に分けて見せる。1つの段落にすると読まれない */
-    ruleLines: (days: number, rests: number, window: number) => [
-      `Each day you finish everything counts. At ${days}, you graduate.`,
-      `You can rest up to ${rests} days in any ${window}. Rest more than that and the count starts over.`,
-    ],
     /** 封をする(plan §8)。⚠ 約束の相手はアプリではなく未来の自分 */
     sealEyebrow: 'To me, on a day I don’t feel like it',
     sealHold: 'Hold to seal',
@@ -310,9 +292,7 @@ export const en = {
       'With notifications off, your words only show when you open the app.',
     allow: 'Allow notifications',
     notNow: 'Not now',
-    doneTitle: 'You’re all set',
     doneBody: 'Your words stay on this device.',
-    doneNote: 'They aren’t sent anywhere, and no one else can read them.',
     begin: 'Begin',
     /** 試しに今、自分の言葉を通知で届ける(plan §7-5) */
     trial: 'Send a test notification',

@@ -1,13 +1,14 @@
 /**
  * 卒業モーダル。
  *
- * 2つの顔を持つ(spec §2 卒業の扱い):
+ * 卒業した人にだけ出す(spec §2 卒業の扱い):
  *   - **卒業した人**(やり切った日が66日): 紺一色の画面。証書をこの画面にそのまま置き、
  *     購読している人には「習慣になったなら、もう課金は要らない」と伝え、解約の画面への道を置く
  *     (2026-11-03 に文言を書き直し。「もう要らないかもしれない」では何を聞かれているか分からなかった)。
  *     受け取るを押すと画像になって共有シートが開く
- *   - **まだの人**(`I don't need this anymore` から): 紙の色の小さなシートで、
- *     やめてかまわないと伝える。⚠ **卒業とは呼ばない。証書も出さない。**責めない・引き止めない
+ *   - **まだの人**には出さない(2026-11-10。「I don't need this anymore」のボタンと、やめる人向けのシートはやめた。
+ *     無課金で66日前の人には、押しても説明と「閉じる」しか無かった。plan §10)。
+ *     解約は Routines 画面の「サブスクを解約する」から直接 Apple の画面へ
  *
  * ⚠ 紺の画面は節目だけのもの(オンボーディングの入口・節目のお祝い・卒業)。
  *   66日前にやめる人には出さない。節目の色を安売りしない(2026-09-16 デザイン方針)。
@@ -31,9 +32,6 @@ import {
   shareCertificate,
   type CertificateDetails,
 } from '@/components/certificate';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
 import { Ceremony, Fonts, Radius, Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { isPro, openManageSubscriptions } from '@/lib/purchases';
@@ -59,11 +57,16 @@ export function GraduationModal({ visible, onClose }: Props) {
       if (!cancelled) setIsPaid(active);
     });
     loadCertificate().then((next) => {
-      if (!cancelled) setDetails(next);
+      if (cancelled) return;
+      setDetails(next);
+      // まだ卒業していない人には出すものが無い。見えない画面を開いたままにしない
+      if (next === null) onClose();
     });
     return () => {
       cancelled = true;
     };
+    // onClose は親が描くたびに作り直される。依存に入れると、開いている間ずっと読み直すことになる
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
 
   /**
@@ -87,9 +90,7 @@ export function GraduationModal({ visible, onClose }: Props) {
           </View>
         ) : details ? (
           <Graduated details={details} isPaid={isPaid} onEnd={handleEnd} onClose={onClose} />
-        ) : (
-          <Leaving isPaid={isPaid} onEnd={handleEnd} onClose={onClose} />
-        )}
+        ) : null}
       </SafeAreaProvider>
     </Modal>
   );
@@ -156,42 +157,6 @@ function Graduated({
           <Text style={styles.footnote}>{t.certificate.note}</Text>
         </ScrollView>
       </SafeAreaView>
-    </View>
-  );
-}
-
-function Leaving({
-  isPaid,
-  onEnd,
-  onClose,
-}: {
-  isPaid: boolean;
-  onEnd: () => void;
-  onClose: () => void;
-}) {
-  return (
-    <View style={styles.backdrop}>
-      <ThemedView style={styles.sheet}>
-        <ThemedText type="display">{t.graduation.leaveTitle}</ThemedText>
-        <ThemedText>{t.graduation.leaveBody(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)}</ThemedText>
-
-        <View style={styles.actions}>
-          {isPaid ? (
-            <>
-              <Button label={t.graduation.end} onPress={onEnd} />
-              <Button label={t.graduation.notYet} variant="plain" onPress={onClose} />
-            </>
-          ) : (
-            // ⚠ 無課金の人に解約を勧めない。止めるものが無い以上、
-            //   ここで示せるのは「いつ離れてもいい」ということだけ
-            <Button label={t.graduation.close} onPress={onClose} />
-          )}
-        </View>
-
-        <ThemedText type="small" themeColor="textSecondary">
-          {isPaid ? t.graduation.stillWorks : t.graduation.freeNote}
-        </ThemedText>
-      </ThemedView>
     </View>
   );
 }

@@ -124,9 +124,10 @@ send it to. If you delete the app, your words are deleted too.
 
 FREE AND PAID
 
-Routines, check-offs, notifications, the widget and graduation are free. The
-paid plan lets you keep more than one set of words and use different words
-for different routines.
+Routines, check-offs, notifications, the widget and graduation are free. So
+are your first three sets of words, which take turns day by day. The paid
+plan lets you keep more than three and use different words for different
+routines.
 
 The paid plan comes at three monthly prices with the same features. Pick what
 it's worth to you. Cancel any time in Settings.
@@ -148,6 +149,8 @@ Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/st
 No account or sign-in is required. Everything works on first launch.
 
 Onboarding asks for one routine and one line of text; any values work.
+Up to three lines of text are free; the paywall appears at the end of
+onboarding and when adding a fourth.
 Notifications are local only. To see one without waiting, add a routine a
 minute or two ahead and leave the app.
 
@@ -156,9 +159,9 @@ Graduation requires completing every routine on 66 days, with up to two rest
 days in any seven, so it cannot be reached during review. The certificate and
 graduation screen are shown only to users who reach it. The progress line on
 Today (Day N / 66) and the full-screen marks at 7, 33 and 50 days follow the
-same count. The "I don't need this anymore" button at
-the bottom of the Routines screen is always available and shows the related
-flow for users who choose to stop early.
+same count. At the bottom of the Routines screen, subscribers see a "Cancel
+subscription" button that opens Apple's subscription settings, and users who
+have graduated see "See your certificate". Other users see no button there.
 
 SUBSCRIPTIONS
 Three monthly auto-renewing subscriptions unlock the same content. They differ
@@ -279,7 +282,8 @@ KATSU はその反対です。全部やり切った日が66日になったら卒
 ■ 無料と有料
 
 ルーティン、チェック、通知、ウィジェット、卒業までは無料です。
-有料プランでは、言葉を2つ以上持てて、ルーティンごとに違う言葉を出せます。
+言葉も3つまで無料で、日替わりで届きます。
+有料プランでは、言葉を4つ以上持てて、ルーティンごとに違う言葉を出せます。
 
 有料プランは、中身が同じで値段が3つあります。自分にとっての価値で選んでください。
 解約はいつでも設定からできます。
@@ -395,9 +399,10 @@ REST API なら:
 ### 英語
 
 ```
+• A new look, and a shorter setup: five screens to your first day.
+• Three sets of words are now free, and they take turns day by day.
+• Renaming a routine or changing its time no longer starts the count over.
 • Choose when Day 1 is. In December, you can pick January 1.
-• Finishing your first day shows a short celebration and a Day 1 card you can share.
-• The first time you open KATSU each day, it tells you how yesterday went.
 • Notifications have buttons: "Done ✓" checks the routine off, and "Again in 10 min" sends your words again later.
 • Long-press the app icon to check off today's routines.
 • New home and lock screen widget: see your day count and check off routines from the home screen. Open KATSU once before adding it.
@@ -407,9 +412,10 @@ REST API なら:
 ### 日本語
 
 ```
+・見た目を新しくし、最初の設定を5画面に短くしました。
+・言葉が3つまで無料になり、日替わりで届きます。
+・ルーティンの名前や時刻を変えても、日数を数え直さなくなりました。
 ・1日目をいつにするか選べるようになりました。12月なら1月1日も選べます。
-・最初の1日をやり切ると、短いお祝いと、共有できる「1日目」のカードが出ます。
-・その日はじめて開いたとき、昨日どうだったかを一行で表示します。
 ・通知にボタンが付きました。「やった ✓」でチェック、「10分後にもう一度」で同じ言葉をあとでもう一度届けます。
 ・アプリのアイコンを長押しすると、今日のルーティンにチェックできます。
 ・ホーム画面とロック画面のウィジェットを追加しました。日数が見られて、ホーム画面からチェックもできます。置く前に、一度アプリを開いてください。

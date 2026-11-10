@@ -3,7 +3,7 @@
  *
  * 起動引数 `-katsuDevScreen <画面>` で、タップしないと出ない画面を直接開く。
  * シミュレーターでは画面を押す手段が無い(Mac のマウスを動かすことになる)ため。
- *   - `onboarding:<段>`   オンボーディングをその段から(goal / routine / start / words / rule / seal / notifications / done)
+ *   - `onboarding:<段>`   オンボーディングをその段から(intro / routine / words / seal / notifications)
  *   - `share-milestone`  節目のカード(33日)
  *   - `share-words`      言葉のカード(最初の言葉)
  *   - `katsu`            「自分の言葉」のタブを開く(ストアのスクショ 03)
@@ -39,17 +39,7 @@ const JP_PACKAGES = [
     }) as unknown as PurchasesPackage,
 );
 
-const ONBOARDING_STEPS: OnboardingStep[] = [
-  'intro',
-  'goal',
-  'routine',
-  'start',
-  'words',
-  'rule',
-  'seal',
-  'notifications',
-  'done',
-];
+const ONBOARDING_STEPS: OnboardingStep[] = ['intro', 'routine', 'words', 'seal', 'notifications'];
 
 export function DevScreen({ screen }: { screen: string }) {
   const [routines, setRoutines] = useState<RoutineItem[]>([]);

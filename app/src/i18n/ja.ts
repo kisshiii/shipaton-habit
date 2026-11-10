@@ -45,6 +45,8 @@ export const ja: Copy = {
     notificationsTitle: '通知がオフです',
     notificationsBody: 'オンにすると、ルーティンの時刻を過ぎたときに自分の言葉が届きます。',
     notificationsAction: 'オンにする',
+    rule: (days: number, rests: number, window: number) =>
+      `全部やり切った日を数えて、${days}日で卒業です。休みは直近${window}日で${rests}回まで。`,
   },
 
   routines: {
@@ -61,7 +63,7 @@ export const ja: Copy = {
     save: '保存',
     cancel: 'やめる',
     deleteAction: 'このルーティンを削除',
-    graduate: 'KATSU をやめたいとき',
+    certificate: '卒業証書を見る',
     missingTitle: 'やることを書いてください',
     missingTitleBody: 'その時刻に何をするかを書いてください。',
     limitTitle: '3件までです',
@@ -70,10 +72,10 @@ export const ja: Copy = {
     remove: '削除',
     dailyHint:
       '毎日やることを選んでください。週に数回のことは、毎日できる形にします（例：ジム → 毎日10分体を動かす）。',
-    changeNote: 'あとからルーティンを足す・消す・名前を変えると、日数は数え直しになります。',
+    changeNote: 'あとからルーティンを足す・消すと、日数は数え直しになります。名前と時刻は変えても数え直しません。',
     restartTitle: '日数を数え直しますか？',
     restartBody: (days: number, goal: number) =>
-      `いま${goal}日のうち${days}日です。ルーティンを変えると、日数は0から数え直しになります。`,
+      `いま${goal}日のうち${days}日です。ルーティンを足す・消すと、日数は0から数え直しになります。`,
     restartConfirm: '変える',
   },
 
@@ -93,7 +95,7 @@ export const ja: Copy = {
     forPrefix: '対象:',
     allRoutines: 'すべてのルーティン',
     anotherTitle: 'もうひとつ書く',
-    anotherBody: '1つ目は無料です。2つ目からは有料プランで使えます。',
+    anotherBody: '3つまでは無料です。4つ目からは有料プランで使えます。',
     anotherAction: 'プランを見る',
     emptyTitle: 'まだ何も書いていません',
     emptyBody: 'その時刻の自分に、何と言いますか。',
@@ -112,7 +114,7 @@ export const ja: Copy = {
   paywall: {
     title: 'このアプリは、あなたにとって月いくらの価値がありますか？',
     sameTitle: '3つとも、できることは同じです',
-    sameItems: ['言葉を2つ以上持てる', 'ルーティンごとに言葉を出し分ける'],
+    sameItems: ['言葉を4つ以上持てる', 'ルーティンごとに言葉を出し分ける'],
     unreachable: 'App Store に接続できませんでした。あとでもう一度お試しください。ほかの機能はそのまま使えます。',
     noOffering: 'プランがまだ用意されていません。ほかの機能はそのまま使えます。',
     noProducts: 'App Store からプランを読み込めませんでした。ほかの機能はそのまま使えます。',
@@ -132,18 +134,13 @@ export const ja: Copy = {
   graduation: {
     /** ⚠ 改行の位置を決めておく。決めないと変なところで折り返す */
     title: '習慣になったなら、\nもう課金は要りません。',
-    note: 'サブスクを解約しても、アプリはそのまま無料で使えます。1つ目の言葉も届き続けます。',
+    note: 'サブスクを解約しても、アプリはそのまま無料で使えます。3つ目までの言葉も届き続けます。',
     titleFree: 'ここで終えても、\n続けてもかまいません。',
     noteFree: 'アプリはこのまま使えます。要らなくなったら、いつでも削除してください。',
     end: 'サブスクを解約する',
     notYet: 'まだ続ける',
     close: '閉じる',
-    stillWorks: 'どちらを選んでも、アプリはそのまま使えます。',
-    freeNote: '要らなくなったら、いつでも削除してください。',
     certificate: '卒業証書を受け取る',
-    leaveTitle: 'いつやめても、かまいません。',
-    leaveBody: (days: number, rests: number, window: number) =>
-      `卒業は、全部やり切った日が${days}日になったときです（休みは直近${window}日で${rests}回まで）。その前にやめるのは卒業ではありませんが、決めるのは自分です。書いた言葉は消えません。`,
   },
 
   certificate: {
@@ -190,30 +187,23 @@ export const ja: Copy = {
   },
 
   onboarding: {
-    tagline: '自分の言葉で、自分を動かす。',
-    intro: 'やる気が出ない日の自分に向けて、言葉を書きます。やらなかったときに、その言葉が届きます。',
+    /** ⚠ 改行の位置を決めておく。決めないと「一 / 声。」と折り返す */
+    tagline: '忘れている自分を、\nいまに戻す一声。',
+    intro: '決めた時刻を過ぎたら、自分で書いた言葉が届きます。',
     introNote: 'KATSU は、習慣が身についたら卒業するアプリです。',
     start: 'はじめる',
-    goalTitle: '何を変えたいですか',
-    goalBody: 'ひとつ選んでください。次の画面で書き換えられます。',
+    goalBody: '例から選ぶこともできます。',
     goals: [
       { label: '朝型になる', time: '06:30', title: '起きたら、水を一杯飲む' },
       { label: '毎日体を動かす', time: '07:30', title: '朝ごはんの後、10分歩く' },
       { label: '早く寝る', time: '22:30', title: '22時半になったら、スマホを別の部屋に置く' },
       { label: '毎日学ぶ', time: '21:00', title: '夕食の後、10分勉強する' },
-      { label: 'ほかのこと', time: '07:00', title: '' },
     ],
     ifThen: '「〜したら、〜する」の形で書きます。やる気のない日でもできるくらい小さく。',
-    startTitle: '1日目はいつにしますか',
-    startBody: '明日にすると、今夜のうちに準備できます。',
+    startTitle: '1日目',
     startToday: '今日から',
     startTomorrow: '明日から',
     startNewYear: '1月1日から',
-    ruleTitle: '66日のしくみ',
-    ruleLines: (days: number, rests: number, window: number) => [
-      `全部やり切った日を数えて、${days}日で卒業です。`,
-      `休みは直近${window}日で${rests}回まで。それを超えると、日数は数え直しになります。`,
-    ],
     sealEyebrow: 'やりたくない日の自分へ',
     sealHold: '長押しで封をする',
     sealNote: 'これを読むのは、自分だけです。',
@@ -233,9 +223,7 @@ export const ja: Copy = {
       '通知がオフだと、言葉はアプリを開いたときにだけ表示されます。',
     allow: '通知を許可する',
     notNow: '今はしない',
-    doneTitle: '準備ができました',
     doneBody: '言葉はこの端末の外に出ません。',
-    doneNote: 'どこにも送られず、ほかの人が読むことはありません。',
     begin: 'はじめる',
     trial: '試しに通知を送る',
     trialSent: '送りました。届くとこう見えます。',

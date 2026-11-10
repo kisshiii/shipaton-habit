@@ -56,7 +56,6 @@ import { SelfHarmNotice } from '@/components/self-harm-notice';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimeField } from '@/components/time-field';
-import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
 import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { Ceremony, Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -80,19 +79,14 @@ import {
   setStartedOnForOnboarding,
 } from '@/storage';
 
-type Step =
-  | 'intro'
-  | 'goal'
-  | 'routine'
-  | 'start'
-  | 'words'
-  | 'rule'
-  | 'seal'
-  | 'notifications'
-  | 'done';
+/**
+ * 2026-11-10 に 10画面 → 5画面にした(plan §10)。入口 → やること → 言葉 → 封 → 通知。
+ * 「何を変えたいか」と「いつから」は、やることの画面にまとめた。「66日のしくみ」は Today に出す。
+ */
+type Step = 'intro' | 'routine' | 'words' | 'seal' | 'notifications';
 
 /** 目盛りに出す手順。⚠ 順番に意味があるので番号(位置)を見せてよい */
-const STEPS: Step[] = ['goal', 'routine', 'start', 'words', 'rule', 'seal', 'notifications', 'done'];
+const STEPS: Step[] = ['routine', 'words', 'seal', 'notifications'];
 
 /** 始める日の選択肢。1月1日は12月の間だけ出す(フレッシュスタート効果。plan §8) */
 function startChoices(now: Date = new Date()): { label: string; dateKey: string }[] {
@@ -135,8 +129,8 @@ export function Onboarding({ onFinished, preview }: Props) {
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
   /** 端末内の判定を待っている間(最大3秒)。二度押しで二重に保存させない */
   const [isChecking, setIsChecking] = useState(false);
-  // 撮影用に完了の段から始めたときは、許可済みとして「試しに届ける」を見せる
-  const [isAllowed, setIsAllowed] = useState(preview?.step === 'done');
+  /** 通知を許可した。許可した人には、同じ画面で「試しに届ける」を見せる */
+  const [isAllowed, setIsAllowed] = useState(false);
   const [isTrialSent, setIsTrialSent] = useState(false);
   /** 1日目にする日。今日のままなら置き直さない */
   const [startOn, setStartOn] = useState(() => toDateKey(new Date()));
@@ -165,7 +159,7 @@ export function Onboarding({ onFinished, preview }: Props) {
     }
     setError(null);
     // ⚠ ここでは保存しない。最後にまとめて保存する(上のコメント)
-    goTo('start');
+    goTo('words');
   };
 
   const handleSaveWords = async () => {
@@ -188,28 +182,25 @@ export function Onboarding({ onFinished, preview }: Props) {
     if (isAttack) {
       Alert.alert(t.katsu.softGuardTitle, t.katsu.softGuardBody, [
         { text: t.katsu.softGuardRewrite, style: 'cancel' },
-        { text: t.katsu.softGuardKeep, onPress: () => goTo('rule') },
+        { text: t.katsu.softGuardKeep, onPress: () => goTo('seal') },
       ]);
       return;
     }
-    goTo('rule');
+    goTo('seal');
   };
 
-  // 何を変えたいか: 例を次の段に入れておく。答えそのものは保存しない
+  // 例を押すと、時刻とやることが入る。どの例を選んだかは保存しない
   const handlePickGoal = (goal: { time: string; title: string }) => {
+    setError(null);
     setTime(goal.time);
     setTitle(goal.title);
-    goTo('routine');
   };
 
-  const handlePickStart = (dateKey: string) => {
-    setStartOn(dateKey);
-    goTo('words');
-  };
-
+  // 許可した人はこの画面に残して「試しに届ける」を見せる。断った人はそのまま先へ(課金機会①)
   const handleAskNotifications = async () => {
-    setIsAllowed((await requestNotificationPermission()) === 'granted');
-    goTo('done');
+    const isGranted = (await requestNotificationPermission()) === 'granted';
+    setIsAllowed(isGranted);
+    if (!isGranted) setIsPaywallOpen(true);
   };
 
   // 最初の1分で、自分の言葉が届く体験をさせる(plan §7-5)。許可した人だけ
@@ -263,7 +254,7 @@ export function Onboarding({ onFinished, preview }: Props) {
       {/* ⚠ この provider を外すと先頭の文字がノッチに潜る。上のコメントを読むこと */}
       <SafeAreaProvider>
         {step === 'intro' ? (
-          <Intro onStart={() => goTo('goal')} />
+          <Intro onStart={() => goTo('routine')} />
         ) : step === 'seal' ? (
           <Seal words={words.trim()} onSealed={() => goTo('notifications')} onBack={goBack} />
         ) : (
@@ -292,37 +283,14 @@ export function Onboarding({ onFinished, preview }: Props) {
                   contentContainerStyle={styles.content}
                   keyboardShouldPersistTaps="handled"
                   keyboardDismissMode="on-drag">
-                  {step === 'goal' && (
-                    <>
-                      <ThemedText type="display">{t.onboarding.goalTitle}</ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {t.onboarding.goalBody}
-                      </ThemedText>
-                      {t.onboarding.goals.map((goal) => (
-                        <Button
-                          key={goal.label}
-                          label={goal.label}
-                          variant="secondary"
-                          onPress={() => handlePickGoal(goal)}
-                        />
-                      ))}
-                    </>
-                  )}
-
                   {step === 'routine' && (
                     <>
                       <ThemedText type="display">{t.onboarding.routineTitle}</ThemedText>
                       {/* 「〜したら、〜する」と小さく始めること(plan §8)。
-                          ⚠ 説明はこの3つまで。1.0.3 で前からの説明文を外した(4段落は読まれない) */}
+                          ⚠ 説明はこの1つだけ。毎日の習慣の案内(plan §2)は Routines 画面にあり、ここでは例がその役をする。
+                          足すと、英語で「1日目」の選択が画面の下に隠れる(2026-11-10) */}
                       <ThemedText type="small" themeColor="textSecondary">
                         {t.onboarding.ifThen}
-                      </ThemedText>
-                      {/* 毎日の習慣の案内(plan §2)。手順は増やさず、一言添えるだけ */}
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {t.routines.dailyHint}
-                      </ThemedText>
-                      <ThemedText type="small" themeColor="textSecondary">
-                        {t.routines.changeNote}
                       </ThemedText>
                       <TimeField value={time} onChange={setTime} label={t.routines.time} />
                       {/* ⚠ この例文が実質的なチュートリアル。消さないこと */}
@@ -334,34 +302,34 @@ export function Onboarding({ onFinished, preview }: Props) {
                         maxLength={40}
                         style={inputStyle}
                       />
-                    </>
-                  )}
-
-                  {step === 'start' && (
-                    <>
-                      <ThemedText type="display">{t.onboarding.startTitle}</ThemedText>
+                      {/* 例。押すと上の時刻とやることに入る(そのまま直せる)。⚠ ルーティンの例であって、言葉の例ではない */}
                       <ThemedText type="small" themeColor="textSecondary">
-                        {t.onboarding.startBody}
+                        {t.onboarding.goalBody}
                       </ThemedText>
-                      {startChoices().map((choice) => (
-                        <Button
-                          key={choice.dateKey}
-                          label={choice.label}
-                          variant="secondary"
-                          onPress={() => handlePickStart(choice.dateKey)}
-                        />
-                      ))}
-                    </>
-                  )}
-
-                  {step === 'rule' && (
-                    <>
-                      <ThemedText type="display">{t.onboarding.ruleTitle}</ThemedText>
-                      {t.onboarding
-                        .ruleLines(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)
-                        .map((line) => (
-                          <ThemedText key={line}>{line}</ThemedText>
+                      <View style={styles.chips}>
+                        {t.onboarding.goals.map((goal) => (
+                          <Chip
+                            key={goal.label}
+                            label={goal.label}
+                            isSelected={goal.title === title && goal.time === time}
+                            onPress={() => handlePickGoal(goal)}
+                          />
                         ))}
+                      </View>
+                      {/* いつを1日目にするか。1月1日は12月の間だけ出る */}
+                      <ThemedText type="small" themeColor="textSecondary">
+                        {t.onboarding.startTitle}
+                      </ThemedText>
+                      <View style={styles.chips}>
+                        {startChoices().map((choice) => (
+                          <Chip
+                            key={choice.dateKey}
+                            label={choice.label}
+                            isSelected={choice.dateKey === startOn}
+                            onPress={() => setStartOn(choice.dateKey)}
+                          />
+                        ))}
+                      </View>
                     </>
                   )}
 
@@ -405,17 +373,11 @@ export function Onboarding({ onFinished, preview }: Props) {
                       <ThemedText type="small" themeColor="textSecondary">
                         {t.onboarding.notificationsNote}
                       </ThemedText>
-                    </>
-                  )}
-
-                  {step === 'done' && (
-                    <>
-                      <ThemedText type="display">{t.onboarding.doneTitle}</ThemedText>
-                      {/* ⚠ 端末内で完結することを1行で伝える。欠点を隠さず強みとして出す(spec §4) */}
-                      <ThemedText>{t.onboarding.doneBody}</ThemedText>
+                      {/* ⚠ 端末内で完結することを1行で伝える(spec §4) */}
                       <ThemedText type="small" themeColor="textSecondary">
-                        {t.onboarding.doneNote}
+                        {t.onboarding.doneBody}
                       </ThemedText>
+                      {/* 最初の1分で、自分の言葉が届く体験をさせる(plan §7-5)。許可した人だけ */}
                       {isAllowed &&
                         (isTrialSent ? (
                           <ThemedText type="small" themeColor="textSecondary">
@@ -446,31 +408,27 @@ export function Onboarding({ onFinished, preview }: Props) {
                   {step === 'words' && (
                     <Button label={t.onboarding.next} onPress={handleSaveWords} busy={isChecking} />
                   )}
-                  {step === 'rule' && (
-                    <Button label={t.onboarding.next} onPress={() => goTo('seal')} />
-                  )}
-                  {step === 'notifications' && (
-                    <>
-                      <Button label={t.onboarding.allow} onPress={handleAskNotifications} />
-                      <Button
-                        label={t.onboarding.notNow}
-                        variant="plain"
-                        onPress={() => goTo('done')}
-                      />
-                    </>
-                  )}
                   {/* ⚠ 課金機会①: オンボーディング最後。閉じられること */}
-                  {step === 'done' && (
-                    <Button
-                      label={t.onboarding.begin}
-                      onPress={() => setIsPaywallOpen(true)}
-                      busy={isSaving}
-                    />
-                  )}
+                  {step === 'notifications' &&
+                    (isAllowed ? (
+                      <Button
+                        label={t.onboarding.begin}
+                        onPress={() => setIsPaywallOpen(true)}
+                        busy={isSaving}
+                      />
+                    ) : (
+                      <>
+                        <Button label={t.onboarding.allow} onPress={handleAskNotifications} />
+                        <Button
+                          label={t.onboarding.notNow}
+                          variant="plain"
+                          onPress={() => setIsPaywallOpen(true)}
+                          disabled={isSaving}
+                        />
+                      </>
+                    ))}
                   {/* 戻る。選び間違えた1日目や、書き間違えた言葉を直せるように(何も保存していないので安全) */}
-                  {step !== 'goal' && (
-                    <Button label={t.onboarding.back} variant="plain" onPress={goBack} />
-                  )}
+                  <Button label={t.onboarding.back} variant="plain" onPress={goBack} />
                 </View>
               </KeyboardAvoidingView>
             </SafeAreaView>
@@ -482,6 +440,26 @@ export function Onboarding({ onFinished, preview }: Props) {
         <Paywall visible={isPaywallOpen} onClose={handleFinish} />
       </SafeAreaProvider>
     </Modal>
+  );
+}
+
+/** 例や1日目を選ぶ小さなボタン。選ばれているものだけ塗る */
+function Chip({ label, isSelected, onPress }: { label: string; isSelected: boolean; onPress: () => void }) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: isSelected }}
+      style={({ pressed }) => [
+        styles.chip,
+        { borderColor: isSelected ? theme.accent : theme.line, backgroundColor: isSelected ? theme.accent : 'transparent' },
+        pressed && { opacity: 0.6 },
+      ]}>
+      <ThemedText type="smallBold" style={{ color: isSelected ? theme.accentText : theme.text }}>
+        {label}
+      </ThemedText>
+    </Pressable>
   );
 }
 
@@ -610,7 +588,7 @@ const styles = StyleSheet.create({
     fontFamily: Fonts?.voice,
     fontSize: 26,
     lineHeight: 40,
-    fontWeight: 600,
+    fontWeight: 700,
   },
   sealButton: {
     minHeight: 52,
@@ -638,6 +616,18 @@ const styles = StyleSheet.create({
     gap: Spacing.one,
     paddingHorizontal: Spacing.four,
     paddingTop: Spacing.three,
+  },
+  chips: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: Spacing.two,
+  },
+  chip: {
+    minHeight: 44,
+    justifyContent: 'center',
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.control,
+    borderWidth: 1,
   },
   progressStep: {
     flex: 1,
