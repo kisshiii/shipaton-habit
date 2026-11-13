@@ -87,11 +87,9 @@ yourself on the day you started.
 
 WHY IT ENDS
 
-Most habit apps are built to keep you coming back. Streaks you don't want to
-break, notifications that pull you back in and a bit of guilt when you leave
-all do that job.
+Most habit apps have no end. You keep using them, and you keep paying.
 
-KATSU works the other way. Finish everything on your list on 66 days and you
+KATSU has one. Finish everything on your list on 66 days and you
 graduate. You get a certificate, and if you're subscribed, KATSU shows you
 how to cancel. Once it's a habit, you don't need to keep paying for it.
 
@@ -134,6 +132,8 @@ it's worth to you. Cancel any time in Settings.
 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
+
+**⚠ 他社の連続記録を批判しない 【決定】2026-11-13:** KATSU の「66日のうちN日」も、休みを超えると数え直しになる連続記録。自分が持っているものを批判すると筋が通らない。違いとして言うのは「終わり(卒業)があること」だけ。
 
 **⚠ 研究に触れるときの決まり(spec §8-2):** 研究が支えるのは**66日という長さだけ**。66日は**1本の研究の中央値**であって、全員が66日で身につくとは書かない。分野全体の結論のようにも書かない(`research found` と言わない)。休みについては、Lally らが「1日休んでも習慣化はほとんど遅れなかった」と報告しているので、**休みを認める理由として言ってよい**。ただし「直近7日で2回まで」という線引きはこのアプリの選択で、研究が決めた数字ではない。
 
@@ -244,11 +244,9 @@ KATSU は、習慣が身についたら卒業する習慣アプリです。
 
 ■ なぜ卒業があるのか
 
-多くの習慣アプリは、使い続けてもらうように作られています。
-連続記録を途切れさせたくない気持ちや、呼び戻す通知、やめるときの後ろめたさが、
-そのための仕組みです。
+多くの習慣アプリには、終わりがありません。使い続けるかぎり、支払いも続きます。
 
-KATSU はその反対です。全部やり切った日が66日になったら卒業です。
+KATSU には卒業があります。全部やり切った日が66日になったら卒業です。
 卒業証書を受け取れて、サブスクに入っている人には解約の方法を案内します。
 習慣になったら、お金を払い続ける必要はありません。
 
@@ -332,8 +330,10 @@ KATSU はその反対です。全部やり切った日が66日になったら卒
 
 | 言語 | 値 | 文字数 |
 | --- | --- | --- |
-| 英語 | `More than one set of words, at your price.` | 42 |
-| 日本語 | `言葉を複数持てます。値段はあなたが決めます。` | 22 |
+| 英語 | `More than three sets of words, at your price.` | 45(上限ちょうどのはず。ASC で通らなければ `More than three sets of words. You set the price.` は長いので `Over three sets of words, at your price.` に) |
+| 日本語 | `言葉を4つ以上持てます。値段は自分で決めます。` | 23 |
+
+**⚠ 2026-11-13 に変更(1.0.3 で言葉が3つまで無料になったため)。ASC の3商品の説明も、1.0.3 の提出のときに差し替える。**旧: `More than one set of words, at your price.` /「言葉を複数持てます。値段はあなたが決めます。」
 
 ### サブスクリプションの並び順
 

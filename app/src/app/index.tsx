@@ -10,7 +10,6 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
 import { AppState as RNAppState, type AppStateStatus, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -27,6 +26,7 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
+import { playAllDone, playCheck, playUncheck } from '@/lib/haptics';
 import {
   evaluateGraduation,
   milestonesUpTo,
@@ -163,13 +163,15 @@ export default function TodayScreen() {
 
   const handleToggle = async (routineId: string) => {
     const wasDone = record?.completedIds.includes(routineId) ?? false;
-    // 付けたときは軽く叩く。外したときは最小限にとどめ、取り消しを演出しない
-    (wasDone
-      ? Haptics.selectionAsync()
-      : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    ).catch(() => {});
+    // 押した瞬間に「トン」。外したときは最小限にとどめ、取り消しを演出しない
+    if (wasDone) playUncheck();
+    else playCheck();
     const nextRecord = await toggleCompletion(routineId);
     setRecord(nextRecord);
+    // 今日の分を全部やり切った瞬間。毎回必ず鳴らす(ランダムにしない。plan §10)
+    if (!wasDone && nextRecord.totalCount > 0 && nextRecord.completedIds.length >= nextRecord.totalCount) {
+      playAllDone();
+    }
     // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
     await syncScheduledNotifications();
     // 済んだ項目をアイコン長押しから外す。外したチェックなら戻す
