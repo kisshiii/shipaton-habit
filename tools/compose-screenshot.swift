@@ -32,8 +32,9 @@ if args.count >= 9, let mx = Double(args[5]), let my = Double(args[6]), let mw =
 }
 
 let W: CGFloat = 1290, H: CGFloat = 2796
-let bg = NSColor(srgbRed: 0x0A / 255.0, green: 0x0C / 255.0, blue: 0x14 / 255.0, alpha: 1)
-let ink = NSColor(srgbRed: 0xF4 / 255.0, green: 0xF1 / 255.0, blue: 0xE8 / 255.0, alpha: 1)
+// 炭(アプリの地 #2B2A28)より一段暗い色。画面が浮いて見えるように(2026-11-14 に紺がかった黒から変更)
+let bg = NSColor(srgbRed: 0x1C / 255.0, green: 0x1B / 255.0, blue: 0x1A / 255.0, alpha: 1)
+let ink = NSColor(srgbRed: 0xF0 / 255.0, green: 0xED / 255.0, blue: 0xE5 / 255.0, alpha: 1)
 
 let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(W), pixelsHigh: Int(H), bitsPerSample: 8,
                            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,

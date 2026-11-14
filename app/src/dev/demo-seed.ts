@@ -66,7 +66,7 @@ const ROUTINES: Record<DemoTheme, { ja: DemoRoutine[]; en: DemoRoutine[] }> = {
     ],
     en: [
       { id: 'demo-run', time: '06:30', title: 'Go for a run' },
-      { id: 'demo-english', time: '20:00', title: 'Study English for 15 minutes' },
+      { id: 'demo-english', time: '20:00', title: 'Study Spanish for 15 minutes' },
       { id: 'demo-journal', time: '22:00', title: 'Write in my journal before bed' },
     ],
   },
