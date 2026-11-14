@@ -79,13 +79,13 @@ const styles = StyleSheet.create({
     fontFamily: Fonts?.voice,
     fontSize: 30,
     lineHeight: 40,
-    fontWeight: 700,
+    fontWeight: 800,
   },
   voice: {
     fontFamily: Fonts?.voice,
     fontSize: 19,
     lineHeight: 30,
-    fontWeight: 600,
+    fontWeight: 700,
   },
   time: {
     fontFamily: Fonts?.mono,

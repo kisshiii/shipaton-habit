@@ -30,6 +30,11 @@ import {
 import type { DailyRecord } from '@/types';
 
 export type GraduationProgress = {
+  /**
+   * Day 1 が来ているか。オンボーディングで「明日から」「1月1日から」を選んだ人は、
+   * その日まで false(plan §8)。始まる前は日数も休みも数えない
+   */
+  hasStarted: boolean;
   /** 今の起点からやり切った日の数(今日をやり切っていれば今日も含む) */
   doneDays: number;
   /** 今の起点以降で、今日を含む直近 `REST_WINDOW_DAYS` 日の休みの回数。今日は休みに数えない */
@@ -45,6 +50,15 @@ export type GraduationProgress = {
   restRestartOn: string | null;
   /** 初めて `GRADUATION_STREAK_DAYS` 日に達した日。まだなら null */
   graduatedOn: string | null;
+  /** 昨日がやり切った日か休みの日か。Day 1 の当日と、始まる前は null(plan §8 その日最初の一言) */
+  yesterday: 'done' | 'rest' | null;
+  /**
+   * 今日、本人がチェックを付けてやり切ったか。分母から外れただけで「やり切った」扱いになった日は false。
+   * 1日目のお祝いを「やり切ったその場」に限るために使う(plan §8 追加)
+   */
+  todayDoneByHand: boolean;
+  /** Day 1 からの、やり切った日の通算(数え直しても減らない)。1日目のお祝いを一生に1回にするために使う */
+  lifetimeDoneDays: number;
 };
 
 export type GraduationStatus = {
@@ -95,9 +109,12 @@ export function computeProgress(
   let graduatedOn: string | null = null;
   /** 今の起点以降の休み。1日ずつ進むので、日付ではなく何日目かで持つ */
   let rests: number[] = [];
+  let yesterday: 'done' | 'rest' | null = null;
+  let lifetimeDoneDays = 0;
 
   const days = dateKeysBetween(startedOn, today);
   days.forEach((dateKey, index) => {
+    if (index === days.length - 2) yesterday = isAchieved(records[dateKey]) ? 'done' : 'rest';
     if (changes.has(dateKey)) {
       doneDays = 0;
       unbrokenDays = 0;
@@ -107,6 +124,7 @@ export function computeProgress(
     }
 
     if (isAchieved(records[dateKey])) {
+      lifetimeDoneDays += 1;
       doneDays += 1;
       unbrokenDays += 1;
       if (graduatedOn === null && doneDays >= GRADUATION_STREAK_DAYS) graduatedOn = dateKey;
@@ -120,19 +138,26 @@ export function computeProgress(
       // 数え直す。この休みも含めて、ここまでの休みは次の期間に持ち越さない
       doneDays = 0;
       rests = [];
-      restRestartOn = dateKey;
+      // ⚠ 卒業した後は、数え直しのお知らせを出さない(66 / 66 で止める。plan §4)
+      if (graduatedOn === null) restRestartOn = dateKey;
       countStartedOn = days[index + 1] ?? today;
     }
   });
 
   const todayIndex = days.length - 1;
+  const todayRecord = records[today];
   return {
+    todayDoneByHand:
+      todayIndex >= 0 && isAchieved(todayRecord) && (todayRecord?.completedIds.length ?? 0) > 0,
+    lifetimeDoneDays,
+    hasStarted: startedOn <= today,
     doneDays,
     restsInWindow: rests.filter((day) => todayIndex - day < REST_WINDOW_DAYS).length,
     unbrokenDays,
     countStartedOn,
     restRestartOn,
     graduatedOn,
+    yesterday,
   };
 }
 
@@ -146,7 +171,13 @@ export function pickMilestone(
 ): number | null {
   if (progress.graduatedOn !== null) return null;
   const reached = MILESTONE_DAYS.filter(
-    (day) => day <= progress.doneDays && !celebrated.includes(day),
+    (day) =>
+      day <= progress.doneDays &&
+      !celebrated.includes(day) &&
+      // 1日目は、初めての1日を本人がやり切ったその場でだけ(一生に1回。plan §8 追加)。
+      // 2日目以降に開いた人・分母から外れただけの日・数え直したあとの1日目には出さない
+      (day !== 1 ||
+        (progress.doneDays === 1 && progress.lifetimeDoneDays === 1 && progress.todayDoneByHand)),
   );
   return reached.length > 0 ? Math.max(...reached) : null;
 }

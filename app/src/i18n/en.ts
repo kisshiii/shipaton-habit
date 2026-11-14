@@ -20,41 +20,55 @@ export const en = {
     /** ⚠ VoiceOver 用。画面には出ない */
     doneHint: 'Done',
     notDoneHint: 'Not done yet',
-    toggleHint: 'Double tap to mark it done or undone',
+    toggleHint: 'Double-tap to check or uncheck',
     /** ⚠ 件数は文の中に置く。数字だけを大きく出して煽らない */
     progress: (done: number, total: number) => `${done} of ${total} done`,
-    allDone: 'That is everything for today.',
+    allDone: 'All done for today.',
     /**
      * 卒業までの進み具合(plan §4)。数字はやり切った日の数。
      * ⚠ 休みを「missed」「lost」と言わない。残りが0でも警告にしない
      */
     dayOf: (day: number, goal: number) => `Day ${day} / ${goal}`,
+    /** 始める日を先にした人(plan §8)。その日まで日数を出さない */
+    startsOn: (date: string) => `Day 1 is ${date}. Checks before then don’t count.`,
     rests: (used: number, max: number, window: number) =>
-      `Rest days in the last ${window}: ${used} of ${max}`,
+      `Rest days (last ${window} days): ${used} of ${max}`,
     unbroken: (days: number) => (days === 1 ? '1 day without a rest' : `${days} days without a rest`),
+    /**
+     * その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。残りが0でも警告にしない
+     */
+    yesterdayDone: (days: number) =>
+      `Yesterday: all done. That’s ${days} ${days === 1 ? 'day' : 'days'}.`,
+    /** ⚠ 残りが0でも警告にしない。事実だけを言う */
+    yesterdayRest: (left: number, window: number) =>
+      left > 0
+        ? `Yesterday was a rest day. You have ${left} left in the last ${window} days.`
+        : 'Yesterday was a rest day.',
     /**
      * 休みで数え直した後、次に開いたとき1回だけ出す(plan §4)。
      * ⚠ 「failed」「reset」「lost」と言わない。静かに、事実と次のことだけ
      */
     restartNotice: (rests: number, window: number) =>
-      `Back to day 1. You can rest up to ${rests} days in any ${window}.`,
-    fallbackMeta: 'Notifications are off, so your words show here.',
-    emptyTitle: 'Nothing scheduled',
-    emptyBody: 'Add your first routine in the Routines tab. Today fills itself in from there.',
-    noWordsTitle: 'Nothing to say yet',
-    noWordsBody: 'Notifications stay quiet until you write your own words in Your KATSU.',
-    notificationsTitle: 'Let your words reach you',
-    notificationsBody:
-      'Without notifications you have to remember to open this app. That is the one thing it was built to spare you.',
-    notificationsAction: 'Turn on notifications',
+      `The count starts over today. Up to ${rests} rest days in any ${window} keep it going.`,
+    fallbackMeta: 'Notifications are off, so your words are shown here.',
+    emptyTitle: 'No routines yet',
+    emptyBody: 'Add one in the Routines tab.',
+    noWordsTitle: 'No words yet',
+    noWordsBody: 'No notifications are sent until you write something in Your KATSU.',
+    notificationsTitle: 'Notifications are off',
+    notificationsBody: 'Turn them on to get your words when a routine’s time passes.',
+    notificationsAction: 'Turn on',
+    /** 66日のしくみ。まだ1日もやり切っていない間だけ、進み具合の下に出す(2026-11-10。オンボーディングから移した) */
+    rule: (days: number, rests: number, window: number) =>
+      `Each day you finish everything counts. At ${days}, you graduate. You can rest up to ${rests} days in any ${window}.`,
   },
 
   routines: {
     title: 'Routines',
     emptyTitle: 'Nothing yet',
-    emptyBody: 'Add something you will do every day at the same time. One is enough to start.',
-    fullTitle: 'Start with a few',
-    fullBody: 'Up to three. Fewer is easier to finish every day.',
+    emptyBody: 'Add something you’ll do at the same time every day. One is enough to start.',
+    fullTitle: 'That’s three',
+    fullBody: 'Three is the limit. The fewer you have, the easier it is to finish every day.',
     addTitle: 'Add a routine',
     editTitle: 'Edit routine',
     time: 'Time',
@@ -63,117 +77,119 @@ export const en = {
     save: 'Save',
     cancel: 'Cancel',
     deleteAction: 'Delete this routine',
-    graduate: 'I don’t need this anymore',
-    missingTitle: 'Add a title',
-    missingTitleBody: 'Write what you will do at that time.',
-    limitTitle: 'Start with a few',
-    limitBody: 'Up to three. Fewer is easier to finish every day.',
-    removeTitle: 'Remove this routine?',
-    remove: 'Remove',
+    /** 卒業した人にだけ出す(2026-11-10。「I don’t need this anymore」のボタンはやめた。plan §10) */
+    certificate: 'See your certificate',
+    missingTitle: 'Add what you’ll do',
+    missingTitleBody: 'Write what you’ll do at that time.',
+    limitTitle: 'That’s three',
+    limitBody: 'Three is the limit. The fewer you have, the easier it is to finish every day.',
+    removeTitle: 'Delete this routine?',
+    remove: 'Delete',
     /** ⚠ 曜日指定は入れない。週に数回のことは毎日の形に言い換えてもらう(plan §2) */
     dailyHint:
-      'Pick things you’ll do every day. If it’s a few times a week, make it daily: gym becomes “move for 10 minutes.”',
-    changeNote: 'Adding, removing or renaming one later starts the count over.',
+      'Pick things you’ll do every day. For something you do a few times a week, make a daily version: “gym” becomes “move for 10 minutes.”',
+    changeNote: 'Adding or deleting a routine later starts the count over. Renaming one or changing its time doesn’t.',
     /**
      * ルーティンを変えると数え直しになるときの確認(plan §1・§4)。
      * ⚠ 「リセット」「失う」と言わない。何が起きるかを事実だけ伝え、決めるのは本人
      */
     restartTitle: 'Start the count over?',
     restartBody: (days: number, goal: number) =>
-      `You are on day ${days} of ${goal}. Changing your routines starts the count again from day 1.`,
+      `You’re on day ${days} of ${goal}. Adding or deleting a routine starts the count over.`,
     restartConfirm: 'Change it',
   },
 
   katsu: {
     title: 'Your KATSU',
+    /**
+     * 「喝」の意味を英語で一度だけ説明する(2026-11-10)。英語圏の人はこの語を知らず、
+     * タブ名だけが浮いて見えていた。日本語では出さない(空文字)
+     */
+    meaning: 'Katsu (喝): a shout that wakes you up.',
     intro:
-      'This is what you will hear when you skip. Write it as the person who decided to change.',
+      'When a routine’s time passes and it isn’t done, these words arrive as a notification. Write them to yourself.',
     writeTitle: 'Write your words',
     editTitle: 'Edit your words',
-    guardrail: 'It’s okay to challenge an action. Don’t attack the person.',
-    placeholder: 'You said you were going to change.',
-    save: 'Save these words',
+    guardrail: 'Be as hard on what you did as you like. Leave who you are out of it.',
+    placeholder: 'You said you’d change.',
+    save: 'Save',
     saveEdit: 'Save',
     cancel: 'Cancel',
     edit: 'Edit',
     delete: 'Delete',
-    locked: 'Locked, still yours',
+    locked: 'Locked. Not deleted.',
     forPrefix: 'For:',
     allRoutines: 'All routines',
-    anotherTitle: 'Write another one',
-    anotherBody: 'One set of words is free. More than one is part of the paid plan.',
-    anotherAction: 'See the plans',
-    emptyTitle: 'Write something',
-    emptyBody: 'What would you say to yourself at that moment?',
+    anotherTitle: 'Add another',
+    anotherBody: 'Three are free. More come with the paid plan.',
+    anotherAction: 'See plans',
+    emptyTitle: 'Nothing written yet',
+    emptyBody: 'What do you want to hear at that moment?',
     /**
      * Tier 2 ソフトガード(spec §2)。人格・存在を否定する言葉のとき、保存の前に一度だけ聞く。
      * ⚠ 止めない・説教しない。言い換えの例文をこちらで書かない(届くのは本人の言葉だけ)
      */
-    softGuardTitle: 'This one is aimed at you, not at what you did',
+    softGuardTitle: 'This one goes after you as a person',
     softGuardBody:
-      'Harsh is fine. But this says something about who you are. Try pointing it at today: what you skipped, and what to do now.',
+      'Being harsh is fine. Try aiming it at what you skipped today and what to do now.',
     softGuardRewrite: 'Rewrite',
     softGuardKeep: 'Keep it',
-    deleteTitle: 'Delete this?',
-    deleteBody: 'You wrote it. You can write it again.',
-    pickerTitle: 'When should this one show up?',
+    deleteTitle: 'Delete these words?',
+    deleteBody: 'You can always write new ones.',
+    pickerTitle: 'Which routine is this for?',
     /** ⚠ 日替わりで選ばれることを伝える。黙っていると届かない言葉があるように見える */
-    rotation: 'When several sets of words share a routine, one of them arrives each day.',
+    rotation: 'If a routine has more than one set of words, a different one comes each day.',
     /** ⚠ VoiceOver 用。「···」ボタンの名前 */
     more: 'More',
   },
 
   paywall: {
     /** ⚠ 答えるのはユーザー。主語を「あなた」、単位を「月」にして値札の質問に見せない */
-    title: 'What is this app worth to you, each month?',
+    title: 'What’s this app worth to you each month?',
     /** ⚠ 価格の上に一度だけ言う。これが無いと3つの価格が松竹梅に見える */
-    sameTitle: 'All three unlock the same things',
-    sameItems: ['More than one set of words', 'Different words for different routines'],
-    unreachable: 'Could not reach the store. Try again later. Nothing else is affected.',
+    sameTitle: 'All three plans include the same features',
+    sameItems: ['More than three sets of words', 'Different words for different routines'],
+    unreachable: 'Couldn’t reach the App Store. Try again later. The rest of the app works as usual.',
     /** ⚠ RevenueCat に current の Offering が無い。ダッシュボード側の設定漏れ */
-    noOffering: 'No plans are set up yet. Nothing else is affected.',
+    noOffering: 'Plans aren’t available yet. The rest of the app works as usual.',
     /** ⚠ Offering はあるが商品が降りてこない。App Store Connect 側の状態 */
-    noProducts: 'The plans are not available from the store yet. Nothing else is affected.',
+    noProducts: 'Couldn’t load the plans from the App Store. The rest of the app works as usual.',
     perMonth: '/ month',
     notNow: 'Not now',
     restore: 'Restore',
-    restoreNothing: 'Nothing to restore for this Apple ID.',
-    restoreFailed: 'Could not reach the store. Try again later.',
+    restoreNothing: 'There’s nothing to restore for this Apple Account.',
+    restoreFailed: 'Couldn’t reach the App Store. Try again later.',
     /**
      * ⚠ 課金されたかどうかを断定しないこと。例外の中身までは分からない。
      *   復元という手を示すほうが誠実で、実際に役に立つ。
      */
-    purchaseFailed: 'That did not go through. If you were charged, try Restore.',
+    purchaseFailed: 'The purchase didn’t go through. If you were charged, tap Restore.',
     /** ⚠ 支払いは済んでいる。謝るのはこちら側で、ユーザーの操作は間違っていない */
     purchaseUnconfirmed:
-      'Payment went through, but we could not unlock it yet. Try Restore in a moment.',
+      'Your payment went through, but it hasn’t been applied yet. Tap Restore in a moment.',
     /**
      * ⚠ 3.1.2 の必須表示。解約の場所と期限を具体的に書く。
      *   「言葉は消えない」は spec §2(課金が切れても書いた言葉を消さない)の事実どおり。
      */
     renewal:
-      'Renews monthly until you cancel. To cancel, go to Settings → Apple ID → Subscriptions at least 24 hours before it renews. Your words stay even if you cancel.',
+      'Renews monthly until you cancel. Cancel at least 24 hours before renewal in Settings → your name → Subscriptions. Your words stay if you cancel.',
     terms: 'Terms of Use',
     privacy: 'Privacy Policy',
   },
 
   graduation: {
-    title: 'You might not need this anymore.',
-    note: 'This app was designed for you to quit it. Nobody here is going to tell you whether you are ready. You are the only one who knows that.',
-    end: 'End my subscription',
-    notYet: 'Not yet',
-    close: 'Close',
-    stillWorks: 'Either way, nothing here stops working.',
-    freeNote: 'Nothing is holding you here. Delete the app whenever it has done its job.',
-    certificate: 'Take your certificate',
     /**
-     * ⚠ 卒業前にやめようとした人向け。**卒業とは呼ばない**が、責めない・引き止めない。
-     *   やめるかどうかは本人が決める
+     * 卒業した人への問い(2026-11-03 に書き直し)。何を勧めているかを1文で分かるようにする。
+     * ⚠ 購読している人と、していない人で分ける。無課金の人に「課金は要らない」と言っても意味がない
      */
-    leaveTitle: 'You can stop here.',
-    /** ⚠ 「in a row」と言わない。休みがあるので連続ではない(plan §3) */
-    leaveBody: (days: number, rests: number, window: number) =>
-      `Graduating means doing everything on your list on ${days} days, with up to ${rests} rest days in any ${window}. Stopping before that is not graduating, but it is still your call, and nothing you wrote is deleted.`,
+    title: 'If it’s a habit now, you don’t need to pay anymore.',
+    note: 'Cancel your subscription and the app keeps working for free. Your first three sets of words keep arriving.',
+    titleFree: 'You can stop here or keep going.',
+    noteFree: 'The app keeps working as it is. Delete it whenever you like.',
+    end: 'Cancel subscription',
+    notYet: 'Keep going',
+    close: 'Close',
+    certificate: 'Get your certificate',
   },
 
   /**
@@ -184,11 +200,11 @@ export const en = {
     eyebrow: 'Certificate of graduation',
     /** ⚠ 卒業した人にしか出ない。事実だけを言う */
     headline: (days: number) => `${days} days. All done.`,
-    habitsLabel: 'What you made yours',
+    habitsLabel: 'Habits',
     started: 'Started',
     graduated: 'Graduated',
-    footer: 'KATSU — Habits that end',
-    note: 'The image is made on this device. Your words are not on it, and nothing leaves unless you share it.',
+    footer: 'KATSU',
+    note: 'The image is made on this device. Your words aren’t on it, and it isn’t sent anywhere unless you share it.',
   },
 
   /**
@@ -196,10 +212,30 @@ export const en = {
    * ⚠ 祝福するが、可愛くしない。感嘆符・絵文字・「Congratulations!」を入れない
    */
   milestone: {
-    title: (day: number, goal: number) => (day * 2 === goal ? 'Halfway.' : `${day} days.`),
+    title: (day: number, goal: number) =>
+      day === 1 ? 'Day 1.' : day * 2 === goal ? 'Halfway.' : `${day} days.`,
     body: (day: number, goal: number) =>
-      `${day} of ${goal} days, everything done. ${goal - day} to go, one day at a time.`,
+      `${day} of ${goal} days done. ${goal - day} to go.`,
     close: 'Back to today',
+  },
+
+  /** ホーム画面・ロック画面のウィジェット(plan §7-6)。⚠ 言葉は載せない */
+  widget: {
+    startsOn: (date: string) => `Day 1 is ${date}`,
+  },
+
+  /** 通知を長押ししたときのボタン(1.0.3、plan §8 追加) */
+  notifications: {
+    done: 'Done ✓',
+    snooze: (minutes: number) => `Again in ${minutes} min`,
+  },
+
+  /**
+   * アイコンを長押ししたときの項目(1.0.3、plan §8 追加)。今日まだのルーティンだけ。
+   * ⚠ ルーティン名だけを出す。書いた言葉(KatsuMessage)は入れない。全部済んだら何も出さない
+   */
+  quickActions: {
+    title: (time: string, title: string) => `${time} ${title}`,
   },
 
   /**
@@ -215,36 +251,57 @@ export const en = {
     wordsAction: 'Share as a card',
     share: 'Share',
     close: 'Close',
-    note: 'The image is made on this device. Nothing leaves unless you share it.',
+    note: 'The image is made on this device and isn’t sent anywhere unless you share it.',
   },
 
   onboarding: {
-    tagline: 'A voice from the you who believed.',
+    tagline: 'The voice that brings you back.',
     intro:
-      'You are about to write down what you want said to you on the days you would rather not show up.',
-    introNote: 'This app is designed for you to quit it. If it works, you stop needing it.',
+      'When the time you set passes, the words you wrote arrive.',
+    introNote: 'KATSU is an app you graduate from once the habit sticks.',
     start: 'Start',
-    routineTitle: 'One thing, every day',
-    routineBody: 'Something with a time on it, that repeats. Five minutes to an hour.',
-    wordsTitle: 'Now write the hard part',
+    /** 例。押すと時刻とやることに入る。⚠ これはルーティンの例。言葉の例はアプリが用意しない(spec §1) */
+    goalBody: 'Or start from an example:',
+    goals: [
+      { label: 'Become a morning person', time: '06:30', title: 'After I wake up, drink a glass of water' },
+      { label: 'Move every day', time: '07:30', title: 'After breakfast, walk for 10 minutes' },
+      { label: 'Go to bed earlier', time: '22:30', title: 'At 22:30, put my phone in another room' },
+      { label: 'Learn every day', time: '21:00', title: 'After dinner, study for 10 minutes' },
+    ],
+    /** 実行意図(「〜したら、〜する」)と、小さく始めること(plan §8) */
+    ifThen: 'Write it as “After I…, I’ll…”. Keep it small enough to do on a bad day.',
+    startTitle: 'Day 1',
+    startToday: 'Today',
+    startTomorrow: 'Tomorrow',
+    /** 12月の間だけ出す */
+    startNewYear: 'January 1',
+    /** 封をする(plan §8)。⚠ 約束の相手はアプリではなく未来の自分 */
+    sealEyebrow: 'To me, on a day I don’t feel like it',
+    sealHold: 'Hold to seal',
+    sealNote: 'Only you will ever read this.',
+    /** VoiceOver では長押しの代わりにダブルタップで封ができる */
+    sealHint: 'Double-tap to seal',
+    back: 'Back',
+    /** 「〜したら、〜する」の形の例(言葉ではなく、ルーティンの例) */
+    titlePlaceholder: 'After I wake up, drink a glass of water',
+    routineTitle: 'One thing, same time every day',
+    wordsTitle: 'Write your words',
     wordsBody:
-      'This is what arrives when the time passes and you have not done it. Not our words. Yours.',
-    wordsRequired: 'Write something. This is the whole point.',
-    titleRequired: 'Write what you will do at that time.',
-    notificationsTitle: 'How it reaches you',
+      'When the time passes and it isn’t done, this arrives as a notification.',
+    wordsRequired: 'Write something to continue.',
+    titleRequired: 'Write what you’ll do at that time.',
+    notificationsTitle: 'Notifications',
     notificationsBody:
-      'When the time passes and the box is still empty, your words arrive as a notification. Check it off and that one goes quiet.',
+      'If a routine’s time passes and it isn’t checked, your words arrive as a notification. Check it off and that one stays quiet.',
     notificationsNote:
-      'Without this you would have to remember to open the app, which is the one thing this was built to spare you.',
+      'With notifications off, your words only show when you open the app.',
     allow: 'Allow notifications',
     notNow: 'Not now',
-    doneTitle: 'That is the whole app',
     doneBody: 'Your words stay on this device.',
-    doneNote: 'Nothing you write here is sent anywhere. Nobody reads it but you.',
     begin: 'Begin',
     /** 試しに今、自分の言葉を通知で届ける(plan §7-5) */
-    trial: 'Send my words to me now',
-    trialSent: 'On its way. This is what arrives when the time passes and it is not done.',
+    trial: 'Send a test notification',
+    trialSent: 'Sent. This is how it will look.',
     next: 'Next',
   },
 

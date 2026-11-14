@@ -157,6 +157,8 @@ export default function KatsuScreen() {
         <ScrollView contentContainerStyle={styles.content}>
           <View style={styles.header}>
             <ThemedText type="display">{t.katsu.title}</ThemedText>
+            {/* 英語だけ: 「喝」の意味を一度だけ説明する */}
+            {!!t.katsu.meaning && <ThemedText type="smallBold">{t.katsu.meaning}</ThemedText>}
             <ThemedText type="small" themeColor="textSecondary">
               {t.katsu.intro}
             </ThemedText>

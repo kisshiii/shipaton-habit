@@ -17,31 +17,31 @@ import { language } from '@/i18n';
 
 export const Colors = {
   light: {
-    text: '#14151A',
-    background: '#FBFAF7',
-    backgroundElement: '#F1EFE9',
-    backgroundSelected: '#E5E1D6',
-    textSecondary: '#5F6470',
-    accent: '#0F1B61',
+    text: '#2B2A28',
+    background: '#F6F5F1',
+    backgroundElement: '#ECEAE4',
+    backgroundSelected: '#E0DED7',
+    textSecondary: '#66645F',
+    accent: '#2B2A28',
     /** accent の上に載せる文字・記号の色 */
-    accentText: '#FAF3E6',
+    accentText: '#F6F5F1',
     /** 時刻表の罫線。⚠ 一覧は箱で囲まず、これで区切る */
-    line: '#E2DED3',
+    line: '#DBD9D2',
     /** ユーザーの言葉を載せる紙。灰色の箱(案内)と区別するため白に近くする */
-    card: '#FFFFFF',
+    card: '#FCFBF8',
     /** 削除などの取り消せない操作だけに使う。⚠ 未完了や進捗に使わない(赤で煽らない) */
     danger: '#9A3B24',
   },
   dark: {
-    text: '#F4F1E8',
-    background: '#0A0C14',
-    backgroundElement: '#171A26',
-    backgroundSelected: '#232838',
-    textSecondary: '#A6ACBB',
-    accent: '#EFE1C6',
-    accentText: '#0F1B61',
-    line: '#262B3A',
-    card: '#11141E',
+    text: '#F0EDE5',
+    background: '#2B2A28',
+    backgroundElement: '#383734',
+    backgroundSelected: '#454440',
+    textSecondary: '#B8B5AD',
+    accent: '#F0EDE5',
+    accentText: '#2B2A28',
+    line: '#484743',
+    card: '#333230',
     danger: '#E0906F',
   },
 } as const;
@@ -52,10 +52,10 @@ export const Colors = {
  *   普段は紙の色、節目だけ紺 ── 色の切り替わりそのものを儀式の合図にする。
  */
 export const Ceremony = {
-  navy: '#0F1B61',
-  cream: '#FAF0E0',
-  creamSoft: 'rgba(250, 240, 224, 0.72)',
-  creamRule: 'rgba(250, 240, 224, 0.22)',
+  navy: '#2B2A28',
+  cream: '#F0EDE5',
+  creamSoft: 'rgba(240, 237, 229, 0.74)',
+  creamRule: 'rgba(240, 237, 229, 0.24)',
 } as const;
 
 /** 角丸。⚠ 何にでも同じ値を付けない。押せるもの・紙・シートで分ける */
@@ -82,7 +82,7 @@ export const Fonts = Platform.select({
      * ⚠ 日本語は `ui-serif` だとゴシックに落ちるため、ヒラギノ明朝を名指しする。
      *   操作(ボタン・説明)はゴシックのまま ── 手紙と道具を書体で分ける(2026-09-16 デザイン方針)
      */
-    voice: language === 'ja' ? 'Hiragino Mincho ProN' : 'ui-serif',
+    voice: language === 'ja' ? 'Hiragino Sans' : 'system-ui',
   },
   default: {
     sans: 'normal',

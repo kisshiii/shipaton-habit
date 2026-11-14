@@ -16,6 +16,10 @@ export const MAX_REST_DAYS = 2;
 
 /**
  * 節目のお祝いを出す日数(やり切った日の数)。それぞれ一生に1回だけ(plan §4)。
+ * 1 は最初の1日(1.0.3、plan §8 追加)。⚠ 1日目だけは、やり切ったその場でしか出さない。
  * 33 は66日の折り返し。
  */
-export const MILESTONE_DAYS = [7, 33, 50] as const;
+export const MILESTONE_DAYS = [1, 7, 33, 50] as const;
+
+/** 評価を頼む節目(plan §7-3)。1日目では頼まない ── まだ何も分かっていない人に頼まない */
+export const REVIEW_MILESTONE = 7;

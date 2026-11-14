@@ -7,9 +7,18 @@ import { DevSettings, Settings, useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { Onboarding } from '@/components/onboarding';
-import { routineIdFromResponse } from '@/lib/notifications';
+import { ACTION_DONE, ACTION_SNOOZE } from '@/constants/notifications';
+import { todayKey } from '@/lib/date';
+import {
+  dayOfResponse,
+  registerNotificationActions,
+  routineIdFromResponse,
+  syncScheduledNotifications,
+} from '@/lib/notifications';
 import { configurePurchases } from '@/lib/purchases';
-import { getAppState } from '@/storage';
+import { addQuickActionListener, initialQuickAction, routineIdFromQuickAction } from '@/lib/quick-actions';
+import { applyWidgetChecks } from '@/lib/widget';
+import { getAppState, markCompletedToday } from '@/storage';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -31,6 +40,17 @@ Notifications.setNotificationHandler({
 const devSeedArgument: unknown =
   __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevSeed') : undefined;
 
+/** ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevTheme <テーマ>`(撮るルーティンの組み合わせ) */
+const devThemeArgument: unknown =
+  __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevTheme') : undefined;
+
+/** ⚠ 撮影用・開発ビルド専用: 起動引数 `-katsuDevScreen <画面>`(`src/dev/dev-screen.tsx`) */
+const devScreenArgument: unknown =
+  __DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1' ? Settings.get('katsuDevScreen') : undefined;
+
+/** 冷起動のクイックアクションを処理したか。画面の再マウントをまたいで覚える */
+let handledInitialQuickAction = false;
+
 export default function TabLayout() {
   const colorScheme = useColorScheme();
 
@@ -41,11 +61,14 @@ export default function TabLayout() {
     if (__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') {
       if (devSeedArgument == null) return;
       // import にすると本番バンドルにも入る。ここは require でなければならない
-      const { isDemoKind, seedDemo } =
+      const { isDemoKind, isDemoTheme, seedDemo } =
         // eslint-disable-next-line @typescript-eslint/no-require-imports
         require('@/dev/demo-seed') as typeof import('@/dev/demo-seed');
       const seeding = isDemoKind(devSeedArgument)
-        ? seedDemo(devSeedArgument, { force: true })
+        ? seedDemo(devSeedArgument, {
+            force: true,
+            theme: isDemoTheme(devThemeArgument) ? devThemeArgument : undefined,
+          })
         : Promise.resolve(false);
       seeding.finally(() => setIsSeeding(false));
     }
@@ -60,6 +83,12 @@ export default function TabLayout() {
     configurePurchases();
   }, []);
 
+  // アプリが動いていない間にウィジェットで押したチェックを、起動したらすぐ記録へ移す(plan §7-6)。
+  // Today も読み直すたびに同じことをする。重なっても1回ずつ順に処理される
+  useEffect(() => {
+    applyWidgetChecks().catch(() => {});
+  }, []);
+
   // 何を出すか決まってからスプラッシュを畳む。
   // 先に畳むと、オンボーディングが要る人に一瞬タブが見える
   useEffect(() => {
@@ -69,7 +98,11 @@ export default function TabLayout() {
       .finally(() => SplashScreen.hideAsync());
   }, [isSeeding]);
 
-  const handleOnboarded = useCallback(() => setNeedsOnboarding(false), []);
+  // ⚠ Today はオンボーディングの下で、まだ何も無い状態のまま描かれている。閉じたら読み直させる
+  const handleOnboarded = useCallback(() => {
+    setNeedsOnboarding(false);
+    router.navigate({ pathname: '/', params: { opened: String(Date.now()) } });
+  }, []);
 
   // 通知タップで起動・復帰したときの遷移。
   // 冷起動も含めて拾えるよう、リスナーではなくこのフックを使う。
@@ -108,9 +141,61 @@ export default function TabLayout() {
 
     const routineId = routineIdFromResponse(lastResponse);
     if (!routineId) return;
-    // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する
-    router.navigate({ pathname: '/', params: { routineId } });
+
+    // 「10分後にもう一度」: アプリは開かない。届け直しはネイティブが予約済み
+    // (modules/katsu-notification-actions)。ここで予約すると二重になる
+    if (lastResponse.actionIdentifier === ACTION_SNOOZE) return;
+
+    (async () => {
+      try {
+        // 「やった ✓」: その通知の日が今日ならチェックを付けてから開く。昨日の分なら開くだけ
+        // (「10分後にもう一度」で0時をまたいでも、届いた日ではなく通知の日で決める)
+        if (lastResponse.actionIdentifier === ACTION_DONE && dayOfResponse(lastResponse) === todayKey()) {
+          await markCompletedToday(routineId);
+          await syncScheduledNotifications();
+        }
+      } finally {
+        // 該当項目へ。文字列を経路情報に混ぜず、ID だけで解決する。
+        // ⚠ opened を毎回変えて、Today がすでに開いていても読み直させる。保存に失敗しても開く
+        router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
+      }
+    })().catch(() => {});
   }, [lastResponse]);
+
+  // アイコンを長押しした項目から開いたとき(1.0.3、plan §8 追加)。
+  // 冷起動は initialQuickAction、起動中はリスナーで拾う。
+  // ⚠ 冷起動では iOS が両方の経路で知らせることがある。チェックは付いていれば何もしないので、
+  //   二重に来ても Today を開き直すだけで済む
+  useEffect(() => {
+    const handle = async (routineId: string) => {
+      try {
+        await markCompletedToday(routineId);
+        await syncScheduledNotifications();
+      } finally {
+        // ⚠ 保存に失敗しても Today は開く(押したのに何も起きない、を避ける)。
+        // opened を毎回変えて、Today がすでに開いていても読み直させる(項目も Today が差し替える)
+        router.navigate({ pathname: '/', params: { routineId, opened: String(Date.now()) } });
+      }
+    };
+
+    const initialId = routineIdFromQuickAction(initialQuickAction);
+    // ⚠ initialQuickAction は JS が動いている間ずっと同じ値を返す。開発中の再読み込みで二度目を処理しない
+    if (initialId && !handledInitialQuickAction) {
+      handledInitialQuickAction = true;
+      handle(initialId).catch(() => {});
+    }
+
+    const subscription = addQuickActionListener((action) => {
+      const routineId = routineIdFromQuickAction(action);
+      if (routineId) handle(routineId).catch(() => {});
+    });
+    return () => subscription.remove();
+  }, []);
+
+  // 通知を長押ししたときのボタン(1.0.3)。言語が変わっても合うよう、起動のたびに登録し直す
+  useEffect(() => {
+    registerNotificationActions().catch(() => {});
+  }, []);
 
   if (isSeeding) return null;
 
@@ -118,6 +203,15 @@ export default function TabLayout() {
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AppTabs />
       {needsOnboarding === true && <Onboarding onFinished={handleOnboarded} />}
+      {(__DEV__ || process.env.EXPO_PUBLIC_KATSU_DEV_TOOLS === '1') &&
+        typeof devScreenArgument === 'string' &&
+        (() => {
+          // import にすると本番バンドルにも入る。ここは require でなければならない
+          const { DevScreen } =
+            // eslint-disable-next-line @typescript-eslint/no-require-imports
+            require('@/dev/dev-screen') as typeof import('@/dev/dev-screen');
+          return <DevScreen screen={devScreenArgument} />;
+        })()}
     </ThemeProvider>
   );
 }

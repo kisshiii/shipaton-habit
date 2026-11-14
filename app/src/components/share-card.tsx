@@ -39,7 +39,8 @@ function CardFrame({ eyebrow, children }: { eyebrow: string; children: ReactNode
         <Text style={styles.eyebrow}>{eyebrow}</Text>
       </View>
       {children}
-      <Text style={styles.footer}>{t.certificate.footer}</Text>
+      {/* 見出しがもう KATSU のときは、下にもう一度出さない(2026-11-10。足元を「KATSU」だけにしてから重なっていた) */}
+      {eyebrow !== t.certificate.footer && <Text style={styles.footer}>{t.certificate.footer}</Text>}
     </View>
   );
 }

@@ -45,19 +45,24 @@ type Props = {
    * ⚠ この後に必ず `onClose` も呼ばれる。両方に同じ関数を渡すと二重に走る。
    */
   onPurchased?: () => void;
+  /**
+   * ⚠ 撮影用(`src/dev/dev-screen.tsx`)だけが渡す。ストアから読まずにこの商品を並べる。
+   *   シミュレーターは米国のストアにつながるので、日本のスクショ用に App Store Connect の値を渡す
+   */
+  previewPackages?: PurchasesPackage[];
 };
 
-export function Paywall({ visible, onClose, onPurchased }: Props) {
+export function Paywall({ visible, onClose, onPurchased, previewPackages }: Props) {
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <SafeAreaProvider>
-        <Sheet onClose={onClose} onPurchased={onPurchased} visible={visible} />
+        <Sheet onClose={onClose} onPurchased={onPurchased} visible={visible} previewPackages={previewPackages} />
       </SafeAreaProvider>
     </Modal>
   );
 }
 
-function Sheet({ visible, onClose, onPurchased }: Props) {
+function Sheet({ visible, onClose, onPurchased, previewPackages }: Props) {
   const theme = useTheme();
   const insets = useSafeAreaInsets();
   const [packages, setPackages] = useState<PurchasesPackage[] | null>(null);
@@ -73,6 +78,13 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
     let cancelled = false;
     setNotice(null);
     setIsLoading(true);
+    if (previewPackages) {
+      const timer = setTimeout(() => {
+        setPackages([...previewPackages].sort((a, b) => a.product.price - b.product.price));
+        setIsLoading(false);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
     getOffering().then((result) => {
       if (cancelled) return;
       // ⚠ 安い順に並べること。覚悟の目盛りとして下から上へ読ませる(spec §2)。
@@ -88,7 +100,7 @@ function Sheet({ visible, onClose, onPurchased }: Props) {
     return () => {
       cancelled = true;
     };
-  }, [visible]);
+  }, [visible, previewPackages]);
 
   const handlePurchase = async (pkg: PurchasesPackage) => {
     setNotice(null);

@@ -54,6 +54,7 @@ const {
   REST_WINDOW_DAYS: W,
   MAX_REST_DAYS: R,
   MILESTONE_DAYS: M,
+  REVIEW_MILESTONE,
 } = require(path.join(OUT, 'constants.js'));
 
 const START = '2026-01-01';
@@ -201,6 +202,37 @@ const cases = [
     assert.strictEqual(progress(r, 30, ['2025-12-31', keys[40]]).doneDays, 31);
   }],
 
+  // --- 始める日を先にした(plan §8) ---------------------------------------------
+  ['Day 1 が今日より後なら、まだ始まっていない(0日・休み0回)', () => {
+    const r = build((i, k) => done(k));
+    const p = progress(r, 10, [], keys[20]);
+    assert.strictEqual(p.hasStarted, false);
+    assert.strictEqual(p.doneDays, 0);
+    assert.strictEqual(p.restsInWindow, 0);
+    assert.strictEqual(p.graduatedOn, null);
+  }],
+  ['Day 1 の当日からは始まっている', () => {
+    const r = build((i, k) => (i < 20 ? notDone(k) : done(k)));
+    assert.strictEqual(progress(r, 20, [], keys[20]).hasStarted, true);
+    assert.strictEqual(progress(r, 20, [], keys[20]).doneDays, 1);
+  }],
+  ['始まる前のルーティンの変更は、数え直しにならない', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 30, [keys[15]], keys[20]).doneDays, 11);
+  }],
+
+  // --- 昨日(その日最初に開いたときの一言。plan §8) ------------------------------
+  ['昨日やり切っていれば done、休みなら rest', () => {
+    const r = restsAt(10);
+    assert.strictEqual(progress(r, 10).yesterday, 'done');
+    assert.strictEqual(progress(r, 11).yesterday, 'rest');
+  }],
+  ['Day 1 の当日と、始まる前は null', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(progress(r, 0).yesterday, null);
+    assert.strictEqual(progress(r, 10, [], keys[20]).yesterday, null);
+  }],
+
   // --- 卒業後 ---------------------------------------------------------------
   ['卒業した後に何度休んでも、卒業日は変わらない', () => {
     const r = build((i, k) => (i < N ? done(k) : notDone(k)));
@@ -224,17 +256,58 @@ const cases = [
   // --- 節目 -----------------------------------------------------------------
   ['節目に届いた日に、その節目を出す', () => {
     const r = build((i, k) => done(k));
-    assert.strictEqual(pickMilestone(progress(r, M[0] - 2), []), null);
-    assert.strictEqual(pickMilestone(progress(r, M[0] - 1), []), M[0]);
+    const week = REVIEW_MILESTONE;
+    assert.strictEqual(pickMilestone(progress(r, week - 2), [1]), null);
+    assert.strictEqual(pickMilestone(progress(r, week - 1), [1]), week);
   }],
   ['一度祝った節目は、数え直して同じ日数に届いても出さない', () => {
     const r = build((i, k) => done(k));
-    assert.strictEqual(pickMilestone(progress(r, M[0] + 20, [keys[20]]), [M[0]]), null);
+    assert.strictEqual(pickMilestone(progress(r, 7 + 20, [keys[20]]), [1, 7]), null);
   }],
   ['いくつも越えていたら一番大きいものだけ。済みにするのはそれ以下全部', () => {
     const r = build((i, k) => done(k));
-    assert.strictEqual(pickMilestone(progress(r, M[1] - 1), []), M[1]);
-    assert.deepStrictEqual(milestonesUpTo(M[1]), [M[0], M[1]]);
+    assert.strictEqual(pickMilestone(progress(r, 33 - 1), []), 33);
+    assert.deepStrictEqual(milestonesUpTo(33), M.filter((d) => d <= 33));
+  }],
+  ['1日目は、やり切ったその場でだけ出す(後から開いた2日目以降には出さない)', () => {
+    const r = build((i, k) => done(k));
+    assert.strictEqual(pickMilestone(progress(r, 0), []), 1);
+    assert.strictEqual(pickMilestone(progress(r, 2), []), null);
+    // 1日目を祝ったあとは、次の節目まで何も出ない
+    assert.strictEqual(pickMilestone(progress(r, 3), [1]), null);
+  }],
+  ['1日目をやり切ったあと、2日目を開いた時点(今日はまだ)では出さない', () => {
+    const r = build((i, k) => (i === 0 ? done(k) : i === 1 ? notDone(k) : undefined));
+    assert.strictEqual(progress(r, 1).doneDays, 1);
+    assert.strictEqual(pickMilestone(progress(r, 1), []), null);
+  }],
+  ['休みをはさんで開いた日(今日はまだ)にも1日目を出さない', () => {
+    const r = build((i, k) => (i === 0 ? done(k) : i === 2 ? notDone(k) : undefined));
+    assert.strictEqual(pickMilestone(progress(r, 2), []), null);
+  }],
+  ['時刻を過ぎていて分母から外れただけの1日目(何もしていない)は祝わない', () => {
+    const r = build((i, k) => (i === 0 ? { date: k, completedIds: [], totalCount: 0, excludedIds: ['a'] } : undefined));
+    assert.strictEqual(progress(r, 0).doneDays, 1);
+    assert.strictEqual(pickMilestone(progress(r, 0), []), null);
+  }],
+  ['数え直したあとの1日目は祝わない(1日目は一生に1回)', () => {
+    const rests = Array.from({ length: R + 1 }, (_, j) => 10 + j);
+    const last = rests[rests.length - 1];
+    const r = build((i, k) => (rests.includes(i) ? notDone(k) : i <= last + 1 ? done(k) : undefined));
+    assert.strictEqual(progress(r, last + 1).doneDays, 1);
+    assert.strictEqual(pickMilestone(progress(r, last + 1), [7]), null);
+    assert.strictEqual(pickMilestone(progress(r, last + 1), []), null);
+  }],
+  ['卒業した人には、休みで数え直したお知らせを出さない', () => {
+    const rests = Array.from({ length: R + 1 }, (_, j) => N + 5 + j);
+    const r = build((i, k) => (i < N ? done(k) : rests.includes(i) ? notDone(k) : done(k)));
+    const p = progress(r, N + 20);
+    assert.notStrictEqual(p.graduatedOn, null);
+    assert.strictEqual(p.restRestartOn, null);
+  }],
+  ['評価を頼む節目は7日で、1日目ではない', () => {
+    assert.strictEqual(REVIEW_MILESTONE, 7);
+    assert.ok(M.includes(1));
   }],
   ['卒業した後は節目を出さない', () => {
     const r = build((i, k) => done(k));

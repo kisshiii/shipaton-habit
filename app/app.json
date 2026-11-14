@@ -2,7 +2,7 @@
   "expo": {
     "name": "KATSU",
     "slug": "app",
-    "version": "1.0.2",
+    "version": "1.0.3",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "app",
@@ -37,9 +37,31 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#0F1B61",
+          "backgroundColor": "#2B2A28",
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 200
+        }
+      ],
+      "expo-quick-actions",
+      [
+        "expo-widgets",
+        {
+          "bundleIdentifier": "com.kisshi.gradhabit.ExpoWidgetsTarget",
+          "groupIdentifier": "group.com.kisshi.gradhabit",
+          "widgets": [
+            {
+              "name": "KatsuProgress",
+              "displayName": "KATSU",
+              "description": "Day N / 66",
+              "ios": {
+                "supportedFamilies": [
+                  "systemSmall",
+                  "systemMedium",
+                  "accessoryRectangular"
+                ]
+              }
+            }
+          ]
         }
       ]
     ],

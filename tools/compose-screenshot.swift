@@ -32,8 +32,9 @@ if args.count >= 9, let mx = Double(args[5]), let my = Double(args[6]), let mw =
 }
 
 let W: CGFloat = 1290, H: CGFloat = 2796
-let bg = NSColor(srgbRed: 0x0A / 255.0, green: 0x0C / 255.0, blue: 0x14 / 255.0, alpha: 1)
-let ink = NSColor(srgbRed: 0xF4 / 255.0, green: 0xF1 / 255.0, blue: 0xE8 / 255.0, alpha: 1)
+// 炭(アプリの地 #2B2A28)より一段暗い色。画面が浮いて見えるように(2026-11-14 に紺がかった黒から変更)
+let bg = NSColor(srgbRed: 0x1C / 255.0, green: 0x1B / 255.0, blue: 0x1A / 255.0, alpha: 1)
+let ink = NSColor(srgbRed: 0xF0 / 255.0, green: 0xED / 255.0, blue: 0xE5 / 255.0, alpha: 1)
 
 let out = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(W), pixelsHigh: Int(H), bitsPerSample: 8,
                            samplesPerPixel: 4, hasAlpha: true, isPlanar: false, colorSpaceName: .deviceRGB,
@@ -45,11 +46,19 @@ bg.setFill()
 NSRect(x: 0, y: 0, width: W, height: H).fill()
 
 // 見出し(2行・中央揃え)
-let font = NSFont(name: "HelveticaNeue", size: 118) ?? NSFont.systemFont(ofSize: 118)
+// ⚠ 長い行(日本語の11文字以上など)は折り返して3行目が切れる。一番長い行が幅に収まるまで小さくする(2026-11-04)
+let maxWidth = W - 120
+var size: CGFloat = 118
+func font(_ size: CGFloat) -> NSFont { NSFont(name: "HelveticaNeue", size: size) ?? NSFont.systemFont(ofSize: size) }
+while size > 60 {
+  let widest = [line1, line2].map { NSAttributedString(string: $0, attributes: [.font: font(size)]).size().width }.max() ?? 0
+  if widest <= maxWidth { break }
+  size -= 2
+}
 let para = NSMutableParagraphStyle()
 para.alignment = .center
 para.lineSpacing = 0
-let attrs: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: ink, .paragraphStyle: para]
+let attrs: [NSAttributedString.Key: Any] = [.font: font(size), .foregroundColor: ink, .paragraphStyle: para]
 let caption = NSAttributedString(string: "\(line1)\n\(line2)", attributes: attrs)
 let captionTop: CGFloat = 120
 let captionHeight: CGFloat = 300

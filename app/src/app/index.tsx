@@ -10,11 +10,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useFocusEffect, useLocalSearchParams } from 'expo-router';
-import * as Haptics from 'expo-haptics';
-import { AppState as RNAppState, type AppStateStatus, ScrollView, StyleSheet, View } from 'react-native';
+import { AppState as RNAppState, type AppStateStatus, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
-import { Button } from '@/components/button';
 import { CheckMark } from '@/components/check-mark';
 import { EmptyState } from '@/components/empty-state';
 import { GraduationModal } from '@/components/graduation-modal';
@@ -23,28 +21,32 @@ import { MilestoneModal } from '@/components/milestone-modal';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
 import { TimetableList, TimetableRow } from '@/components/timetable-row';
-import { MAX_REST_DAYS, MILESTONE_DAYS, REST_WINDOW_DAYS } from '@/constants/graduation';
+import { GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS, REVIEW_MILESTONE } from '@/constants/graduation';
 import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
+import { playAllDone, playCheck, playUncheck } from '@/lib/haptics';
 import {
   evaluateGraduation,
   milestonesUpTo,
   type GraduationProgress as Progress,
 } from '@/lib/graduation';
 import { requestReviewOnce } from '@/lib/review';
+import { applyWidgetChecks, syncWidget } from '@/lib/widget';
 import {
   getNotificationPermission,
   requestNotificationPermission,
   syncScheduledNotifications,
 } from '@/lib/notifications';
+import { syncQuickActions } from '@/lib/quick-actions';
 import {
   getMessages,
   getRoutines,
   getTodayRecord,
   markGraduated,
   markMilestonesCelebrated,
+  markOpenedToday,
   markRestartNoticeShown,
   toggleCompletion,
 } from '@/storage';
@@ -64,24 +66,55 @@ export default function TodayScreen() {
    * この画面が開いている間は出したままにする(タブを移るたびに消えたり出たりさせない)
    */
   const [isRestartNoticeOpen, setIsRestartNoticeOpen] = useState(false);
+  /** その日最初に開いたときの一言(plan §8)。この画面が開いている間は出したままにする */
+  const [dailyLine, setDailyLine] = useState<{ text: string; countStartedOn: string } | null>(null);
   const dateRef = useRef(todayKey());
+  /** 裏で起こされたとき(通知のボタンなど)に、一言・お知らせを出さずに済ませた。前に出たら読み直す */
+  const isGreetingPendingRef = useRef(false);
 
   // 通知から開かれたとき、どの項目の話だったかを見失わせない
-  const { routineId: focusedId } = useLocalSearchParams<{ routineId?: string }>();
+  const { routineId: focusedId, opened } = useLocalSearchParams<{ routineId?: string; opened?: string }>();
 
   // 毎日判定する。やり切った日が66日に達した日に一度だけ卒業を出す(spec §2 卒業の扱い)
   const checkGraduation = useCallback(async () => {
     const status = await evaluateGraduation();
     setProgress(status?.progress ?? null);
+    // ホーム画面・ロック画面のウィジェットも同じ数字にそろえる(plan §7-6)
+    syncWidget();
     if (status?.shouldOffer) setIsGraduationOpen(true);
     if (status?.milestone) setMilestone(status.milestone);
+    // ルーティンを変えて数え直したら、出していた昨日の一言は引っ込める(数字が合わなくなる)
+    setDailyLine((line) =>
+      line && line.countStartedOn !== status?.progress.countStartedOn ? null : line,
+    );
+    // ⚠ アプリが前に出ていないときは「出した」「今日はもう開いた」と記録しない。
+    // 本人が見ていない一言・お知らせを、見たことにしてしまうため(2026-11-01 のレビュー)
+    if (RNAppState.currentState !== 'active') {
+      isGreetingPendingRef.current = true;
+      return;
+    }
+    isGreetingPendingRef.current = false;
     if (status?.showRestartNotice && status.progress.restRestartOn) {
       setIsRestartNoticeOpen(true);
       await markRestartNoticeShown(status.progress.restRestartOn);
+      // ⚠ 今日はもう開いたことにする。しないと、タブを移って戻ったときに昨日の一言が重なる
+      await markOpenedToday();
+    } else if (status && !status.progress.graduatedOn && (await markOpenedToday())) {
+      // 数え直しのお知らせを出す日と、卒業した後は出さない
+      const { yesterday, doneDays, restsInWindow, countStartedOn } = status.progress;
+      if (yesterday === 'done') setDailyLine({ text: t.today.yesterdayDone(doneDays), countStartedOn });
+      if (yesterday === 'rest') {
+        setDailyLine({
+          text: t.today.yesterdayRest(Math.max(MAX_REST_DAYS - restsInWindow, 0), REST_WINDOW_DAYS),
+          countStartedOn,
+        });
+      }
     }
   }, []);
 
   const refresh = useCallback(async () => {
+    // ウィジェットで押したチェックを先に記録へ移す(plan §7-6)。読み直す前に済ませる
+    await applyWidgetChecks();
     const [nextRoutines, nextRecord, nextMessages, nextPermission] = await Promise.all([
       getRoutines(),
       getTodayRecord(),
@@ -95,6 +128,8 @@ export default function TodayScreen() {
     setPermission(nextPermission);
     // 開くたびに予約を引き直す。7日開かなくても通知が尽きない
     await syncScheduledNotifications();
+    // アイコン長押しの項目も今日の状態に合わせる(plan §8 追加)
+    await syncQuickActions(nextRoutines, nextRecord);
     await checkGraduation();
   }, [checkGraduation]);
 
@@ -104,24 +139,43 @@ export default function TodayScreen() {
     }, [refresh]),
   );
 
-  // 日付をまたいだ状態でアプリに戻ってきたとき、昨日のチェックを出したままにしない
+  // 通知の「やった ✓」から開かれたとき。Today がすでに開いていても読み直す
+  useEffect(() => {
+    if (!opened) return;
+    // ⚠ effect の中で同期的に state を変えない(lint)。次の周回で読み直す
+    const timer = setTimeout(refresh, 0);
+    return () => clearTimeout(timer);
+  }, [opened, refresh]);
+
+  // 日付をまたいだ状態でアプリに戻ってきたとき、昨日のチェックを出したままにしない。
+  // ウィジェットでチェックしてから戻ってきたときも読み直す(Today が開いたままだとフォーカスは変わらない)
   useEffect(() => {
     const subscription = RNAppState.addEventListener('change', (status: AppStateStatus) => {
-      if (status === 'active' && dateRef.current !== todayKey()) refresh();
+      if (status !== 'active') return;
+      applyWidgetChecks()
+        .then((applied) => {
+          if (applied > 0 || dateRef.current !== todayKey() || isGreetingPendingRef.current) refresh();
+        })
+        .catch(() => {});
     });
     return () => subscription.remove();
   }, [refresh]);
 
   const handleToggle = async (routineId: string) => {
     const wasDone = record?.completedIds.includes(routineId) ?? false;
-    // 付けたときは軽く叩く。外したときは最小限にとどめ、取り消しを演出しない
-    (wasDone
-      ? Haptics.selectionAsync()
-      : Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light)
-    ).catch(() => {});
-    setRecord(await toggleCompletion(routineId));
+    // 押した瞬間に「トン」。外したときは最小限にとどめ、取り消しを演出しない
+    if (wasDone) playUncheck();
+    else playCheck();
+    const nextRecord = await toggleCompletion(routineId);
+    setRecord(nextRecord);
+    // 今日の分を全部やり切った瞬間。毎回必ず鳴らす(ランダムにしない。plan §10)
+    if (!wasDone && nextRecord.totalCount > 0 && nextRecord.completedIds.length >= nextRecord.totalCount) {
+      playAllDone();
+    }
     // 完了した項目の通知を消す。「終わってるのに煽られる」を防ぐ最後の砦
     await syncScheduledNotifications();
+    // 済んだ項目をアイコン長押しから外す。外したチェックなら戻す
+    await syncQuickActions(routines, nextRecord);
     // その日の最後の1件を押した瞬間に条件を満たすことがある。
     // 次にタブを開き直すまで待たせない
     await checkGraduation();
@@ -138,8 +192,8 @@ export default function TodayScreen() {
     if (milestone === null) return;
     setMilestone(null);
     await markMilestonesCelebrated(milestonesUpTo(milestone));
-    // 最初の節目を閉じたときに一度だけ評価を頼む(plan §7-3)
-    if (milestone === MILESTONE_DAYS[0]) await requestReviewOnce();
+    // 7日の節目を閉じたときに一度だけ評価を頼む(plan §7-3)
+    if (milestone === REVIEW_MILESTONE) await requestReviewOnce();
   };
 
   const handleEnableNotifications = async () => {
@@ -183,6 +237,20 @@ export default function TodayScreen() {
           {/* 卒業までの進み具合(plan §4)。ルーティンが無い人には出さない */}
           {hasRoutines && progress && <GraduationProgress progress={progress} />}
 
+          {/* 66日のしくみ。まだ1日もやり切っていない間だけ(オンボーディングから移した。plan §10) */}
+          {hasRoutines && progress && progress.doneDays === 0 && !progress.graduatedOn && !isRestartNoticeOpen && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {t.today.rule(GRADUATION_STREAK_DAYS, MAX_REST_DAYS, REST_WINDOW_DAYS)}
+            </ThemedText>
+          )}
+
+          {/* その日最初に開いたときの一言(plan §8)。⚠ 休みを責めない。色を変えない */}
+          {hasRoutines && dailyLine && (
+            <ThemedText type="small" themeColor="textSecondary">
+              {dailyLine.text}
+            </ThemedText>
+          )}
+
           {/* ⚠ 静かに一行だけ。「失敗」「リセット」と言わない。赤くしない(plan §4) */}
           {hasRoutines && isRestartNoticeOpen && (
             <ThemedText type="small" themeColor="textSecondary">
@@ -200,15 +268,18 @@ export default function TodayScreen() {
             </ThemedView>
           )}
 
+          {/* 通知のお願いは1行に収める。カードにするとルーティンが画面の下に押し出される(2026-11-03) */}
           {isBlocked && hasWords && (
-            <EmptyState
-              symbol="bell.badge"
-              title={t.today.notificationsTitle}
-              body={t.today.notificationsBody}
-              action={
-                <Button label={t.today.notificationsAction} onPress={handleEnableNotifications} />
-              }
-            />
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={t.today.notificationsTitle + '. ' + t.today.notificationsBody}
+              onPress={handleEnableNotifications}
+              style={({ pressed }) => [styles.notify, { borderColor: theme.line, opacity: pressed ? 0.6 : 1 }]}>
+              <ThemedText type="small" themeColor="textSecondary" style={styles.notifyText}>
+                {t.today.notificationsBody}
+              </ThemedText>
+              <ThemedText type="smallBold">{t.today.notificationsAction}</ThemedText>
+            </Pressable>
           )}
 
           {hasRoutines && !hasWords && (
@@ -276,6 +347,18 @@ const styles = StyleSheet.create({
   header: {
     gap: Spacing.half,
     paddingTop: Spacing.two,
+  },
+  notify: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.three,
+    borderRadius: Radius.card,
+    borderWidth: StyleSheet.hairlineWidth,
+  },
+  notifyText: {
+    flex: 1,
   },
   letter: {
     gap: Spacing.two,

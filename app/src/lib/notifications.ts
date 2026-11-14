@@ -14,16 +14,40 @@
 
 import * as Notifications from 'expo-notifications';
 
-import { IOS_SCHEDULED_LIMIT, SCHEDULE_DAYS_AHEAD } from '@/constants/notifications';
+import NotificationActions from '../../modules/katsu-notification-actions';
+
+import {
+  ACTION_DONE,
+  ACTION_SNOOZE,
+  IOS_SCHEDULED_LIMIT,
+  ROUTINE_CATEGORY,
+  SCHEDULE_DAYS_AHEAD,
+  SNOOZE_ID_PREFIX,
+  SNOOZE_MINUTES,
+} from '@/constants/notifications';
+import { t } from '@/i18n';
 import { toDateKey } from '@/lib/date';
+import { FREE_MESSAGE_LIMIT } from '@/constants/messages';
 import { isProCached } from '@/lib/purchases';
-import { getDailyRecords, getMessages, getRoutines } from '@/storage';
+import { getAppState, getDailyRecords, getMessages, getRoutines } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
 
 /** 通知に載せるデータ。**ユーザーの本文をここに入れないこと** */
 type KatsuNotificationData = {
   routineId: string;
+  /**
+   * その通知が「どの日の分」か(ローカルの日付キー)。本文ではないので入れてよい。
+   * 「10分後にもう一度」で深夜0時をまたいでも、届いた日ではなくこの日の分として扱う
+   */
+  forDay?: string;
 };
+
+/** 通知が「どの日の分」か。古い通知(forDay が無い)は届いた日で代える */
+export function dayOfResponse(response: Notifications.NotificationResponse): string {
+  const forDay = (response.notification.request.content.data as Partial<KatsuNotificationData> | undefined)
+    ?.forDay;
+  return typeof forDay === 'string' ? forDay : deliveredOn(response);
+}
 
 /** 通知タップで開いたときに読む routineId を取り出す */
 export function routineIdFromResponse(
@@ -52,7 +76,43 @@ export async function requestNotificationPermission(): Promise<Notifications.Per
   return status;
 }
 
+// --- 通知のボタン(1.0.3、plan §8 追加) ------------------------------------------
+
+/**
+ * 通知を長押ししたときのボタンを登録する。起動のたびに呼んでよい(上書きされる)。
+ *   - やった ✓      アプリが開き、そのルーティンにチェックが付く
+ *   - 10分後にもう一度  アプリを開かずに、同じ言葉を10分後に届け直す
+ * ⚠ 「もう一度」の予約は**ネイティブ**(`modules/katsu-notification-actions`)がする。
+ *   expo-notifications は応答の完了をすぐ iOS に返すので、裏で止まっている・終了している
+ *   アプリでは JS が動く前に止められ、JS で予約すると消える。ここでは分数を渡すだけ
+ */
+export async function registerNotificationActions(): Promise<void> {
+  NotificationActions?.configure(SNOOZE_MINUTES * 60);
+  await Notifications.setNotificationCategoryAsync(ROUTINE_CATEGORY, [
+    {
+      identifier: ACTION_DONE,
+      buttonTitle: t.notifications.done,
+      options: { opensAppToForeground: true },
+    },
+    {
+      identifier: ACTION_SNOOZE,
+      buttonTitle: t.notifications.snooze(SNOOZE_MINUTES),
+      options: { opensAppToForeground: false },
+    },
+  ]);
+}
+
+/** 通知が届いた日(ローカル)。届いた日のうちだけ「やった」でチェックを付ける */
+export function deliveredOn(response: Notifications.NotificationResponse): string {
+  const raw = response.notification.date;
+  // 秒で来ることもあるので、ミリ秒にそろえる
+  return toDateKey(new Date(raw < 1e12 ? raw * 1000 : raw));
+}
+
 // --- 試しに届ける -------------------------------------------------------------
+
+/** 試しの通知の ID。引き直しのときに、これは消さない */
+const TRIAL_ID = 'katsuTrial';
 
 /** 試しの通知が届くまでの秒数。画面を見ている間に届く長さにする */
 const TRIAL_DELAY_SECONDS = 3;
@@ -67,6 +127,8 @@ const TRIAL_DELAY_SECONDS = 3;
  */
 export async function sendTrialNotification(title: string, body: string): Promise<void> {
   await Notifications.scheduleNotificationAsync({
+    // ⚠ 決まった ID にして、引き直し(全消し)で消されないようにする
+    identifier: TRIAL_ID,
     content: { title, body, data: {} },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL,
@@ -81,8 +143,8 @@ export async function sendTrialNotification(title: string, body: string): Promis
  * そのルーティンに使う文言を選ぶ。
  *
  * 項目ごとの出し分けは有料(課金機会③)。
- * ⚠ **無料のときは先頭1件を全ルーティン共通で使う。**
- *   画面側は2つ目以降を「Locked ── still yours」と表示して触らせないのに、
+ * ⚠ **無料のときは先頭 `FREE_MESSAGE_LIMIT` 件を、全ルーティン共通で日替わりに使う**(2026-11-10。plan §10)。
+ *   画面側はそれより後ろを「ロック中」と表示して触らせないのに、
  *   通知だけがそれを鳴らしていると、ロックが嘘になり ②③ が課金機会として成立しない。
  *   ロック済みの言葉は**消さない**(spec §2)。使わないだけで、再課金すれば戻る。
  */
@@ -97,7 +159,10 @@ function messageFor(
   //   「特定のルーティン用に書いた言葉が全ルーティンで鳴る」ことになる。
   //   共通のものが1つも無ければ先頭に落とす(鳴らさないよりは本人の言葉を届ける)。
   if (!isPaid) {
-    return messages.find((message) => message.routineId === undefined) ?? messages[0];
+    const unlocked = messages.slice(0, FREE_MESSAGE_LIMIT);
+    const common = unlocked.filter((message) => message.routineId === undefined);
+    if (common.length === 0) return unlocked[0];
+    return common[pickIndex(`${dayKey}:${routine.id}`, common.length)];
   }
 
   // そのルーティン専用があればその中から。無ければ共通の中から
@@ -126,6 +191,13 @@ function pickIndex(seed: string, count: number): number {
   return Math.abs(hash) % count;
 }
 
+/** `startedOn`("2027-01-01")をその日の 0:00 の Date にする。無ければ null */
+function parseStartDay(startedOn: string | undefined): Date | null {
+  const [year, month, day] = (startedOn ?? '').split('-').map(Number);
+  if (!year || !month || !day) return null;
+  return new Date(year, month - 1, day);
+}
+
 /** その日のその時刻を表す Date を作る */
 function occurrenceAt(day: Date, time: string): Date {
   const [hours, minutes] = time.split(':').map(Number);
@@ -134,10 +206,65 @@ function occurrenceAt(day: Date, time: string): Date {
   return at;
 }
 
-async function runSync(): Promise<number> {
-  await Notifications.cancelAllScheduledNotificationsAsync();
+/**
+ * 予約を消す。「もう一度」の予約だけは、そのルーティンが今日まだ終わっていなければ残す
+ * (全消しすると、アプリを開いただけで「10分後にもう一度」が消えてしまう)。
+ */
+/**
+ * 予約を消す。残すのは次の2つだけで、残した件数を返す(64件の上限の計算に使う):
+ *   - 試しの通知(オンボーディングの最後)
+ *   - 「10分後にもう一度」の予約のうち、今日の分で、そのルーティンがまだ終わっておらず、
+ *     本文が今もある言葉のもの(消した言葉・ロックされた言葉を届け直さない)
+ */
+async function cancelPlanned(keepSnooze: (data: Partial<KatsuNotificationData>, body: string) => boolean): Promise<number> {
+  const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+  const keep = (request: Notifications.NotificationRequest): boolean => {
+    if (request.identifier === TRIAL_ID) return true;
+    if (!request.identifier.startsWith(SNOOZE_ID_PREFIX)) return false;
+    return keepSnooze(
+      (request.content.data as Partial<KatsuNotificationData> | undefined) ?? {},
+      request.content.body ?? '',
+    );
+  };
+  await Promise.all(
+    scheduled
+      .filter((request) => !keep(request))
+      .map((request) => Notifications.cancelScheduledNotificationAsync(request.identifier)),
+  );
+  return scheduled.filter(keep).length;
+}
 
+/**
+ * もう済んだルーティンの、届いて通知センターに残っている通知を下げる。
+ * 残しておくと、そこから「10分後にもう一度」を押せてしまう
+ */
+async function dismissDelivered(isDone: (routineId: string) => boolean): Promise<void> {
+  const presented = await Notifications.getPresentedNotificationsAsync();
+  await Promise.all(
+    presented
+      .filter((notification) => {
+        const routineId = (notification.request.content.data as Partial<KatsuNotificationData> | undefined)
+          ?.routineId;
+        return typeof routineId === 'string' && isDone(routineId);
+      })
+      .map((notification) => Notifications.dismissNotificationAsync(notification.request.identifier)),
+  );
+}
+
+async function runSync(): Promise<number> {
   const [routines, messages] = await Promise.all([getRoutines(), getMessages()]);
+  const todayKeyNow = toDateKey(new Date());
+  const todayDone = (await getDailyRecords())[todayKeyNow]?.completedIds ?? [];
+  const texts = new Set(messages.map((message) => message.text));
+  const kept = await cancelPlanned(
+    (data, body) =>
+      data.forDay === todayKeyNow &&
+      typeof data.routineId === 'string' &&
+      routines.some((routine) => routine.id === data.routineId) &&
+      !todayDone.includes(data.routineId) &&
+      texts.has(body),
+  );
+  await dismissDelivered((routineId) => todayDone.includes(routineId)).catch(() => {});
   if (routines.length === 0 || messages.length === 0) return 0;
 
   const status = await getNotificationPermission();
@@ -147,12 +274,17 @@ async function runSync(): Promise<number> {
   const isPaid = await isProCached();
 
   // 記録は1回だけ読む。日ごとに読むと同じキーを7回パースすることになる
-  const records = await getDailyRecords();
+  const [records, appState] = await Promise.all([getDailyRecords(), getAppState()]);
   const now = new Date();
   const planned: Notifications.NotificationRequestInput[] = [];
 
+  // 始める日を先にした人(「1月1日から」など。plan §8)には、その日より前に送らない。
+  // 予約はその日から数える ── 年末に入れてそのまま開かなくても、1月1日の分が予約されている
+  const startDay = parseStartDay(appState.startedOn);
+  const firstDay = startDay && startDay.getTime() > now.getTime() ? startDay : now;
+
   for (let offset = 0; offset < SCHEDULE_DAYS_AHEAD; offset += 1) {
-    const day = new Date(now);
+    const day = new Date(firstDay);
     day.setDate(day.getDate() + offset);
     const completedIds = records[toDateKey(day)]?.completedIds ?? [];
 
@@ -164,9 +296,9 @@ async function runSync(): Promise<number> {
       const message = messageFor(messages, routine, isPaid, toDateKey(day));
       if (!message) continue;
 
-      const data: KatsuNotificationData = { routineId: routine.id };
+      const data: KatsuNotificationData = { routineId: routine.id, forDay: toDateKey(day) };
       planned.push({
-        content: { title: routine.title, body: message.text, data },
+        content: { title: routine.title, body: message.text, data, categoryIdentifier: ROUTINE_CATEGORY },
         trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date: at },
       });
     }
@@ -175,7 +307,8 @@ async function runSync(): Promise<number> {
   // ⚠ iOS は64件を超えた分を黙って捨てる。溢れるなら**近い日から捨てずに残す**。
   //   MAX_ROUTINES × SCHEDULE_DAYS_AHEAD は現状21件で収まるが、
   //   どちらかを増やしたときに静かに壊れないよう、ここで頭を打っておく。
-  const capped = planned.slice(0, IOS_SCHEDULED_LIMIT);
+  // 残した予約(試し・もう一度)の分も上限から引く
+  const capped = planned.slice(0, Math.max(IOS_SCHEDULED_LIMIT - kept, 0));
   await Promise.all(capped.map((request) => Notifications.scheduleNotificationAsync(request)));
   return capped.length;
 }

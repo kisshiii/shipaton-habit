@@ -85,6 +85,8 @@ const styles = StyleSheet.create({
     color: Ceremony.cream,
     fontFamily: Fonts?.voice,
     fontSize: 96,
+    // 墨で書いた字の太さ。細い数字は上品に寄りすぎる(2026-11-10)
+    fontWeight: 800,
     lineHeight: 112,
   },
   rule: {

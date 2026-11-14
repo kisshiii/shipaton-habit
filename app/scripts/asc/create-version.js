@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /**
- * 1.0.2 を用意する: バージョン作成(既にあれば再利用)→ 指定したビルドを紐づけ →
+ * 今の版(app.json の version)を用意する: バージョン作成(既にあれば再利用)→ 指定したビルドを紐づけ →
  * 英日の説明文・新機能・プロモーションテキストを docs/asc-listing.md から入れる。
  * 審査には出さない。
  *   node scripts/asc/create-version.js <ビルド番号>   例: 22(ソフトガードなし)/ 23(あり)
@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 
 const APP_ID = '6800968856';
-const VERSION = '1.0.2';
+// 版は app.json から読む(1.0.2 のときは直書きだった。上げ忘れて古い版に流し込まないため)
+const VERSION = require('../../app.json').expo.version;
 // ⚠ どのビルドで出すかは本人が決める(ソフトガードを入れるかどうか)。決め打ちにしない
 const BUILD = process.argv[2];
 if (!/^\d+$/.test(BUILD ?? '')) throw new Error('usage: node scripts/asc/create-version.js <build number>');

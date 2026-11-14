@@ -9,7 +9,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { MESSAGE_MAX_LENGTH } from '@/constants/messages';
 import { MAX_ROUTINES } from '@/constants/routines';
-import { normalizeTime, todayKey, toTimeKey } from '@/lib/date';
+import { normalizeTime, toDateKey, todayKey, toTimeKey } from '@/lib/date';
 import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import { countChars } from '@/lib/text';
 import type { AppState, DailyRecord, KatsuMessage, RoutineItem } from '@/types';
@@ -81,27 +81,44 @@ async function patchAppState(patch: Partial<AppState>): Promise<AppState> {
   return next;
 }
 
-export async function markGraduated(dateKey: string = todayKey()): Promise<void> {
+async function markGraduatedUnlocked(dateKey: string = todayKey()): Promise<void> {
   await patchAppState({ graduatedAt: dateKey });
 }
 
-export async function markOnboarded(dateKey: string = todayKey()): Promise<void> {
+/**
+ * Day 1 を選んだ日にする(オンボーディングの「いつから始めるか」。plan §8)。
+ * ⚠ オンボーディングからだけ呼ぶ。始めた後に動かすと、数えた日がずれる
+ */
+async function setStartedOnForOnboardingUnlocked(dateKey: string): Promise<void> {
+  await patchAppState({ startedOn: dateKey });
+}
+
+async function markOnboardedUnlocked(dateKey: string = todayKey()): Promise<void> {
   await patchAppState({ onboardedAt: dateKey });
 }
 
 /** 節目のお祝いを出したことを残す。それより小さい節目もまとめて済みにする */
-export async function markMilestonesCelebrated(days: readonly number[]): Promise<void> {
+async function markMilestonesCelebratedUnlocked(days: readonly number[]): Promise<void> {
   const celebrated = new Set([...((await getAppState()).celebratedMilestones ?? []), ...days]);
   await patchAppState({ celebratedMilestones: [...celebrated].sort((a, b) => a - b) });
 }
 
+/**
+ * 今日 Today を開いたことを残し、今日初めてかどうかを返す(plan §8 その日最初の一言)。
+ */
+async function markOpenedTodayUnlocked(dateKey: string = todayKey()): Promise<boolean> {
+  const isFirst = (await getAppState()).lastOpenedOn !== dateKey;
+  if (isFirst) await patchAppState({ lastOpenedOn: dateKey });
+  return isFirst;
+}
+
 /** 評価を頼んだことを残す。二度と自分からは頼まない(plan §7-3) */
-export async function markReviewRequested(dateKey: string = todayKey()): Promise<void> {
+async function markReviewRequestedUnlocked(dateKey: string = todayKey()): Promise<void> {
   await patchAppState({ reviewRequestedAt: dateKey });
 }
 
 /** 休みによる数え直しのお知らせを出したことを残す */
-export async function markRestartNoticeShown(restartOn: string): Promise<void> {
+async function markRestartNoticeShownUnlocked(restartOn: string): Promise<void> {
   await patchAppState({ restartNoticeShownFor: restartOn });
 }
 
@@ -119,7 +136,7 @@ async function markRoutineChanged(dateKey: string = todayKey()): Promise<void> {
  * ⚠ **開発・撮影用ビルド専用。**卒業画面や節目を確かめる・ストア用に撮るために、保存内容を丸ごと差し替える。
  *   呼び出し側は `if (__DEV__ || EXPO_PUBLIC_KATSU_DEV_TOOLS)` の中からしか呼ばない。ここでも本番では拒否する。
  */
-export async function replaceAllForDevelopment(
+async function replaceAllForDevelopmentUnlocked(
   snapshot: {
     routines: RoutineItem[];
     records: RecordMap;
@@ -161,7 +178,7 @@ async function saveRoutines(routines: RoutineItem[]): Promise<void> {
  * 2件目以降は、卒業の数え直しの起点として追加した日を残す(plan §1)。
  * 上限に達している場合は RoutineLimitError を投げる。
  */
-export async function addRoutine(input: {
+async function addRoutineUnlocked(input: {
   time: string;
   title: string;
 }): Promise<RoutineItem> {
@@ -186,7 +203,9 @@ export async function addRoutine(input: {
   if (appState.startedOn) {
     await markRoutineChanged(date);
   } else {
-    await patchAppState({ startedOn: date });
+    // ⚠ 新しく始めた人は、節目を空で持たせる。undefined のままだと、最初の判定が
+    //   「1.0.2 から更新した人」と同じ扱いになり、1日目のお祝いを黙って済みにしてしまう
+    await patchAppState({ startedOn: date, celebratedMilestones: appState.celebratedMilestones ?? [] });
   }
 
   // 追加した日は Day 1 か、数え直しの起点(どちらも数え始めの日)。
@@ -199,11 +218,11 @@ export async function addRoutine(input: {
   }
 
   // 今日の分母を追従させる
-  await getTodayRecord();
+  await getTodayRecordUnlocked();
   return routine;
 }
 
-export async function updateRoutine(
+async function updateRoutineUnlocked(
   id: string,
   patch: { time?: string; title?: string },
 ): Promise<void> {
@@ -216,17 +235,15 @@ export async function updateRoutine(
     if (!time) throw new Error('Invalid time');
     target.time = time;
   }
-  // 名前を変えたら数え直す。名前を書き換えて中身ごと差し替える抜け道を塞ぐ(plan §1)。
-  // 時刻の変更では数え直さない
-  let isRenamed = false;
+  // 名前・時刻の変更では数え直さない(2026-11-10 に変更。plan §10)。
+  // 「ランニング」を「靴を履く」に小さく直すのは習慣づくりで一番大事な直しで、それを罰しない。
+  // 数え直すのは追加と削除だけ
   if (patch.title !== undefined) {
     const title = patch.title.trim();
     if (!title) throw new Error('Empty title');
-    isRenamed = title !== target.title;
     target.title = title;
   }
   await saveRoutines(routines);
-  if (isRenamed) await markRoutineChanged();
 }
 
 /**
@@ -235,7 +252,7 @@ export async function updateRoutine(
  * 過去日の記録は再計算しない(spec §2: 分母は固定)。
  * 削除した日を、卒業の数え直しの起点として残す(plan §1)。
  */
-export async function deleteRoutine(id: string): Promise<void> {
+async function deleteRoutineUnlocked(id: string): Promise<void> {
   const routines = await getRoutines();
   if (!routines.some((routine) => routine.id === id)) return;
   await saveRoutines(routines.filter((routine) => routine.id !== id));
@@ -257,13 +274,15 @@ export async function deleteRoutine(id: string): Promise<void> {
   const records = await readJson<RecordMap>(KEYS.records, {});
   const today = records[date];
   if (today) {
+    // ⚠ 分母から外した印も消す。残すと、全部消した日が「外した項目がある日」=やり切った日に見える
     records[date] = {
       ...today,
       completedIds: today.completedIds.filter((completedId) => completedId !== id),
+      excludedIds: (today.excludedIds ?? []).filter((excludedId) => excludedId !== id),
     };
     await writeJson(KEYS.records, records);
   }
-  await getTodayRecord();
+  await getTodayRecordUnlocked();
 }
 
 // --- DailyRecord ------------------------------------------------------------
@@ -305,7 +324,7 @@ async function excludeFromToday(routineId: string): Promise<void> {
  * 過去日は触らない。除外判定(`excludedIds`)はここでは作らない
  * ── 確定するのは登録時の1回だけ(`addRoutine`)。
  */
-export async function getTodayRecord(): Promise<DailyRecord> {
+async function getTodayRecordUnlocked(): Promise<DailyRecord> {
   const date = todayKey();
   const [routines, records] = await Promise.all([
     getRoutines(),
@@ -340,12 +359,72 @@ export async function getDailyRecords(): Promise<Record<string, DailyRecord>> {
 }
 
 /**
+ * 今日のチェックを付ける(付いていれば何もしない)。通知の「やった ✓」から呼ぶ。
+ * ⚠ 付け外しではない。通知を2回押しても外れないようにする
+ */
+async function markCompletedTodayUnlocked(routineId: string): Promise<void> {
+  const [today, routines] = await Promise.all([getTodayRecordUnlocked(), getRoutines()]);
+  if (today.completedIds.includes(routineId)) return;
+  if (!routines.some((routine) => routine.id === routineId)) return;
+  const base: DailyRecord = { ...today, completedIds: [...today.completedIds, routineId] };
+  const records = await readJson<RecordMap>(KEYS.records, {});
+  records[base.date] = { ...base, totalCount: countedIdsIn(routines, base).length };
+  await writeJson(KEYS.records, records);
+}
+
+/**
+ * ウィジェットで押したチェックを、**押した日**の記録に付ける(付けるだけ。外さない)。付けた件数を返す。
+ *
+ * その日に一度もアプリを開かなかった人の分を、次に開いたときに移すため(2026-11-03 に決定。spec §2)。
+ * ⚠ 本人が過去日を直す手段ではない。ウィジェットは押したその日の表示でしか押せない
+ *   (`katsu-progress.tsx` の check())。その日のうちに押した記録を、あとから写すだけ。
+ * - 今日なら `markCompletedToday` と同じ。先の日は何もしない
+ * - その日の記録があれば分母は変えない(過去日は再計算しない)。ただし分母から外していた項目に
+ *   付いたら、今日と同じく分母に入れる
+ * - 記録が無ければ(その日アプリを開かなかった)、その日にあったルーティンで分母を作る。
+ *   開かなければルーティンは変えられないので、今のルーティンのうちその日までに作ったものが、その日の分
+ */
+async function markCompletedOnDayUnlocked(date: string, routineIds: string[]): Promise<number> {
+  const today = todayKey();
+  if (date > today) return 0;
+  if (date === today) {
+    const before = (await getTodayRecordUnlocked()).completedIds.length;
+    for (const id of routineIds) await markCompletedTodayUnlocked(id);
+    return (await getTodayRecordUnlocked()).completedIds.length - before;
+  }
+
+  const [routines, records] = await Promise.all([getRoutines(), readJson<RecordMap>(KEYS.records, {})]);
+  const onThatDay = routines.filter((routine) => toDateKey(new Date(routine.createdAt)) <= date);
+  const current = records[date];
+  const additions = routineIds.filter(
+    (id, index) =>
+      routineIds.indexOf(id) === index &&
+      onThatDay.some((routine) => routine.id === id) &&
+      !(current?.completedIds.includes(id) ?? false),
+  );
+  if (additions.length === 0) return 0;
+
+  if (current) {
+    const excluded = new Set(current.excludedIds ?? []);
+    records[date] = {
+      ...current,
+      completedIds: [...current.completedIds, ...additions],
+      totalCount: current.totalCount + additions.filter((id) => excluded.has(id)).length,
+    };
+  } else {
+    records[date] = { date, completedIds: additions, totalCount: onThatDay.length, excludedIds: [] };
+  }
+  await writeJson(KEYS.records, records);
+  return additions.length;
+}
+
+/**
  * 今日のチェックを付け外しする。
  * チェックした時刻は記録しない(spec §2: その日のうちなら何時でも達成)。
  * 分母から外していた項目にチェックが付いたら、その項目は分母にも入る。
  */
-export async function toggleCompletion(routineId: string): Promise<DailyRecord> {
-  const [today, routines] = await Promise.all([getTodayRecord(), getRoutines()]);
+async function toggleCompletionUnlocked(routineId: string): Promise<DailyRecord> {
+  const [today, routines] = await Promise.all([getTodayRecordUnlocked(), getRoutines()]);
   const isCompleted = today.completedIds.includes(routineId);
   const base: DailyRecord = {
     ...today,
@@ -385,7 +464,7 @@ function assertSavable(text: string): string {
   return trimmed;
 }
 
-export async function addMessage(text: string): Promise<KatsuMessage> {
+async function addMessageUnlocked(text: string): Promise<KatsuMessage> {
   const trimmed = assertSavable(text);
   const message: KatsuMessage = { id: createId(), text: trimmed };
   await saveMessages([...(await getMessages()), message]);
@@ -398,14 +477,14 @@ export async function addMessage(text: string): Promise<KatsuMessage> {
  * ⚠ 本文を触らないので Tier 1 の再検査は走らせない。
  *   保存済みの本文は入力時に一度通っている(spec §4「再検査は入力時のみで足りる」)。
  */
-export async function setMessageRoutine(id: string, routineId?: string): Promise<void> {
+async function setMessageRoutineUnlocked(id: string, routineId?: string): Promise<void> {
   const messages = await getMessages();
   await saveMessages(
     messages.map((message) => (message.id === id ? { ...message, routineId } : message)),
   );
 }
 
-export async function updateMessage(id: string, text: string): Promise<void> {
+async function updateMessageUnlocked(id: string, text: string): Promise<void> {
   const trimmed = assertSavable(text);
   const messages = await getMessages();
   await saveMessages(
@@ -413,7 +492,81 @@ export async function updateMessage(id: string, text: string): Promise<void> {
   );
 }
 
-export async function deleteMessage(id: string): Promise<void> {
+async function deleteMessageUnlocked(id: string): Promise<void> {
   const messages = await getMessages();
   await saveMessages(messages.filter((message) => message.id !== id));
+}
+
+// --- 書き込みの順番 -----------------------------------------------------------
+
+/**
+ * ⚠ **書き込みはすべてこの列に並べる。**保存は「全体を読む → 直す → 全体を書く」なので、
+ *   2つが同時に走ると、後から書いた方が先の変更を消す(2026-10-31 のレビューで発覚。
+ *   2つ続けてチェックすると1つ目が消える、通知の「やった」とクイックアクションが重なる、など)。
+ *   読むだけの関数(get〜)は並べない。並べた関数の中から、並べた関数を呼ばないこと(止まる)。
+ */
+let writeQueue: Promise<unknown> = Promise.resolve();
+
+function serialized<T>(work: () => Promise<T>): Promise<T> {
+  const run = writeQueue.then(work, work);
+  writeQueue = run.catch(() => undefined);
+  return run;
+}
+
+export function markGraduated(...args: Parameters<typeof markGraduatedUnlocked>): ReturnType<typeof markGraduatedUnlocked> {
+  return serialized(() => markGraduatedUnlocked(...args)) as ReturnType<typeof markGraduatedUnlocked>;
+}
+export function setStartedOnForOnboarding(...args: Parameters<typeof setStartedOnForOnboardingUnlocked>): ReturnType<typeof setStartedOnForOnboardingUnlocked> {
+  return serialized(() => setStartedOnForOnboardingUnlocked(...args)) as ReturnType<typeof setStartedOnForOnboardingUnlocked>;
+}
+export function markOnboarded(...args: Parameters<typeof markOnboardedUnlocked>): ReturnType<typeof markOnboardedUnlocked> {
+  return serialized(() => markOnboardedUnlocked(...args)) as ReturnType<typeof markOnboardedUnlocked>;
+}
+export function markMilestonesCelebrated(...args: Parameters<typeof markMilestonesCelebratedUnlocked>): ReturnType<typeof markMilestonesCelebratedUnlocked> {
+  return serialized(() => markMilestonesCelebratedUnlocked(...args)) as ReturnType<typeof markMilestonesCelebratedUnlocked>;
+}
+export function markOpenedToday(...args: Parameters<typeof markOpenedTodayUnlocked>): ReturnType<typeof markOpenedTodayUnlocked> {
+  return serialized(() => markOpenedTodayUnlocked(...args)) as ReturnType<typeof markOpenedTodayUnlocked>;
+}
+export function markReviewRequested(...args: Parameters<typeof markReviewRequestedUnlocked>): ReturnType<typeof markReviewRequestedUnlocked> {
+  return serialized(() => markReviewRequestedUnlocked(...args)) as ReturnType<typeof markReviewRequestedUnlocked>;
+}
+export function markRestartNoticeShown(...args: Parameters<typeof markRestartNoticeShownUnlocked>): ReturnType<typeof markRestartNoticeShownUnlocked> {
+  return serialized(() => markRestartNoticeShownUnlocked(...args)) as ReturnType<typeof markRestartNoticeShownUnlocked>;
+}
+export function replaceAllForDevelopment(...args: Parameters<typeof replaceAllForDevelopmentUnlocked>): ReturnType<typeof replaceAllForDevelopmentUnlocked> {
+  return serialized(() => replaceAllForDevelopmentUnlocked(...args)) as ReturnType<typeof replaceAllForDevelopmentUnlocked>;
+}
+export function addRoutine(...args: Parameters<typeof addRoutineUnlocked>): ReturnType<typeof addRoutineUnlocked> {
+  return serialized(() => addRoutineUnlocked(...args)) as ReturnType<typeof addRoutineUnlocked>;
+}
+export function updateRoutine(...args: Parameters<typeof updateRoutineUnlocked>): ReturnType<typeof updateRoutineUnlocked> {
+  return serialized(() => updateRoutineUnlocked(...args)) as ReturnType<typeof updateRoutineUnlocked>;
+}
+export function deleteRoutine(...args: Parameters<typeof deleteRoutineUnlocked>): ReturnType<typeof deleteRoutineUnlocked> {
+  return serialized(() => deleteRoutineUnlocked(...args)) as ReturnType<typeof deleteRoutineUnlocked>;
+}
+export function getTodayRecord(...args: Parameters<typeof getTodayRecordUnlocked>): ReturnType<typeof getTodayRecordUnlocked> {
+  return serialized(() => getTodayRecordUnlocked(...args)) as ReturnType<typeof getTodayRecordUnlocked>;
+}
+export function markCompletedToday(...args: Parameters<typeof markCompletedTodayUnlocked>): ReturnType<typeof markCompletedTodayUnlocked> {
+  return serialized(() => markCompletedTodayUnlocked(...args)) as ReturnType<typeof markCompletedTodayUnlocked>;
+}
+export function markCompletedOnDay(...args: Parameters<typeof markCompletedOnDayUnlocked>): ReturnType<typeof markCompletedOnDayUnlocked> {
+  return serialized(() => markCompletedOnDayUnlocked(...args)) as ReturnType<typeof markCompletedOnDayUnlocked>;
+}
+export function toggleCompletion(...args: Parameters<typeof toggleCompletionUnlocked>): ReturnType<typeof toggleCompletionUnlocked> {
+  return serialized(() => toggleCompletionUnlocked(...args)) as ReturnType<typeof toggleCompletionUnlocked>;
+}
+export function addMessage(...args: Parameters<typeof addMessageUnlocked>): ReturnType<typeof addMessageUnlocked> {
+  return serialized(() => addMessageUnlocked(...args)) as ReturnType<typeof addMessageUnlocked>;
+}
+export function setMessageRoutine(...args: Parameters<typeof setMessageRoutineUnlocked>): ReturnType<typeof setMessageRoutineUnlocked> {
+  return serialized(() => setMessageRoutineUnlocked(...args)) as ReturnType<typeof setMessageRoutineUnlocked>;
+}
+export function updateMessage(...args: Parameters<typeof updateMessageUnlocked>): ReturnType<typeof updateMessageUnlocked> {
+  return serialized(() => updateMessageUnlocked(...args)) as ReturnType<typeof updateMessageUnlocked>;
+}
+export function deleteMessage(...args: Parameters<typeof deleteMessageUnlocked>): ReturnType<typeof deleteMessageUnlocked> {
+  return serialized(() => deleteMessageUnlocked(...args)) as ReturnType<typeof deleteMessageUnlocked>;
 }

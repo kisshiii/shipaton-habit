@@ -57,7 +57,7 @@
 ## Promotional Text (170)
 
 ```
-Habits take time. In one study, the median was 66 days. KATSU carries you through them with words you wrote yourself, lets you rest, then tells you to leave.
+It takes time to build a habit. In one study, the median was 66 days. KATSU keeps you going with words you wrote yourself. You can rest. At 66 days, you graduate.
 ```
 
 (157文字)**審査なしでいつでも変えられる。**ただし「lets you rest」は 1.0.2 の仕様なので、**1.0.2 の公開と同時に差し替えること。**
@@ -65,10 +65,10 @@ Habits take time. In one study, the median was 66 days. KATSU carries you throug
 ## Keywords (100, カンマ区切り・スペースなし)
 
 ```
-streak,discipline,motivation,accountability,morning,daily,goal,promise,checklist,productivity,gym
+morning,wake,workout,gym,sleep,bedtime,study,phone,screen,detox,resolution,new,year,goal,motivation
 ```
 
-(97文字)
+(99文字。**2026-11-01 に 1.0.3 向けに差し替え**: カスタムプロダクトページに割り当てる語(朝・運動・睡眠・勉強・スマホ・新年)を入れた。外した語の理由は `docs/aso/custom-product-pages.md` §1)
 
 **⚠ アプリ名・サブタイトルと重複する語を入れない**(Apple が別途索引する)。`habit` は名前の `Habits`、`reminder` はサブタイトルで索引される。 `katsu` は入れないこと ── 料理の検索結果に混ざりに行くことになる。
 
@@ -77,65 +77,67 @@ streak,discipline,motivation,accountability,morning,daily,goal,promise,checklist
 ## Description
 
 ```
-KATSU is a habit app built to make itself unnecessary.
+KATSU is a habit app you graduate from.
 
-(Not the cutlet. This one has no recipes in it.)
+(Not the cutlet. There are no recipes in here.)
 
-Set the routines you want to keep. When the time comes and you have not done
-one, your phone tells you so — using words you wrote yourself, on the day you
-decided to change. Not a template. Not encouragement written by a stranger.
-Your own sentence, handed back to you at the moment you are ignoring it.
+Add up to three things you want to do every day, each at a set time. If the
+time passes and one isn't done, you get a notification with words you wrote
+yourself on the day you started.
 
 WHY IT ENDS
 
-Most habit apps need you to keep needing them. Streaks you are afraid to
-break, notifications that pull you back, a small guilt when you leave. Their
-success and yours point in opposite directions.
+Most habit apps have no end. You keep using them, and you keep paying.
 
-This one is built the other way. Do everything on your list on 66 days and
-you graduate: KATSU tells you so, hands you a certificate to keep, and shows
-you where the cancel button is. Leaving is the point.
+KATSU has one. Finish everything on your list on 66 days and you
+graduate. You get a certificate, and if you're subscribed, KATSU shows you
+how to cancel. Once it's a habit, you don't need to keep paying for it.
 
-Why 66? In one study where people repeated a daily action, the median time
-to reach peak automaticity was 66 days — with individuals ranging from 18 to
-254 (Lally et al., 2010). The same study found that missing a day now and
-then did not set people back much. So KATSU lets you rest: up to two days in
-any seven, without losing your place. Rest days do not count toward the 66,
-and a third rest day in a week starts the count over.
+Why 66? In a 2010 study from University College London, people repeated a
+daily action until it felt automatic. The median was 66 days, though it varied
+a lot from person to person. The same study found that missing a day now and then didn't set
+people back much. So KATSU lets you rest up to two days in any seven without
+losing your count. Rest days don't count toward the 66, and a third rest day
+in seven days starts the count over.
 
 HOW IT WORKS
 
-• Add a few daily routines — a time and a thing to do. A few times a week?
-  Make it daily: gym becomes "move for 10 minutes"
-• Write what you would say to yourself for skipping one
-• Miss one, and that is what arrives
-• Check it off any time that day. There is no late
+• Add daily routines: a time and one thing to do. If it's a few times a week,
+  make a daily version: "gym" becomes "move for 10 minutes"
+• Write what you want to hear on a day you skip
+• If the time passes and it isn't checked, those words arrive
+• Check it off any time that day. Late still counts
+• Check off from the notification, the app icon or the home screen widget
 
-WHAT IT WILL NOT DO
+WHAT IT DOESN'T DO
 
-• No scores, no charts, no badges. One number: how far you are toward 66
-• Nothing is ever called a failure. A day you miss is just a rest day
+• No scores, charts or badges
+• Nothing is called a failure. A day you don't finish is a rest day
 • No account, no sign-up, no cloud
 
-WHAT YOU WRITE STAYS ON YOUR PHONE
+YOUR WORDS STAY ON YOUR PHONE
 
-Your words are never uploaded, never analysed, never logged. There is no
-server to send them to. If you delete the app, they are gone — which is the
-honest trade for never handing them over.
+What you write is never uploaded, analyzed or logged. There's no server to
+send it to. If you delete the app, your words are deleted too.
 
 FREE AND PAID
 
-Everything in the core loop is free: routines, checking off, notifications,
-graduation. The paid plan adds more than one set of words, and different
-words for different routines.
+Routines, check-offs, notifications, the widget and graduation are free. So
+are your first three sets of words, which take turns day by day. The paid
+plan lets you keep more than three and use different words for different
+routines.
 
-You choose the price. The plans are identical — the question is what this is
-worth to you. Cancel any time from Settings, and if you graduate, you should.
+The paid plan comes at three monthly prices with the same features. Pick what
+it's worth to you. Cancel any time in Settings.
 
 Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
 
+**⚠ 他社の連続記録を批判しない 【決定】2026-11-13:** KATSU の「66日のうちN日」も、休みを超えると数え直しになる連続記録。自分が持っているものを批判すると筋が通らない。違いとして言うのは「終わり(卒業)があること」だけ。
+
 **⚠ 研究に触れるときの決まり(spec §8-2):** 研究が支えるのは**66日という長さだけ**。66日は**1本の研究の中央値**であって、全員が66日で身につくとは書かない。分野全体の結論のようにも書かない(`research found` と言わない)。休みについては、Lally らが「1日休んでも習慣化はほとんど遅れなかった」と報告しているので、**休みを認める理由として言ってよい**。ただし「直近7日で2回まで」という線引きはこのアプリの選択で、研究が決めた数字ではない。
+
+**⚠ 「18〜254日」と著者名を説明文に書かない 【決定】2026-11-03(本人指摘):** 研究は12週間(84日)しか追っておらず、254日は途中までの伸び方から計算した推定。測った日数のように読めるので書かない。「Lally ら, 2010」は論文の書き方で、ストアの読み手には伝わらない。「2010年にロンドン大学が発表した研究」「人によって大きな差がある」と書く。
 
 **⚠ 以下は 1.0.1 の判断(10-13 に失効。卒業条件が連続ではなくなったため)。** 「卒業は連続だ」を自分から言う理由 【決定】2026-09-22: 「WHY IT ENDS」で他社の連続記録を批判している以上、黙っていると読み手が矛盾に気づいたときに不誠実に見える。 違いは**カウンターを見せないこと**と**途切れても数以外に何も失わないこと**で、そこを正直に言う。
 
@@ -147,6 +149,8 @@ Terms of Use (EULA): https://www.apple.com/legal/internet-services/itunes/dev/st
 No account or sign-in is required. Everything works on first launch.
 
 Onboarding asks for one routine and one line of text; any values work.
+Up to three lines of text are free; the paywall appears at the end of
+onboarding and when adding a fourth.
 Notifications are local only. To see one without waiting, add a routine a
 minute or two ahead and leave the app.
 
@@ -155,9 +159,9 @@ Graduation requires completing every routine on 66 days, with up to two rest
 days in any seven, so it cannot be reached during review. The certificate and
 graduation screen are shown only to users who reach it. The progress line on
 Today (Day N / 66) and the full-screen marks at 7, 33 and 50 days follow the
-same count. The "I don't need this anymore" button at
-the bottom of the Routines screen is always available and shows the related
-flow for users who choose to stop early.
+same count. At the bottom of the Routines screen, subscribers see a "Cancel
+subscription" button that opens Apple's subscription settings, and users who
+have graduated see "See your certificate". Other users see no button there.
 
 SUBSCRIPTIONS
 Three monthly auto-renewing subscriptions unlock the same content. They differ
@@ -171,6 +175,13 @@ expressions. On a match it declines to save the text, shows a short
 non-judgmental message with a link to findahelpline.com, and lets the user
 continue using the app. The check runs entirely on device and the result is
 never stored, logged, or transmitted.
+
+WIDGET AND QUICK ACTIONS (new in 1.0.3)
+The home/lock screen widget shows the day count, today's progress and the
+routine names, with buttons to check off today's routines (never the user's
+words). Please open the app once before adding the widget; until the app has
+run, the widget has nothing to show. Long-pressing
+the app icon offers today's unchecked routines as quick actions.
 
 New in 1.0.2: on devices with Apple Intelligence, a second, softer check uses
 Apple's on-device Foundation Models to notice words that attack the person
@@ -206,7 +217,7 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Promotional Text (170)
 
 ```
-習慣が身につくまでには時間がかかります。ある研究では、意識しなくてもできるようになるまで中央値で66日。KATSUは、あなた自身が書いた言葉でその66日を支えます。休んでもかまいません。やり切ったら、卒業です。
+習慣が身につくまでには時間がかかります。ある研究では中央値で66日でした。KATSU は、自分で書いた言葉でその66日を支えます。休んでもかまいません。やり切ったら卒業です。
 ```
 
 **⚠ 「休んでもかまいません」は 1.0.2 の仕様。1.0.2 の公開と同時に差し替えること。**
@@ -214,8 +225,10 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Keywords (100, カンマ区切り・スペースなし)
 
 ```
-朝活,早起き,継続,目標,自己管理,リマインダー,毎日,やる気,三日坊主,筋トレ,日課,習慣トラッカー,モーニングルーティン,自己啓発,記録
+朝活,早起き,朝型,モーニングルーティン,筋トレ,運動,早寝,睡眠,夜更かし,勉強,資格,スマホ依存,デジタルデトックス,スクリーンタイム,目標,抱負,新年,継続,三日坊主,自己管理,やる気,日課
 ```
+
+**2026-11-01 に 1.0.3 向けに差し替え**(98文字): カスタムプロダクトページに割り当てる語を入れた。`夜更かし` は `三日坊主` と同じく、キーワード欄にだけ置き、見える文面には出さない。外した語の理由は `docs/aso/custom-product-pages.md` §1。⚠ ASC が日本語の上限を文字で数えるか(10/27 は70文字で通った)を、流し込むときに確かめる
 
 **⚠ `KATSU` `喝` を入れないこと。**アプリ名は Apple が別途索引する。 サブタイトルに「習慣」を入れたので、キーワードから `習慣` を外してある(重複)。 旧版の `通知` `卒業` は検索されにくいので外し、`筋トレ` `日課` を足した(2026-09-22)。
 
@@ -224,59 +237,54 @@ network traffic is the RevenueCat SDK for subscription status.
 ### Description
 
 ```
-KATSU は、あなたが使わなくなることを目指して作られた習慣アプリです。
+KATSU は、習慣が身についたら卒業する習慣アプリです。
 
-続けたいことを、時刻とともに登録します。時間が過ぎてもやっていないとき、
-スマホがそれを伝えます。ただし、こちらが用意した言葉ではありません。
-変わると決めたその日に、あなた自身が書いた一文です。
+毎日やりたいことを、時刻と一緒に3つまで登録します。時刻を過ぎてもやっていないと、
+始めた日に自分で書いた言葉が通知で届きます。
 
-テンプレートではない。知らない誰かが書いた励ましでもない。
-自分の言葉が、それを無視している自分に返ってくる。
+■ なぜ卒業があるのか
 
-■ なぜ「終わる」のか
+多くの習慣アプリには、終わりがありません。使い続けるかぎり、支払いも続きます。
 
-多くの習慣アプリは、あなたに必要とされ続けなければ成り立ちません。
-途切れさせたくない連続記録、呼び戻す通知、離れるときの小さな罪悪感。
-アプリの成功とあなたの成功が、正反対を向いています。
+KATSU には卒業があります。全部やり切った日が66日になったら卒業です。
+卒業証書を受け取れて、サブスクに入っている人には解約の方法を案内します。
+習慣になったら、お金を払い続ける必要はありません。
 
-KATSU は逆側に賭けています。その日のルーティンをすべてやり切った日が
-66日に届いたら、卒業です。卒業証書を渡し、「もう要らないのでは」と聞き、
-解約の場所を案内します。離れることが目的です。
-
-66という数字は、ある研究から取りました。毎日同じ場面で行動を繰り返した人たちが、
-意識しなくてもできると感じるまでに、中央値で66日かかっています
-(Lally ら, 2010。個人差は18〜254日)。同じ研究は、ときどき1日休んでも
-ほとんど遅れなかったとも報告しています。だから KATSU では休めます。
-直近7日で2回まで、それまでの日数はそのまま。休んだ日は66日には入らず、
-7日のうちに3回休んだら、また1日目から数えます。
+66日は、2010年にロンドン大学が発表した研究の数字です。毎日同じ場面で
+行動を繰り返した人たちが、意識しなくてもできると感じるまでに、
+中央値で66日かかりました(人によって大きな差があります)。同じ研究では、
+ときどき1日休んでもほとんど遅れなかったと報告されています。そこで KATSU では、直近7日で2回まで
+休めます。休んでも日数はそのままです。休んだ日は66日に入らず、
+7日のうちに3回休むと、日数は数え直しになります。
 
 ■ 使い方
 
-・毎日の予定を数件だけ登録する(時刻とやること)。週に数回のことは、
- 毎日の形にすると続きます(例:ジム → 毎日10分体を動かす)
-・やらなかった自分に、何と言ってほしいかを書く
-・時間が過ぎていたら、それが届く
-・チェックはその日のうちなら何時でもいい。遅刻という概念はありません
+・毎日やることを登録する(時刻とやること)。週に数回のことは、
+ 毎日できる形にします(例:ジム → 毎日10分体を動かす)
+・やらなかった日の自分に向けて、言葉を書く
+・時刻を過ぎてもチェックが付いていないと、その言葉が届く
+・チェックはその日のうちなら何時でもかまいません
+・通知、アプリのアイコン、ホーム画面のウィジェットからもチェックできます
 
 ■ しないこと
 
-・点数も、グラフも、バッジもありません。数字は66日までの進み具合の1つだけです
-・できなかったことを「失敗」と呼びません。やらなかった日は、ただの休みです
-・アカウントも、サインアップも、クラウドもありません
+・点数、グラフ、バッジはありません
+・できなかった日を「失敗」とは呼びません。休みの日として数えます
+・アカウント登録もクラウドもありません
 
 ■ 書いた言葉は端末から出ません
 
-送信も、解析も、ログも一切ありません。送る先のサーバーが存在しないからです。
-アプリを削除すれば消えます。誰にも預けない代わりの、正直な取引です。
+書いた言葉は送信も解析も記録もしません。送る先のサーバーがありません。
+アプリを削除すると、言葉も消えます。
 
 ■ 無料と有料
 
-中心の体験はすべて無料です。登録、チェック、通知、卒業まで。
-有料で増えるのは、言葉を複数持てることと、ルーティンごとに出し分けられることだけ。
+ルーティン、チェック、通知、ウィジェット、卒業までは無料です。
+言葉も3つまで無料で、日替わりで届きます。
+有料プランでは、言葉を4つ以上持てて、ルーティンごとに違う言葉を出せます。
 
-値段はあなたが決めます。3つのプランは中身が同じで、違うのは金額だけ。
-問いは「これにいくらの価値があるか」です。解約はいつでも設定から。
-そして卒業したなら、解約すべきです。
+有料プランは、中身が同じで値段が3つあります。自分にとっての価値で選んでください。
+解約はいつでも設定からできます。
 
 利用規約(EULA): https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 ```
@@ -322,8 +330,10 @@ KATSU は逆側に賭けています。その日のルーティンをすべて�
 
 | 言語 | 値 | 文字数 |
 | --- | --- | --- |
-| 英語 | `More than one set of words, at your price.` | 42 |
-| 日本語 | `言葉を複数持てます。値段はあなたが決めます。` | 22 |
+| 英語 | `More than three sets of words, at your price.` | 45(上限ちょうどのはず。ASC で通らなければ `More than three sets of words. You set the price.` は長いので `Over three sets of words, at your price.` に) |
+| 日本語 | `言葉を4つ以上持てます。値段は自分で決めます。` | 23 |
+
+**⚠ 2026-11-13 に変更(1.0.3 で言葉が3つまで無料になったため)。ASC の3商品の説明も、1.0.3 の提出のときに差し替える。**旧: `More than one set of words, at your price.` /「言葉を複数持てます。値段はあなたが決めます。」
 
 ### サブスクリプションの並び順
 
@@ -381,6 +391,110 @@ REST API なら:
 **⚠ 順番に意味がある。**1〜2で「何のアプリか」、4で「なぜ他と違うか」を出す。 逆にすると、ただの習慣アプリのスクショに見える。
 
 **⚠ 1.0.2 では 1(Today)も撮り直す。**上部に `Day 23 / 66` と休みの残りが出るようになった(plan §5)。数字は 20〜40 日くらいの、途中だと分かる値にする。
+
+## 1.0.3 の「このバージョンの新機能」 **【暫定】2026-11-01**
+
+**⚠ ウィジェットは、一度アプリを開いてから置いてもらう。**開く前に置くと、`expo-widgets` の仕様で赤い「Error」が出ることがある(2026-10-31 のレビューで発覚)。新機能の欄と審査メモの両方に書く。
+
+### 英語
+
+```
+• A new look, and a shorter setup: five screens to your first day.
+• Three sets of words are now free, and they take turns day by day.
+• Renaming a routine or changing its time no longer starts the count over.
+• Choose when Day 1 is. In December, you can pick January 1.
+• Notifications have buttons: "Done ✓" checks the routine off, and "Again in 10 min" sends your words again later.
+• Long-press the app icon to check off today's routines.
+• New home and lock screen widget: see your day count and check off routines from the home screen. Open KATSU once before adding it.
+• Clearer wording throughout the app.
+```
+
+### 日本語
+
+```
+・見た目を新しくし、最初の設定を5画面に短くしました。
+・言葉が3つまで無料になり、日替わりで届きます。
+・ルーティンの名前や時刻を変えても、日数を数え直さなくなりました。
+・1日目をいつにするか選べるようになりました。12月なら1月1日も選べます。
+・通知にボタンが付きました。「やった ✓」でチェック、「10分後にもう一度」で同じ言葉をあとでもう一度届けます。
+・アプリのアイコンを長押しすると、今日のルーティンにチェックできます。
+・ホーム画面とロック画面のウィジェットを追加しました。日数が見られて、ホーム画面からチェックもできます。置く前に、一度アプリを開いてください。
+・アプリ全体の文章を、分かりやすく書き直しました。
+```
+
+## 1.0.3(年始)向け: App 内イベントとフィーチャーの推薦 **【暫定】2026-10-27**(plan §8)
+
+**⚠ アプリの更新ではなく、ストア側の宣伝。**どちらも ASC で本人が作る(下書きはここが原本)。
+
+### 日程
+
+| いつ | 何を |
+|---|---|
+| **11月中** | **フィーチャーの推薦を出す。**Apple の決まりで、載せてほしい日の**3週間以上前**が必須。年始の特集は早く埋まるので、早いほど良い |
+| 12月10日ごろ | App 内イベントを審査に出す(アプリ本体とは別に審査がある)。承認されたら推薦に添付する |
+| 12月15日ごろ | 1.0.3 を審査に出す(「1月1日から始める」が入った版) |
+| 12月18日ごろ〜 | App 内イベントの予告を出す(始まる前から App Store に載せられる) |
+| 1月1日〜1月31日 | イベント期間 |
+
+### App 内イベント
+
+- **種類(バッジ):** Challenge
+- **目的:** 新しいユーザーを呼び込む
+- **期間:** 2027年1月1日 0:00 〜 1月31日(各地の時刻)。⚠ 最長31日(公式では未確認。ASC の画面で確かめる)
+- **文字数の上限:** 名前30 / 短い説明50 / 長い説明120(公式では未確認。ASC の画面で確かめる)
+- **画像:** カード 16:9(1920×1080 以上)と、詳細ページ 9:16。**まだ作っていない**(紺の地に「Day 1 / 66」と「1月1日」。節目の画面と同じ見た目で作る予定)
+
+| 欄 | 英語 | 日本語 |
+|---|---|---|
+| 名前 | `66 Days, Starting January 1`(27) | `1月1日から、66日`(10) |
+| 短い説明 | `Pick one habit. Day 1 is New Year's Day.`(40) | `ひとつ決めて、元日を1日目に。`(15) |
+| 長い説明 | `Pick a daily routine and write what you need to hear on the days you'd rather not. Rest days included.`(102) | `毎日のルーティンと、やりたくない日の自分に届ける言葉を決めて、元日から始めます。休める日つき。66日で卒業です。`(56) |
+
+⚠ 「Challenge」と言っても、競争やランキングにはしない。比べる相手はいない(spec §1)。
+
+### フィーチャーの推薦(Featuring Nominations)
+
+- **種類:** アプリの機能強化(App Enhancements)
+- **名前:** `KATSU 1.0.3 — Start a habit on January 1`
+- **載せてほしい時期:** 2026年12月26日 〜 2027年1月10日
+- **地域・言語:** アプリの配信地域すべて / 英語・日本語
+- **App 内イベント:** 承認されたら「1月1日から、66日」を添付する
+- **補足資料(任意、URL 5つまで):** TestFlight の公開リンク、プレスキット(あれば)
+
+**説明(英語。編集部は英語で読む):**
+
+```
+KATSU is a habit app you graduate from. You pick up to three daily
+routines and write what you want to hear on the days you don't feel like
+it. When a routine's time passes and it isn't done, those words arrive as
+a notification. Finish everything on 66 days (up to two rest days in any
+seven) and you graduate: KATSU gives you a certificate and, if you're
+subscribed, shows you how to cancel.
+
+Version 1.0.3 is built for the new year. Onboarding asks when Day 1
+should be, and in December you can choose January 1. Day 1 gets a short
+celebration and a card to share. Notifications have a Done button, and a
+home and lock screen widget shows the day count and lets you check off
+routines. Nothing is ever called a failure.
+
+There is no server: what people write never leaves the device. An
+on-device check with Apple's Foundation Models suggests rewriting words
+that attack the person, without blocking or sending anything.
+
+Made by one developer in Japan. English and Japanese.
+```
+
+**補足(Helpful details):**
+
+```
+Accessibility: the Today list reads each routine, its time and whether it
+is done to VoiceOver, the progress line is exposed as a progress value,
+and the day-count animation follows the Reduce Motion setting. The
+long-press "seal" step in onboarding can also be done with a VoiceOver
+double tap.
+```
+
+⚠ 推薦は Apple が選ぶもので、出しても取り上げられるとは限らない。費用はかからない。
 
 ## 1.0.2 の「このバージョンの新機能」 **【暫定】2026-10-13**
 
