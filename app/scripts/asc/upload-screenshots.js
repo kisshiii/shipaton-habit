@@ -28,7 +28,8 @@ if (!DIR) {
 }
 /** ASC の言語 → 画像のフォルダ */
 const FOLDER = { 'en-US': 'en', ja: 'ja' };
-const ORDER = ['01_today.png', '02_notification.png', '03_words.png', '04_graduation.png', '05_paywall.png'];
+// 1枚目は通知(このアプリが何をするかが一目で分かる)。2026-11-14 に Today と入れ替えた
+const ORDER = ['01_notification.png', '02_today.png', '03_words.png', '04_graduation.png', '05_paywall.png'];
 
 const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
 const now = Math.floor(Date.now() / 1000);
