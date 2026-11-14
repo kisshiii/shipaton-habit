@@ -394,6 +394,8 @@ REST API なら:
 
 ## 1.0.3 の「このバージョンの新機能」 **【暫定】2026-11-01**
 
+**⚠ 新機能の欄に「✓」は使えない(ASC が拒否する。2026-11-14)。ボタンの名前は「Done」「やった」と書く。**
+
 **⚠ ウィジェットは、一度アプリを開いてから置いてもらう。**開く前に置くと、`expo-widgets` の仕様で赤い「Error」が出ることがある(2026-10-31 のレビューで発覚)。新機能の欄と審査メモの両方に書く。
 
 ### 英語
@@ -403,7 +405,7 @@ REST API なら:
 • Three sets of words are now free, and they take turns day by day.
 • Renaming a routine or changing its time no longer starts the count over.
 • Choose when Day 1 is. In December, you can pick January 1.
-• Notifications have buttons: "Done ✓" checks the routine off, and "Again in 10 min" sends your words again later.
+• Notifications have buttons: "Done" checks the routine off, and "Again in 10 min" sends your words again later.
 • Long-press the app icon to check off today's routines.
 • New home and lock screen widget: see your day count and check off routines from the home screen. Open KATSU once before adding it.
 • Clearer wording throughout the app.
@@ -416,7 +418,7 @@ REST API なら:
 ・言葉が3つまで無料になり、日替わりで届きます。
 ・ルーティンの名前や時刻を変えても、日数を数え直さなくなりました。
 ・1日目をいつにするか選べるようになりました。12月なら1月1日も選べます。
-・通知にボタンが付きました。「やった ✓」でチェック、「10分後にもう一度」で同じ言葉をあとでもう一度届けます。
+・通知にボタンが付きました。「やった」でチェック、「10分後にもう一度」で同じ言葉をあとでもう一度届けます。
 ・アプリのアイコンを長押しすると、今日のルーティンにチェックできます。
 ・ホーム画面とロック画面のウィジェットを追加しました。日数が見られて、ホーム画面からチェックもできます。置く前に、一度アプリを開いてください。
 ・アプリ全体の文章を、分かりやすく書き直しました。
