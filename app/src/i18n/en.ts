@@ -175,6 +175,8 @@ export const en = {
       'Renews monthly until you cancel. Cancel at least 24 hours before renewal in Settings → your name → Subscriptions. Your words stay if you cancel.',
     terms: 'Terms of Use',
     privacy: 'Privacy Policy',
+    /** 日本の特定商取引法の表記。英語では出さない(空文字) */
+    tokushoho: '',
   },
 
   graduation: {

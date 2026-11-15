@@ -20,3 +20,9 @@ export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/d
  *   バックエンドが無いので置き場が無い ── ページの実体は `docs/privacy/index.html`。
  */
 export const PRIVACY_URL = 'https://kisshiii.github.io/shipaton-habit/privacy/';
+
+/**
+ * 特定商取引法に基づく表記(2026-11-15)。日本の法律なので、日本語のときだけ課金画面に出す。
+ * ⚠ 値段を ASC で変えたら、ページ(`docs/tokushoho/index.html`)の値段も手で直すこと
+ */
+export const TOKUSHOHO_URL = 'https://kisshiii.github.io/shipaton-habit/tokushoho/';
