@@ -1,66 +1,69 @@
 /* KATSU の紹介ページ(日本語 index.html / 英語 en/index.html の共通スタイル)。
-   見た目はアプリに合わせる(spec §1): 地は炭、字は生成り、太いゴシック。真っ黒・真っ白・明朝を使わない。
-   ⚠ 画像を横スクロールで並べない(端で切れて壊れて見えた。2026-11-15)。 */
-:root { --bg: #2B2A28; --panel: #232220; --card: #3A3936; --fg: #F0EDE5; --sub: #B9B4A9; --line: #45433F; }
+   色はアプリの2色だけ(spec §1): 炭 #2B2A28 と生成り #F0EDE5。真っ黒・真っ白・明朝を使わない。
+   ⚠ アプリの画面(炭)は、必ず生成りの帯(.light)の上に置く。炭の地に置くと背景に溶けて見えない(2026-11-15)。
+   ⚠ 画像を横スクロールで並べない(端で切れて壊れて見えた)。 */
+:root { --ink: #2B2A28; --paper: #F0EDE5; --sub-dark: #B9B4A9; --sub-light: #5E5A52; --line-dark: #45433F; --line-light: #D6D1C4; }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
 body {
-  margin: 0; background: var(--bg); color: var(--fg);
+  margin: 0; background: var(--ink); color: var(--paper);
   font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Noto Sans JP", sans-serif;
   line-height: 1.8; font-size: 16px;
 }
 html[lang="en"] body { line-height: 1.6; font-size: 17px; }
-main { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
 img { max-width: 100%; height: auto; display: block; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
 
-header { display: flex; align-items: center; justify-content: space-between; padding: 20px 0; }
+/* 帯。何も付けなければ炭の地、light = 生成りの地 */
+.band { padding: 64px 0; }
+.light { background: var(--paper); color: var(--ink); }
+
+header .wrap { display: flex; align-items: center; justify-content: space-between; padding-top: 20px; padding-bottom: 20px; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .08em; }
 .brand img { width: 32px; height: 32px; border-radius: 8px; }
-.lang { color: var(--sub); text-decoration: none; font-size: 14px; }
+.lang { color: var(--sub-dark); text-decoration: none; font-size: 14px; }
 
-/* 一番上: 左に見出しとボタン、右にロック画面の絵 */
-.hero { display: grid; gap: 40px; align-items: center; padding: 32px 0 72px; }
-h1 { font-size: clamp(34px, 8.6vw, 60px); line-height: 1.25; font-weight: 800; margin: 0 0 20px; letter-spacing: .01em; }
+/* 一番上: 見出し・ボタン・実物のロック画面 */
+.hero { padding: 24px 0 64px; }
+.hero .wrap { display: grid; gap: 36px; align-items: center; }
+h1 { font-size: clamp(34px, 8.6vw, 60px); line-height: 1.25; font-weight: 800; margin: 0 0 18px; letter-spacing: .01em; }
 html[lang="en"] h1 { line-height: 1.1; letter-spacing: -.015em; }
-.lead { color: var(--fg); font-size: clamp(17px, 2.2vw, 20px); margin: 0 0 8px; max-width: 26em; }
-.cta { display: inline-block; margin: 20px 0 10px; padding: 15px 30px; background: var(--fg); color: var(--bg);
+.lead { font-size: clamp(17px, 2.2vw, 20px); margin: 0; max-width: 26em; }
+.cta { display: inline-block; margin: 24px 0 10px; padding: 15px 30px; background: var(--paper); color: var(--ink);
        border-radius: 14px; font-weight: 800; text-decoration: none; font-size: 17px; }
-.note { color: var(--sub); font-size: 13px; margin: 0; }
+.light .cta { background: var(--ink); color: var(--paper); }
+.note { color: var(--sub-dark); font-size: 13px; margin: 0; }
+.light .note { color: var(--sub-light); }
+.hero figure { margin: 0; }
+.hero figure img { width: 100%; border-radius: 24px; }
+.hero .full { display: none; }
+.hero figcaption { color: var(--sub-dark); font-size: 13px; margin-top: 10px; text-align: center; }
 
-/* ロック画面の絵(CSS で描いている。通知の中身はストアのスクショと同じ) */
-.lock { background: var(--panel); border: 1px solid var(--line); border-radius: 44px; padding: 44px 18px 26px;
-        width: 100%; max-width: 372px; margin: 0 auto; aspect-ratio: 9 / 15; display: flex; flex-direction: column; }
-.lock .date { text-align: center; color: var(--sub); font-size: 15px; font-weight: 600; }
-.lock .clock { text-align: center; font-size: 84px; font-weight: 700; line-height: 1.1; letter-spacing: -.02em; }
-.notif { margin-top: auto; background: var(--card); border-radius: 22px; padding: 13px 12px; display: flex; gap: 10px; align-items: center; position: relative; }
-.notif img { width: 38px; height: 38px; border-radius: 10px; flex: 0 0 auto; }
-.notif .t { padding-right: 34px; font-weight: 700; font-size: 14px; line-height: 1.4; }
-.notif .b { font-size: 13.5px; line-height: 1.4; }
-.notif .now { position: absolute; top: 9px; right: 14px; color: var(--sub); font-size: 12px; }
-.lock .cap { text-align: center; color: var(--sub); font-size: 12px; margin-top: 14px; }
+/* 画面の切り出し + 短い文 の組(生成りの帯の中) */
+.row { display: grid; gap: 24px; align-items: center; padding: 40px 0; }
+.row + .row { border-top: 1px solid var(--line-light); }
+.row .shot img { width: 100%; max-width: 440px; margin: 0 auto; border-radius: 22px; box-shadow: 0 14px 34px rgba(43, 42, 40, .28); }
+h2 { font-size: clamp(24px, 4.4vw, 34px); line-height: 1.35; font-weight: 800; margin: 0 0 12px; }
+.row p { margin: 0 0 10px; max-width: 28em; }
+.row .small { color: var(--sub-light); font-size: 14px; }
 
-/* 画面1枚 + 短い文 の組 */
-.row { display: grid; gap: 28px; align-items: center; padding: 56px 0; border-top: 1px solid var(--line); }
-.row .shot { order: 2; }
-.row img { width: 100%; max-width: 280px; margin: 0 auto; border-radius: 30px; border: 1px solid var(--line); }
-h2 { font-size: clamp(24px, 4.4vw, 32px); line-height: 1.35; font-weight: 800; margin: 0 0 14px; }
-.row p, .row li { color: var(--fg); margin: 0 0 10px; max-width: 30em; }
-.row ol { margin: 0 0 10px; padding-left: 1.3em; }
-.row .sub { color: var(--sub); font-size: 14px; }
-
-.facts { display: grid; gap: 28px; padding: 56px 0; border-top: 1px solid var(--line); }
+.facts .wrap { display: grid; gap: 28px; }
 .facts h3 { font-size: 18px; font-weight: 800; margin: 0 0 8px; }
-.facts p { margin: 0; color: var(--sub); font-size: 15px; }
+.facts p { margin: 0; color: var(--sub-dark); font-size: 15px; }
 
-.end { text-align: center; padding: 64px 0 72px; border-top: 1px solid var(--line); }
-.end h2 { margin-bottom: 4px; }
-footer { border-top: 1px solid var(--line); padding: 24px 0 48px; font-size: 13px; color: var(--sub); }
-footer a { color: var(--sub); margin-right: 16px; }
+.end { text-align: center; }
+.end h2 { margin-bottom: 0; }
+footer { padding: 28px 0 48px; font-size: 13px; color: var(--sub-dark); }
+footer p { margin: 0 0 10px; }
+footer a { color: var(--sub-dark); margin-right: 16px; }
 
 @media (min-width: 820px) {
-  .hero { grid-template-columns: 1.15fr .85fr; padding: 56px 0 96px; }
-  .row { grid-template-columns: 1fr 1fr; gap: 56px; padding: 80px 0; }
-  .row .shot { order: 0; }
-  .row.flip .shot { order: 2; }
-  .facts { grid-template-columns: 1fr 1fr; gap: 56px; }
+  .band { padding: 88px 0; }
+  .hero { padding: 40px 0 96px; }
+  .hero .wrap { grid-template-columns: 1.2fr .8fr; gap: 56px; }
+  .hero .zoom { display: none; }
+  .hero .full { display: block; max-width: 370px; margin: 0 auto; border-radius: 40px; }
+  .row { grid-template-columns: 1fr 1fr; gap: 64px; padding: 56px 0; }
+  .row.flip .shot { order: -1; }
+  .facts .wrap { grid-template-columns: 1fr 1fr; gap: 56px; }
 }
