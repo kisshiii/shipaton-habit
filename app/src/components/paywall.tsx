@@ -31,7 +31,7 @@ import { Button } from '@/components/button';
 import { ExternalLink } from '@/components/external-link';
 import { ThemedText } from '@/components/themed-text';
 import { ThemedView } from '@/components/themed-view';
-import { PRIVACY_URL, TERMS_URL } from '@/constants/legal';
+import { PRIVACY_URL, TERMS_URL, TOKUSHOHO_URL } from '@/constants/legal';
 import { Spacing } from '@/constants/theme';
 import { t } from '@/i18n';
 import { useTheme } from '@/hooks/use-theme';
@@ -251,6 +251,14 @@ function Sheet({ visible, onClose, onPurchased, previewPackages }: Props) {
                   {t.paywall.privacy}
                 </ThemedText>
               </ExternalLink>
+              {/* 日本語のときだけ。特商法は日本の法律なので、英語の人には出さない */}
+              {!!t.paywall.tokushoho && (
+                <ExternalLink href={TOKUSHOHO_URL}>
+                  <ThemedText type="small" themeColor="accent">
+                    {t.paywall.tokushoho}
+                  </ThemedText>
+                </ExternalLink>
+              )}
             </View>
           </View>
         </ScrollView>
@@ -330,6 +338,9 @@ const styles = StyleSheet.create({
   },
   legalLinks: {
     flexDirection: 'row',
-    gap: Spacing.four,
+    // 日本語は3つ並ぶ。狭い画面でははみ出さずに折り返す
+    flexWrap: 'wrap',
+    columnGap: Spacing.four,
+    rowGap: Spacing.two,
   },
 });
