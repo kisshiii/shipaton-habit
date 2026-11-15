@@ -1,0 +1,61 @@
+import AppKit
+// ヘッダのクリエイティブアセット(21:9、3840×1646)。検索結果の画像と同じ中身を、小さな安全な範囲に収める。
+// search <out> <lang> <見出し1> <見出し2> <通知の題> <通知の本文> <今> <icon.png> <glyph.png>
+let a = CommandLine.arguments
+let out = a[1], lang = a[2], cap1 = a[3], cap2 = a[4], title = a[5], body = a[6], now = a[7]
+let icon = NSImage(contentsOfFile: a[8])!, glyph = NSImage(contentsOfFile: a[9])!
+let W: CGFloat = 3840, H: CGFloat = 1646
+// Apple の安全な範囲(上からの座標): x 1097, y 493, 1646 × 661
+let sx: CGFloat = 1097, sy: CGFloat = 493, sw: CGFloat = 1646, sh: CGFloat = 661
+// 検索結果の画像(安全な範囲の高さ 1030)を基準にした縮尺
+let k: CGFloat = sh / 1030
+func top(_ y: CGFloat, _ h: CGFloat) -> CGFloat { H - y - h } // 上からの座標 → AppKit
+let charcoal = NSColor(srgbRed: 0x2B / 255, green: 0x2A / 255, blue: 0x28 / 255, alpha: 1)
+let ink = NSColor(srgbRed: 0xF0 / 255, green: 0xED / 255, blue: 0xE5 / 255, alpha: 1)
+func font(_ size: CGFloat, bold: Bool) -> NSFont {
+  if lang == "ja" { return NSFont(name: bold ? "HiraginoSans-W7" : "HiraginoSans-W4", size: size)! }
+  return NSFont.systemFont(ofSize: size, weight: bold ? .bold : .regular)
+}
+func width(_ s: String, _ f: NSFont) -> CGFloat { NSAttributedString(string: s, attributes: [.font: f]).size().width }
+func fit(_ lines: [String], _ size: CGFloat, bold: Bool, max: CGFloat) -> NSFont {
+  var s = size; while s > 24, lines.map({ width($0, font(s, bold: bold)) }).max()! > max { s -= 2 }; return font(s, bold: bold)
+}
+
+let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: Int(W), pixelsHigh: Int(H), bitsPerSample: 8, samplesPerPixel: 3, hasAlpha: false, isPlanar: false, colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 32)!
+NSGraphicsContext.current = NSGraphicsContext(bitmapImageRep: rep)
+charcoal.setFill(); NSRect(x: 0, y: 0, width: W, height: H).fill()
+
+// 背景: 大きな「喝」をごく薄く、右下に(安全な範囲の外は、切れてもよい飾り)
+glyph.draw(in: NSRect(x: 2850, y: -380, width: 1900, height: 1900), from: .zero, operation: .sourceOver, fraction: 0.07)
+
+// 見出し(2行・中央)
+let p = NSMutableParagraphStyle(); p.alignment = .center
+let capFont = fit([cap1, cap2], 190 * k, bold: true, max: sw)
+let capH: CGFloat = capFont.pointSize * 1.35 * 2
+NSAttributedString(string: "\(cap1)\n\(cap2)", attributes: [.font: capFont, .foregroundColor: ink, .paragraphStyle: p])
+  .draw(in: NSRect(x: sx, y: top(sy, capH), width: sw, height: capH))
+
+// 通知のカード(ロック画面の通知と同じ並び)
+let cardY: CGFloat = sy + capH + 90 * k, cardH: CGFloat = sh - capH - 90 * k
+let card = NSRect(x: sx, y: top(cardY, cardH), width: sw, height: cardH)
+NSColor(white: 1, alpha: 0.10).setFill(); NSBezierPath(roundedRect: card, xRadius: 96 * k, yRadius: 96 * k).fill()
+NSColor(white: 1, alpha: 0.16).setStroke(); let border = NSBezierPath(roundedRect: card.insetBy(dx: 2, dy: 2), xRadius: 94, yRadius: 94); border.lineWidth = 4; border.stroke()
+let pad: CGFloat = 70 * k, iconSize = min(cardH - pad * 2, 230 * k)
+let iconRect = NSRect(x: card.minX + pad, y: card.midY - iconSize / 2, width: iconSize, height: iconSize)
+NSGraphicsContext.saveGraphicsState(); NSBezierPath(roundedRect: iconRect, xRadius: iconSize * 0.225, yRadius: iconSize * 0.225).addClip(); icon.draw(in: iconRect); NSGraphicsContext.restoreGraphicsState()
+let textX = iconRect.maxX + 60 * k, textW = card.maxX - pad - textX
+let nowFont = font(66 * k, bold: false); let nowW = width(now, nowFont)
+let titleFont = fit([title], 92 * k, bold: true, max: textW - nowW - 40 * k)
+let bodyFont = fit([body], 88 * k, bold: false, max: textW)
+let lineGap: CGFloat = 18 * k
+let block = titleFont.pointSize * 1.25 + lineGap + bodyFont.pointSize * 1.25
+let blockTop = card.midY + block / 2
+NSAttributedString(string: title, attributes: [.font: titleFont, .foregroundColor: ink])
+  .draw(at: NSPoint(x: textX, y: blockTop - titleFont.pointSize * 1.25))
+NSAttributedString(string: now, attributes: [.font: nowFont, .foregroundColor: ink.withAlphaComponent(0.6)])
+  .draw(at: NSPoint(x: card.maxX - pad - nowW, y: blockTop - titleFont.pointSize * 1.15))
+NSAttributedString(string: body, attributes: [.font: bodyFont, .foregroundColor: ink.withAlphaComponent(0.92)])
+  .draw(at: NSPoint(x: textX, y: blockTop - block))
+
+try! rep.representation(using: .png, properties: [:])!.write(to: URL(fileURLWithPath: out))
+print("wrote \(out)")
