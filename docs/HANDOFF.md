@@ -11,7 +11,7 @@
 | 公開中 | **1.0.3(ビルド37)。**2026-11-14 に提出、審査を通って公開済み |
 | main | 1.0.3、特商法のページ、1.0.4 用の特商法のリンク、文書の整理まで入って、GitHub に push 済み(2026-11-15) |
 | 目標 | 2週間使い続ける人を30人(plan §10) |
-| 次の山 | **発信してダウンロードしてもらう(TikTok)。別のセッションでやる。**台本は `docs/marketing/tiktok.md`(⚠ 古いので先に直す) |
+| 次の山 | **発信してダウンロードしてもらう(TikTok)。**台本は `docs/marketing/tiktok.md`(2026-11-15 に今の軸・炭・目標に合わせて直した)。動画は `tools/video/` で作る(下の手順) |
 | EAS | 11月は15回のうち3回使用。この Mac でシミュレーター向けにビルドできるので、確認はそちらで(手順の節) |
 
 ### 1.0.3 で入ったもの(plan §10)
@@ -22,14 +22,14 @@
 
 急がない。**発信の反応を見て直す所が出たら、まとめて出す**(本人判断 2026-11-15)。
 
-1. `app/app.json` の版を 1.0.4 に上げる
+1. (済み)`app/app.json` の版を 1.0.4 に上げた
 2. (済み)課金画面に「特定商取引法に基づく表記」のリンク(日本語のときだけ)は main に入っている。まだどのビルドにも入っていない
 3. `bash tools/sim/build.sh` で入れて、課金画面のリンクを確かめる(日本語で出る・英語で出ない)
 4. EAS でビルド → TestFlight → 本人が実機で確認
 5. ASC に 1.0.4 を作る → **日本語ページの「マーケティング URL」に https://kisshiii.github.io/shipaton-habit/tokushoho/**
 6. **サブスクの商品の説明**を「言葉を4つ以上持てます」に(`docs/asc-listing.md`。1.0.3 では入れなかった)
 7. **検索結果とヘッダの画像**を一緒に出す(`~/Desktop/katsu-search/`、作り方は `tools/compose-search-result.swift` / `tools/compose-header.swift`。本人OK済み)。ASC のプレビューで見え方を確かめてから
-8. 新機能の欄を書く(⚠「✓」は使えない)→ 審査に出す
+8. 新機能の欄を書く(⚠「✓」は使えない。下書きは `docs/asc-listing.md` の 1.0.4 の節。直したものが増えたら足す)→ 審査に出す
 
 ### 版と関係なくやること
 
@@ -114,6 +114,19 @@ xcrun simctl io <UDID> screenshot today.png
 ### 卒業画面を出す
 
 `tools/sim/build.sh` で入れた版で、`-katsuDevSeed graduation` を付けて起動する(上の節)。66日分の記録が入り、卒業画面が開く。**本番バンドルには入らない。**以前の、開発ビルドと Metro を使うやり方は `docs/history/handoff-log.md` にある。
+
+### TikTok の動画を作る
+
+素材と仕上がりはリポジトリの外の `~/katsu-video/`(raw / cuts / out)。詳しくは `docs/marketing/tiktok.md` §3。
+
+```sh
+bash tools/video/record.sh ~/katsu-video/raw/today-ja.mov --seed progress --lang ja [-t 秒]   # シミュレーターを撮る
+python3 tools/video/cut.py ~/katsu-video/cuts/D01-ja.cut -o ~/katsu-video/out/D01-ja.mp4 --preview  # 台本から 1080x1920 を組む
+```
+
+- 炭の地・生成りの字・ヒラギノ角ゴ W8 は `cut.py` が付ける。台本の書き方は `cut.py` の先頭のコメント
+- ロック画面の通知・ウィジェット・アイコン長押しは実機で撮って AirDrop で `raw/` へ
+- スマホから頼むときは、Mac の Claude Code で `/remote-control`(Mac は起こしておく)
 
 ### ストア用スクリーンショットを作る
 
