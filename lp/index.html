@@ -7,46 +7,18 @@
 <meta name="description" content="決めた時刻を過ぎたら、自分で書いた言葉が届く習慣アプリ。iPhone 用。">
 <meta property="og:title" content="KATSU 習慣化・ルーティン">
 <meta property="og:description" content="忘れている自分を、いまに戻す一声。決めた時刻を過ぎたら、自分で書いた言葉が届く。">
-<meta property="og:image" content="img/ja-01_notification.jpg">
+<!-- ⚠ 公開する住所が決まったら、og:image を https:// から始まる完全な URL にする(SNS は相対パスを読まない) -->
+<meta property="og:image" content="img/ja-02_today.jpg">
 <meta name="apple-itunes-app" content="app-id=6800968856">
 <link rel="icon" href="img/icon.png">
 <link rel="alternate" hreflang="en" href="en/">
+<link rel="stylesheet" href="style.css">
 <!--
   KATSU の紹介ページ(日本語)。英語は en/。docs/marketing/tiktok.md「LP」。
   ⚠ アクセス解析・外部の読み込みを入れない(KATSU は「言葉は端末から出ない」を売りにしている)。
      数はストアへのボタンのキャンペーンリンク(ct=)で ASC 側で見る。
-  ⚠ 文面はストアの説明(docs/asc-listing.md)と食い違わせない。感嘆符・「失敗」「リセット」・「連続」を使わない。
+  ⚠ 文面はストアの説明(docs/asc-listing.md)と食い違わせない。感嘆符・「失敗」「リセット」・「連続」を使わない。値段を書かない。
 -->
-<style>
-  :root { --bg: #2B2A28; --bg2: #232220; --fg: #F0EDE5; --sub: #B9B4A9; --line: #45433F; }
-  * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    margin: 0; background: var(--bg); color: var(--fg);
-    font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", -apple-system, BlinkMacSystemFont, "Noto Sans JP", sans-serif;
-    line-height: 1.8; font-size: 16px;
-  }
-  main { max-width: 720px; margin: 0 auto; padding: 0 20px; }
-  header { display: flex; align-items: center; justify-content: space-between; padding: 18px 0; }
-  header .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; letter-spacing: .08em; }
-  header img { width: 32px; height: 32px; border-radius: 8px; }
-  header a.lang { color: var(--sub); text-decoration: none; font-size: 14px; }
-  h1 { font-size: clamp(32px, 8vw, 52px); line-height: 1.3; font-weight: 800; margin: 40px 0 16px; letter-spacing: .02em; }
-  h2 { font-size: 22px; font-weight: 800; margin: 0 0 12px; }
-  p { margin: 0 0 12px; }
-  .lead { color: var(--sub); font-size: 17px; }
-  .cta { display: inline-block; margin: 20px 0 8px; padding: 14px 28px; background: var(--fg); color: var(--bg);
-         border-radius: 14px; font-weight: 800; text-decoration: none; font-size: 17px; }
-  .note { color: var(--sub); font-size: 13px; }
-  .shots { display: flex; gap: 14px; overflow-x: auto; padding: 32px 0 8px; scroll-snap-type: x mandatory; }
-  .shots img { width: 230px; flex: 0 0 auto; border-radius: 18px; scroll-snap-align: start; }
-  section { border-top: 1px solid var(--line); padding: 36px 0; }
-  ol, ul { margin: 0; padding-left: 1.3em; }
-  li { margin-bottom: 6px; }
-  .end { text-align: center; }
-  footer { border-top: 1px solid var(--line); padding: 24px 0 48px; font-size: 13px; color: var(--sub); }
-  footer a { color: var(--sub); margin-right: 16px; }
-</style>
 </head>
 <body>
 <main>
@@ -55,49 +27,73 @@
     <a class="lang" href="en/">English</a>
   </header>
 
-  <h1>忘れている自分を、<br>いまに戻す一声。</h1>
-  <p class="lead">決めた時刻を過ぎてもやっていないと、自分で書いた言葉が届きます。</p>
-  <a class="cta" href="https://apps.apple.com/jp/app/id6800968856">App Store で見る</a>
-  <p class="note">iPhone 用・無料で使えます</p>
-
-  <div class="shots" aria-label="アプリの画面">
-    <img src="img/ja-01_notification.jpg" alt="ロック画面に、自分で書いた言葉が届いている">
-    <img src="img/ja-02_today.jpg" alt="今日の画面。66日のうち何日かと、3つのルーティン">
-    <img src="img/ja-03_words.jpg" alt="自分の言葉を書く画面">
-    <img src="img/ja-04_graduation.jpg" alt="66日やり切ったときの卒業証書">
+  <div class="hero">
+    <div>
+      <h1>忘れている自分を、<br>いまに戻す一声。</h1>
+      <p class="lead">決めた時刻を過ぎてもやっていないと、自分で書いた言葉がロック画面に届きます。</p>
+      <a class="cta" href="https://apps.apple.com/jp/app/id6800968856">App Store で見る</a>
+      <p class="note">iPhone 用・無料で使えます</p>
+    </div>
+    <div class="lock" role="img" aria-label="ロック画面に、自分で書いた言葉の通知が届いている">
+      <div class="date">11月14日 土曜日</div>
+      <div class="clock">20:05</div>
+      <div class="notif">
+        <img src="img/icon.png" alt="">
+        <div><div class="t">英語を15分やる</div><div class="b">やるって決めたのは、お前だろう。</div></div>
+        <div class="now">今</div>
+      </div>
+      <div class="cap">この一言は、自分で書いたもの</div>
+    </div>
   </div>
 
-  <section>
-    <h2>しくみ</h2>
-    <ol>
-      <li>毎日やることを、時刻と一緒に3つまで決める</li>
-      <li>時刻を過ぎて忘れているときの自分に、言葉を書く</li>
-      <li>時刻を過ぎてもチェックが付いていないと、その言葉が届く</li>
-    </ol>
-    <p class="note" style="margin-top:12px">アプリは言葉を書きません。届くのは、自分が自分に書いた言葉だけです。</p>
-  </section>
+  <div class="row">
+    <div class="shot"><img src="img/ja-02_today.jpg" alt="今日の画面。66日のうち23日。3つのルーティンと時刻" loading="lazy"></div>
+    <div>
+      <h2>毎日やることは、3つまで</h2>
+      <ol>
+        <li>毎日やることを、時刻と一緒に決める</li>
+        <li>時刻を過ぎて忘れているときの自分に、言葉を書く</li>
+        <li>時刻を過ぎてもチェックが付いていないと、その言葉が届く</li>
+      </ol>
+      <p class="sub">チェックは通知からも、ホーム画面のウィジェットからも付けられます。</p>
+    </div>
+  </div>
 
-  <section>
-    <h2>66日で卒業</h2>
-    <p>全部やり切った日が66日になったら卒業です。ある研究では、習慣になるまでの日数の中央値が66日でした(人によって大きな差があります)。</p>
-    <p>休みは直近7日で2回まで。休んでも、それまでの日数はそのままです。</p>
-  </section>
+  <div class="row flip">
+    <div class="shot"><img src="img/ja-03_words.jpg" alt="自分の言葉を書く画面" loading="lazy"></div>
+    <div>
+      <h2>言葉は全部、自分で書く</h2>
+      <p>アプリは一言も書きません。例文もありません。届くのは、決めた日の自分が書いた言葉だけです。</p>
+      <p class="sub">書いた言葉は端末から出ません。送信も解析もしません。</p>
+    </div>
+  </div>
 
-  <section>
-    <h2>言葉は端末から出ません</h2>
-    <p>書いた言葉は送信も解析もしません。アカウント登録もクラウドもありません。アプリを消すと、言葉も消えます。</p>
-  </section>
+  <div class="row">
+    <div class="shot"><img src="img/ja-04_graduation.jpg" alt="66日やり切ったときの卒業証書" loading="lazy"></div>
+    <div>
+      <h2>66日やり切ったら、卒業</h2>
+      <p>全部やり切った日が66日になったら卒業です。習慣になったら、アプリを使い続ける必要はありません。</p>
+      <p>休みは直近7日で2回まで。休んでも、それまでの日数はそのままです。</p>
+      <p class="sub">66日は、ある研究で習慣になるまでの日数の中央値だった数字です(人によって大きな差があります)。</p>
+    </div>
+  </div>
 
-  <section>
-    <h2>無料と有料</h2>
-    <p>ルーティン、チェック、通知、ウィジェット、卒業までは無料です。言葉も3つまで無料で、日替わりで届きます。</p>
-    <p>有料プランでは、言葉を4つ以上持てて、ルーティンごとに違う言葉を出せます。</p>
-  </section>
+  <div class="facts">
+    <div>
+      <h3>アカウントもクラウドもありません</h3>
+      <p>登録なしで始められます。書いた言葉を送る先のサーバーがありません。アプリを消すと、言葉も消えます。</p>
+    </div>
+    <div>
+      <h3>無料で卒業までできます</h3>
+      <p>ルーティン、チェック、通知、ウィジェット、卒業までは無料です。言葉も3つまで無料で、日替わりで届きます。有料プランでは、言葉を4つ以上持てて、ルーティンごとに違う言葉を出せます。</p>
+    </div>
+  </div>
 
-  <section class="end">
+  <div class="end">
+    <h2>無料で始められます</h2>
     <a class="cta" href="https://apps.apple.com/jp/app/id6800968856">App Store で見る</a>
     <p class="note">App Store で「KATSU 習慣」でも見つかります</p>
-  </section>
+  </div>
 
   <footer>
     <a href="https://kisshiii.github.io/shipaton-habit/privacy/">プライバシーポリシー</a>
