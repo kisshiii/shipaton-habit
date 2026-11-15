@@ -4,6 +4,7 @@
     python3 tools/video/cut.py tools/video/examples/d01-ja.cut            # → 台本と同じ名前の .mp4
     python3 tools/video/cut.py <台本.cut> -o ~/katsu-video/out/d01-ja.mp4
     python3 tools/video/cut.py <台本.cut> --preview                       # 字幕の位置を確かめる1枚(.png)も出す
+    python3 tools/video/cut.py <台本.cut> --stills                        # 場面ごとの PNG も出す(写真モード用)
 
 見た目は今のアプリに合わせる(spec §1 見た目の方向): 地は炭 #2B2A28、字は #F0EDE5、
 太いゴシック(ヒラギノ角ゴ W8)。真っ黒・真っ白・明朝は使わない。
@@ -112,6 +113,7 @@ class Timeline:
         self.texts = []     # (開始, 終了, 位置, 文)
         self.voices = []    # (path, at)
         self.n = 0
+        self.stills = False
 
     def _out(self):
         self.n += 1
@@ -221,6 +223,15 @@ class Timeline:
         run(cmd)
         print(f'→ {dst}  ({duration(dst):.2f}s, {W}x{H})')
 
+        if self.stills:
+            # 写真モード(スライド)用に、場面ごとに1枚ずつ書き出す。字幕が出ている場面は字幕ごと
+            t = 0.0
+            for i, (_, d, _) in enumerate(self.segs):
+                png = re.sub(r'\.mp4$', '', dst) + f'.{i + 1}.png'
+                run(['ffmpeg', '-y', '-v', 'error', '-ss', f'{t + d / 2:.2f}', '-i', dst, '-frames:v', '1', png])
+                print(f'  slide: {png}')
+                t += d
+
         if preview:
             # 字幕が全部出ている瞬間を1枚ずつ。TikTok の画面と重ねて位置を確かめる用
             for i, (a, b, _, _) in enumerate(self.texts):
@@ -273,6 +284,7 @@ def main():
     ap.add_argument('script')
     ap.add_argument('-o', '--out')
     ap.add_argument('--preview', action='store_true')
+    ap.add_argument('--stills', action='store_true', help='場面ごとの PNG も出す(写真モードのスライド用)')
     a = ap.parse_args()
     if not shutil.which('ffmpeg'):
         sys.exit('ffmpeg が見つかりません')
@@ -282,6 +294,7 @@ def main():
     os.makedirs(os.path.dirname(os.path.abspath(dst)), exist_ok=True)
     with tempfile.TemporaryDirectory(prefix='katsu-cut-') as tmp:
         tl = Timeline(tmp)
+        tl.stills = a.stills
         parse(a.script, tl)
         tl.render(os.path.abspath(dst), a.preview)
 
