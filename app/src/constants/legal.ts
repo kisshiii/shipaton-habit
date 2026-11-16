@@ -17,12 +17,14 @@ export const TERMS_URL = 'https://www.apple.com/legal/internet-services/itunes/d
  * プライバシーポリシー。
  *
  * ⚠ App Store Connect の Privacy Policy URL と**同じものを指すこと。**
- *   バックエンドが無いので置き場が無い ── ページの実体は `docs/privacy/index.html`。
+ *   バックエンドが無いので置き場が無い ── ページの実体は `lp/privacy/index.html`(Cloudflare Pages)。
+ *   2026-11-16 に GitHub Pages から移した。1.0.3 までのビルドは旧住所(kisshiii.github.io/shipaton-habit/privacy/)を
+ *   指しているので、1.0.4 が行き渡るまで旧ページ(`docs/privacy/`)も残す。
  */
-export const PRIVACY_URL = 'https://kisshiii.github.io/shipaton-habit/privacy/';
+export const PRIVACY_URL = 'https://katsu-habit.pages.dev/privacy/';
 
 /**
  * 特定商取引法に基づく表記(2026-11-15)。日本の法律なので、日本語のときだけ課金画面に出す。
- * ⚠ 値段を ASC で変えたら、ページ(`docs/tokushoho/index.html`)の値段も手で直すこと
+ * ⚠ 値段を ASC で変えたら、ページ(`lp/tokushoho/index.html`)の値段も手で直すこと
  */
-export const TOKUSHOHO_URL = 'https://kisshiii.github.io/shipaton-habit/tokushoho/';
+export const TOKUSHOHO_URL = 'https://katsu-habit.pages.dev/tokushoho/';

@@ -41,7 +41,9 @@
 2. (済み)課金画面に「特定商取引法に基づく表記」のリンク(日本語のときだけ)は main に入っている。まだどのビルドにも入っていない
 3. (済み 2026-11-15)`bash tools/sim/build.sh` で入れて、課金画面のリンクを確かめた(日本語で出る・英語で出ない)
 4. EAS でビルド → TestFlight → 本人が実機で確認
-5. ASC に 1.0.4 を作る → **日本語ページの「マーケティング URL」に https://kisshiii.github.io/shipaton-habit/tokushoho/**
+5. ASC に 1.0.4 を作る → **日本語ページの「マーケティング URL」に https://katsu-habit.pages.dev/tokushoho/**
+   - あわせて **ASC の「プライバシーポリシー URL」を https://katsu-habit.pages.dev/privacy/ に変える**(英日とも。アプリの `PRIVACY_URL` と同じにする)
+   - 法務の2ページは 2026-11-16 に Cloudflare(`lp/privacy/`・`lp/tokushoho/`)へ移した。**1.0.4 が公開されて行き渡ったら、GitHub のリポジトリを非公開にする**(本人判断)。それまでは旧ページ `docs/privacy/`・`docs/tokushoho/` も残し、内容を変えるときは両方直す
 6. **サブスクの商品の説明**を「言葉を4つ以上持てます」に(`docs/asc-listing.md`。1.0.3 では入れなかった)
 7. **検索結果とヘッダの画像**を一緒に出す(`~/Desktop/katsu-search/`、作り方は `tools/compose-search-result.swift` / `tools/compose-header.swift`。本人OK済み)。ASC のプレビューで見え方を確かめてから
 8. 新機能の欄を書く(⚠「✓」は使えない。下書きは `docs/asc-listing.md` の 1.0.4 の節。直したものが増えたら足す)→ 審査に出す
