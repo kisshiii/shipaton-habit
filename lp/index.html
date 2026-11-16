@@ -7,12 +7,26 @@
 <meta name="description" content="決めた時刻を過ぎたら、自分で書いた言葉が届く習慣アプリ。iPhone 用。">
 <meta property="og:title" content="KATSU 習慣化・ルーティン">
 <meta property="og:description" content="忘れている自分を、いまに戻す一声。決めた時刻を過ぎたら、自分で書いた言葉が届く。">
-<!-- ⚠ 公開する住所が決まったら、og:image を https:// から始まる完全な URL にする(SNS は相対パスを読まない) -->
-<meta property="og:image" content="img/ja-lock-zoom.jpg">
+<!-- 公開先: https://katsu-habit.pages.dev/ (Cloudflare Pages の直接アップロード。2026-11-16)。SNS は相対パスを読まないので og:image は完全な URL -->
+<meta property="og:image" content="https://katsu-habit.pages.dev/img/ja-lock-zoom.jpg">
+<meta property="og:url" content="https://katsu-habit.pages.dev/">
 <meta name="apple-itunes-app" content="app-id=6800968856">
 <link rel="icon" href="img/icon.png">
 <link rel="alternate" hreflang="en" href="en/">
 <link rel="stylesheet" href="style.css">
+<script>
+  /* ブラウザの言語が日本語でなければ英語のページへ(2026-11-16)。判定は端末の中だけ。記録も通信もしない。
+     英語のページの「日本語」から来た人(?lang=ja)は送り返さない。 */
+  (function () {
+    try {
+      if (/[?&]lang=ja\b/.test(location.search)) return;
+      var langs = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || ''];
+      var ja = false;
+      for (var i = 0; i < langs.length; i++) { if (/^ja\b/i.test(langs[i] || '')) { ja = true; break; } }
+      if (!ja) location.replace('en/');
+    } catch (e) {}
+  })();
+</script>
 <!--
   KATSU の紹介ページ(日本語)。英語は en/。docs/marketing/tiktok.md「LP」。
   画像はストアのスクショ(~/Desktop/katsu-shots-1.0.3)から、見せたい部分だけを切り出したもの。
@@ -100,10 +114,8 @@
 
 <footer>
   <div class="wrap">
-    <p>個人で開発しています。ソースコードは GitHub で公開しています。</p>
     <a href="https://kisshiii.github.io/shipaton-habit/privacy/">プライバシーポリシー</a>
     <a href="https://kisshiii.github.io/shipaton-habit/tokushoho/">特定商取引法に基づく表記</a>
-    <a href="https://github.com/kisshiii/shipaton-habit">GitHub</a>
   </div>
 </footer>
 </body>
