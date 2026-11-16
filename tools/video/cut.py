@@ -13,11 +13,14 @@
 
     clip  <動画> [from=秒] [to=秒] [speed=倍] [fill]
           元の動画の一部。縦横比が違えば炭の地に収める(fill を付けると切り取って全面に)
-    image <画像> <秒>
-          静止画をその秒数だけ出す(スクショ、きれいな1コマなど)
+    image <画像> <秒> [fill]
+          静止画をその秒数だけ出す(スクショ、きれいな1コマなど)。fill で切り取って全面に(写真向け)
+    style outline
+          字幕を TikTok でよく見る形(白い字に黒い縁、箱なし)にする。写真の上に載せる投稿用。
+          書かなければ炭の箱つきの字
     card  <秒> <文>
           炭の全面に、文を真ん中に大きく出す(フックの1枚目、最後の CTA など)
-    text  <開始秒> <終了秒> <top|middle|bottom> <文>
+    text  <開始秒> <終了秒> <top|middle|lower|bottom> <文>
           組み上がった動画の上に字幕を重ねる。秒は動画の頭からの時刻
           (各場面が何秒から始まるかは、実行したときに表示される)
     voice <音声> [at=秒]
@@ -54,6 +57,7 @@ STYLE = {
     # 文字の大きさ, 行の高さの倍率, 箱を付けるか
     'top': (66, 1.42, True),
     'middle': (66, 1.42, True),
+    'lower': (66, 1.42, True),      # 画面の下寄り(3分の2の高さ)。アプリの画面の空いた所に置く用
     'bottom': (54, 1.42, True),
     'card': (80, 1.45, False),
 }
@@ -114,6 +118,7 @@ class Timeline:
         self.voices = []    # (path, at)
         self.n = 0
         self.stills = False
+        self.outline = False
 
     def _out(self):
         self.n += 1
@@ -134,10 +139,10 @@ class Timeline:
         run(['ffmpeg', '-y', '-v', 'error', '-ss', str(start), '-i', src, '-vf', vf, '-an', *ENC, out])
         self.segs.append((out, duration(out), f'clip {os.path.basename(src)} {start}-{start + dur:.1f}s ×{speed}'))
 
-    def image(self, src, dur):
+    def image(self, src, dur, fill=False):
         out = self._out()
         run(['ffmpeg', '-y', '-v', 'error', '-loop', '1', '-i', src, '-t', str(dur),
-             '-vf', f'{self._fit(False)},setsar=1,format=yuv420p', '-an', *ENC, out])
+             '-vf', f'{self._fit(fill)},setsar=1,format=yuv420p', '-an', *ENC, out])
         self.segs.append((out, duration(out), f'image {os.path.basename(src)}'))
 
     def card(self, dur, text):
@@ -151,6 +156,8 @@ class Timeline:
 
     def _drawtext(self, text, pos, t0, t1):
         size, lh_mul, box = STYLE[pos]
+        if self.outline and pos != 'card':
+            size = 86          # 写真の上では大きく(お手本は画面の高さの4〜5%)
         lines = wrap(text, size, W - SAFE_LEFT - SAFE_RIGHT)
         lh = size * lh_mul
         block = lh * len(lines)
@@ -158,6 +165,8 @@ class Timeline:
             y0 = SAFE_TOP
         elif pos == 'bottom':
             y0 = SAFE_BOTTOM - block
+        elif pos == 'lower':
+            y0 = H * 0.66 - block / 2
         else:
             y0 = (H - block) / 2
         # 右のボタンを避けた範囲の真ん中にそろえる
@@ -171,7 +180,12 @@ class Timeline:
             y = y0 + i * lh + (lh - size) / 2
             opts = [f"fontfile='{FONT}'", f"textfile='{tf}'", 'expansion=none',
                     f'fontsize={size}', f'fontcolor={FG}', f'x={cx:.0f}-text_w/2', f'y={y:.0f}']
-            if box:
+            if self.outline and pos != 'card':
+                # TikTok の標準の字に寄せる: 白い字・黒い縁・箱なし
+                opts[4] = 'fontcolor=white'
+                opts += [f'borderw={max(4, size // 13)}', 'bordercolor=black@0.9',
+                         'shadowcolor=black@0.5', 'shadowx=0', 'shadowy=3']
+            elif box:
                 opts += ['box=1', f'boxcolor={BG}@0.90', f'boxborderw={int(size * 0.28)}']
             if t0 is not None:
                 opts.append(f"enable='between(t,{t0},{t1})'")
@@ -259,15 +273,19 @@ def parse(path, tl):
                 tl.clip(p(parts[0]), float(kw.get('from', 0)), float(kw['to']) if 'to' in kw else None,
                         float(kw.get('speed', 1)), 'fill' in parts[1:])
             elif cmd == 'image':
-                src, dur = shlex.split(rest)
-                tl.image(p(src), float(dur))
+                parts = shlex.split(rest)
+                tl.image(p(parts[0]), float(parts[1]), 'fill' in parts[2:])
+            elif cmd == 'style':
+                if rest.strip() != 'outline':
+                    raise ValueError(f'style は outline だけ: {rest}')
+                tl.outline = True
             elif cmd == 'card':
                 dur, text = rest.split(' ', 1)
                 tl.card(float(dur), text.strip().strip('"'))
             elif cmd == 'text':
                 a, b, pos, text = rest.split(' ', 3)
-                if pos not in ('top', 'middle', 'bottom'):
-                    raise ValueError(f'位置は top / middle / bottom: {pos}')
+                if pos not in ('top', 'middle', 'lower', 'bottom'):
+                    raise ValueError(f'位置は top / middle / lower / bottom: {pos}')
                 tl.texts.append((float(a), float(b), pos, text.strip().strip('"')))
             elif cmd == 'voice':
                 parts = shlex.split(rest)
