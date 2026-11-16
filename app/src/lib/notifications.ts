@@ -27,10 +27,9 @@ import {
 } from '@/constants/notifications';
 import { t } from '@/i18n';
 import { toDateKey } from '@/lib/date';
-import { FREE_MESSAGE_LIMIT } from '@/constants/messages';
+import { messageFor } from '@/lib/message-pick';
 import { isProCached } from '@/lib/purchases';
 import { getAppState, getDailyRecords, getMessages, getRoutines } from '@/storage';
-import type { KatsuMessage, RoutineItem } from '@/types';
 
 /** 通知に載せるデータ。**ユーザーの本文をここに入れないこと** */
 type KatsuNotificationData = {
@@ -139,57 +138,7 @@ export async function sendTrialNotification(title: string, body: string): Promis
 
 // --- 予約 -------------------------------------------------------------------
 
-/**
- * そのルーティンに使う文言を選ぶ。
- *
- * 項目ごとの出し分けは有料(課金機会③)。
- * ⚠ **無料のときは先頭 `FREE_MESSAGE_LIMIT` 件を、全ルーティン共通で日替わりに使う**(2026-11-10。plan §10)。
- *   画面側はそれより後ろを「ロック中」と表示して触らせないのに、
- *   通知だけがそれを鳴らしていると、ロックが嘘になり ②③ が課金機会として成立しない。
- *   ロック済みの言葉は**消さない**(spec §2)。使わないだけで、再課金すれば戻る。
- */
-function messageFor(
-  messages: KatsuMessage[],
-  routine: RoutineItem,
-  isPaid: boolean,
-  dayKey: string,
-): KatsuMessage | undefined {
-  // ⚠ 無料に戻ったとき、**割り当ての無い言葉を先に探す。**
-  //   有料中に1件目へルーティンを割り当てていると、`messages[0]` を素で返した場合に
-  //   「特定のルーティン用に書いた言葉が全ルーティンで鳴る」ことになる。
-  //   共通のものが1つも無ければ先頭に落とす(鳴らさないよりは本人の言葉を届ける)。
-  if (!isPaid) {
-    const unlocked = messages.slice(0, FREE_MESSAGE_LIMIT);
-    const common = unlocked.filter((message) => message.routineId === undefined);
-    if (common.length === 0) return unlocked[0];
-    return common[pickIndex(`${dayKey}:${routine.id}`, common.length)];
-  }
-
-  // そのルーティン専用があればその中から。無ければ共通の中から
-  const mine = messages.filter((message) => message.routineId === routine.id);
-  const pool = mine.length ? mine : messages.filter((message) => message.routineId === undefined);
-  if (pool.length === 0) return undefined;
-  if (pool.length === 1) return pool[0];
-
-  // ⚠ **`find` で先頭だけを使わないこと。**書いたのに一度も届かない言葉が生まれる。
-  //   同じ対象に複数あるなら日替わりで回す(spec §2 複数の言葉の扱い)。
-  return pool[pickIndex(`${dayKey}:${routine.id}`, pool.length)];
-}
-
-/**
- * 日付とルーティンから決まる添字。
- *
- * ⚠ **`Math.random` を使わないこと。**予約は画面を開くたびに全消し→貼り直しする。
- *   毎回引き直すと、同じ日の通知がアプリを開くたびに別の言葉に化ける。
- *   同じ日・同じ項目なら必ず同じ結果になる必要がある。
- */
-function pickIndex(seed: string, count: number): number {
-  let hash = 0;
-  for (let i = 0; i < seed.length; i += 1) {
-    hash = (hash * 31 + seed.charCodeAt(i)) | 0;
-  }
-  return Math.abs(hash) % count;
-}
+// 言葉の選び方は `message-pick.ts`(Today の通知オフ時と共通)
 
 /** `startedOn`("2027-01-01")をその日の 0:00 の Date にする。無ければ null */
 function parseStartDay(startedOn: string | undefined): Date | null {

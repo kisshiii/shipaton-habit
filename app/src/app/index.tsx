@@ -26,6 +26,8 @@ import { Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
+import { todayWordFor } from '@/lib/message-pick';
+import { isProCached } from '@/lib/purchases';
 import { playAllDone, playCheck, playUncheck } from '@/lib/haptics';
 import {
   evaluateGraduation,
@@ -58,6 +60,8 @@ export default function TodayScreen() {
   const [record, setRecord] = useState<DailyRecord | null>(null);
   const [messages, setMessages] = useState<KatsuMessage[]>([]);
   const [permission, setPermission] = useState<string | null>(null);
+  /** 通知を切っている人に出す言葉を、通知と同じく有料・無料で選び分けるため(課金の状態は端末のキャッシュ) */
+  const [isPaid, setIsPaid] = useState(false);
   const [isGraduationOpen, setIsGraduationOpen] = useState(false);
   const [progress, setProgress] = useState<Progress | null>(null);
   const [milestone, setMilestone] = useState<number | null>(null);
@@ -115,17 +119,19 @@ export default function TodayScreen() {
   const refresh = useCallback(async () => {
     // ウィジェットで押したチェックを先に記録へ移す(plan §7-6)。読み直す前に済ませる
     await applyWidgetChecks();
-    const [nextRoutines, nextRecord, nextMessages, nextPermission] = await Promise.all([
+    const [nextRoutines, nextRecord, nextMessages, nextPermission, nextIsPaid] = await Promise.all([
       getRoutines(),
       getTodayRecord(),
       getMessages(),
       getNotificationPermission(),
+      isProCached(),
     ]);
     dateRef.current = nextRecord.date;
     setRoutines(nextRoutines);
     setRecord(nextRecord);
     setMessages(nextMessages);
     setPermission(nextPermission);
+    setIsPaid(nextIsPaid);
     // 開くたびに予約を引き直す。7日開かなくても通知が尽きない
     await syncScheduledNotifications();
     // アイコン長押しの項目も今日の状態に合わせる(plan §8 追加)
@@ -214,8 +220,11 @@ export default function TodayScreen() {
   const isBlocked = permission !== null && permission !== 'granted';
   const isAllDone = hasRoutines && totalCount > 0 && doneCount >= totalCount;
   // 通知を切っている人にも同じ言葉が届くようにする(spec §4 通知実装の制約-1)。
+  // ⚠ 通知と同じ選び方(日替わり・無料は先頭3つ)。1.0.3 までは先頭の言葉に固定していた
   // 文言が無いときはアプリ側の定型文で埋めない
-  const fallbackWord = isBlocked ? messages[0]?.text : undefined;
+  const fallbackWord = isBlocked
+    ? todayWordFor(messages, routines, completedIds, isPaid, dateKey, new Date())?.text
+    : undefined;
 
   return (
     <ThemedView style={styles.container}>

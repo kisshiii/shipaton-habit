@@ -51,6 +51,7 @@
     "lint:safe": "bash scripts/lint.sh",
     "test:graduation": "node scripts/test-graduation.js",
     "test:storage": "node scripts/test-storage.js",
+    "test:messages": "node scripts/test-messages.js",
     "setup:cloud": "bash scripts/cloud-setup.sh"
   },
   "private": true
