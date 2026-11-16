@@ -53,6 +53,9 @@ import {
 } from '@/storage';
 import type { KatsuMessage, RoutineItem } from '@/types';
 
+/** シートが下に閉じ終わるまでの時間。次の画面はこれを待ってから開く */
+const SHEET_CLOSE_MS = 400;
+
 /** 書くシートの中身。`id` があれば編集 */
 type Draft = { id?: string; text: string };
 
@@ -61,6 +64,8 @@ export default function KatsuScreen() {
   const [messages, setMessages] = useState<KatsuMessage[]>([]);
   const [isPaid, setIsPaid] = useState(false);
   const [isPaywallOpen, setIsPaywallOpen] = useState(false);
+  /** ロック中の言葉の説明。押した人は「これは何か」を知りたいだけのことが多いので、課金画面をいきなり開かない */
+  const [isLockedInfoOpen, setIsLockedInfoOpen] = useState(false);
   const [routines, setRoutines] = useState<RoutineItem[]>([]);
   /** ピッカーを開いている言葉。null なら閉じている(課金機会③) */
   const [pickingId, setPickingId] = useState<string | null>(null);
@@ -197,7 +202,7 @@ export default function KatsuScreen() {
                       symbol="lock.fill"
                       label={t.katsu.locked}
                       muted
-                      onPress={() => setIsPaywallOpen(true)}
+                      onPress={() => setIsLockedInfoOpen(true)}
                     />
                   ) : (
                     <>
@@ -256,6 +261,24 @@ export default function KatsuScreen() {
           onSaved={refresh}
         />
       )}
+
+      {/*
+        ロック中の言葉を押したとき(2026-11-16、本人判断)。まず「消えていない」ことを伝える。
+        ⚠ 主のボタンは「閉じる」。課金画面に行くかは本人が選ぶ(押しつけない。課金機会②の延長)
+      */}
+      <Sheet visible={isLockedInfoOpen} onClose={() => setIsLockedInfoOpen(false)} title={t.katsu.lockedTitle}>
+        <ThemedText>{t.katsu.lockedBody}</ThemedText>
+        <Button label={t.katsu.lockedClose} onPress={() => setIsLockedInfoOpen(false)} />
+        <Button
+          label={t.katsu.lockedSeePlans}
+          variant="plain"
+          onPress={() => {
+            setIsLockedInfoOpen(false);
+            // ⚠ シートが閉じ終わってから開く。重ねて出すと、iOS では後の画面が出ないことがある
+            setTimeout(() => setIsPaywallOpen(true), SHEET_CLOSE_MS);
+          }}
+        />
+      </Sheet>
 
       <Paywall
         visible={isPaywallOpen}
