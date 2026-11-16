@@ -418,18 +418,27 @@ REST API なら:
 
 ## 1.0.4 の「このバージョンの新機能」 **【暫定】2026-11-15**
 
-**⚠ 下書き。**1.0.4 は発信の反応を見て直す所が出たら、まとめて出す(HANDOFF)。直したものが増えたら、ここに行を足す。今の中身は特商法のリンクだけ。英語の画面には何も変わりがないため、英語は不具合修正の一般的な書き方にする。
+**⚠ 下書き(2026-11-16 更新)。**特商法のリンクと、レビューで見つけた不具合の修正。利用者に関係のあるものだけ書く。
 
 ### 英語
 
 ```
-• Small fixes and improvements.
+• With notifications off, the Today screen now shows a different set of your words each day, the same as notifications.
+• Back on the free plan, your first three sets of words now reach every routine, including ones you had assigned to a single routine.
+• Fixed a widget check-off that could go missing after unchecking a routine in the app.
+• Fixed Day 1 sometimes landing on the wrong day during setup.
+• Other small fixes.
 ```
 
 ### 日本語
 
 ```
+・通知をオフにしているときも、今日の画面に出る言葉が通知と同じく日替わりになりました。
+・無料のプランに戻ったとき、ルーティンに割り当てた言葉も、先頭の3つなら全ルーティンに届くようにしました。
+・アプリでチェックを外したあと、ウィジェットで付け直したチェックが記録されないことがあったのを直しました。
+・最初の設定で選んだ1日目が、ずれることがあったのを直しました。
 ・課金の画面に「特定商取引法に基づく表記」へのリンクを追加しました。
+・そのほか細かな修正。
 ```
 
 ## 1.0.3 の「このバージョンの新機能」 **【暫定】2026-11-01**

@@ -57,6 +57,12 @@ export type GraduationProgress = {
    * 1日目のお祝いを「やり切ったその場」に限るために使う(plan §8 追加)
    */
   todayDoneByHand: boolean;
+  /**
+   * 昨日の時点の `doneDays`。今日をやり切っていれば今日の分を除く。
+   * 「昨日は全部やり切りました。これでN日です。」に使う(`doneDays` を使うと、朝のうちに今日の分を
+   * 済ませてから開いた人に1日多く見える。1.0.4 で直した)
+   */
+  doneDaysThroughYesterday: number;
   /** Day 1 からの、やり切った日の通算(数え直しても減らない)。1日目のお祝いを一生に1回にするために使う */
   lifetimeDoneDays: number;
 };
@@ -146,7 +152,9 @@ export function computeProgress(
 
   const todayIndex = days.length - 1;
   const todayRecord = records[today];
+  const todayCounted = todayIndex >= 0 && days[todayIndex] === today && isAchieved(todayRecord);
   return {
+    doneDaysThroughYesterday: todayCounted ? Math.max(doneDays - 1, 0) : doneDays,
     todayDoneByHand:
       todayIndex >= 0 && isAchieved(todayRecord) && (todayRecord?.completedIds.length ?? 0) > 0,
     lifetimeDoneDays,

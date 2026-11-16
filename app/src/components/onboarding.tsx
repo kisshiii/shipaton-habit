@@ -88,20 +88,32 @@ type Step = 'intro' | 'routine' | 'words' | 'seal' | 'notifications';
 /** 目盛りに出す手順。⚠ 順番に意味があるので番号(位置)を見せてよい */
 const STEPS: Step[] = ['routine', 'words', 'seal', 'notifications'];
 
+type StartKind = 'today' | 'tomorrow' | 'newYear';
+
 /** 始める日の選択肢。1月1日は12月の間だけ出す(フレッシュスタート効果。plan §8) */
-function startChoices(now: Date = new Date()): { label: string; dateKey: string }[] {
+function startChoices(now: Date = new Date()): { kind: StartKind; label: string; dateKey: string }[] {
   const tomorrow = new Date(now);
   tomorrow.setDate(now.getDate() + 1);
-  const choices = [
-    { label: t.onboarding.startToday, dateKey: toDateKey(now) },
-    { label: t.onboarding.startTomorrow, dateKey: toDateKey(tomorrow) },
+  const choices: { kind: StartKind; label: string; dateKey: string }[] = [
+    { kind: 'today', label: t.onboarding.startToday, dateKey: toDateKey(now) },
+    { kind: 'tomorrow', label: t.onboarding.startTomorrow, dateKey: toDateKey(tomorrow) },
   ];
   const newYear = toDateKey(new Date(now.getFullYear() + 1, 0, 1));
   // ⚠ 12月31日は「明日」と「1月1日」が同じ日になる。同じ意味の選択肢を2つ並べない
   if (now.getMonth() === 11 && newYear !== choices[1].dateKey) {
-    choices.push({ label: t.onboarding.startNewYear, dateKey: newYear });
+    choices.push({ kind: 'newYear', label: t.onboarding.startNewYear, dateKey: newYear });
   }
   return choices;
+}
+
+/**
+ * 選んだ種類を、保存する瞬間の日付にする。
+ * ⚠ 日付を画面を開いた時点で決めておかないこと。設定の途中で 0:00 をまたぐと、
+ *   「今日」が昨日になり、記録の無い昨日が1日目(=休み)になる(1.0.4 で直した)。
+ * 1月1日の選択肢が年をまたいで消えていたら、今日(=1月1日)にする。
+ */
+function startDateFor(kind: StartKind, now: Date = new Date()): string {
+  return startChoices(now).find((choice) => choice.kind === kind)?.dateKey ?? toDateKey(now);
 }
 
 /** 起動画面の画像幅(app.json の expo-splash-screen と揃える) */
@@ -132,8 +144,8 @@ export function Onboarding({ onFinished, preview }: Props) {
   /** 通知を許可した。許可した人には、同じ画面で「試しに届ける」を見せる */
   const [isAllowed, setIsAllowed] = useState(false);
   const [isTrialSent, setIsTrialSent] = useState(false);
-  /** 1日目にする日。今日のままなら置き直さない */
-  const [startOn, setStartOn] = useState(() => toDateKey(new Date()));
+  /** 1日目にする日の種類(今日 / 明日 / 1月1日)。日付は保存の瞬間に決める(startDateFor) */
+  const [startKind, setStartKind] = useState<StartKind>('today');
   /** 最後の保存・試しの通知の最中。二度押しで二重に走らせない */
   const [isSaving, setIsSaving] = useState(false);
 
@@ -234,7 +246,9 @@ export function Onboarding({ onFinished, preview }: Props) {
           if (!(caught instanceof RoutineLimitError)) throw caught;
         }
       }
-      if (startOn !== toDateKey(new Date())) await setStartedOnForOnboarding(startOn);
+      // ⚠ 「今日」でも必ず置き直す。1.0.2 までの版で途中まで進めた人は、そのときの日が
+      //   1日目として残っていて、その間が全部休みに数えられていた(1.0.4 で直した)
+      await setStartedOnForOnboarding(startDateFor(startKind));
       await addMessage(words);
       await markOnboarded();
       // 1.0.2 以降の初めての判定をここで済ませておく。済ませないと、最初の判定が
@@ -323,10 +337,10 @@ export function Onboarding({ onFinished, preview }: Props) {
                       <View style={styles.chips}>
                         {startChoices().map((choice) => (
                           <Chip
-                            key={choice.dateKey}
+                            key={choice.kind}
                             label={choice.label}
-                            isSelected={choice.dateKey === startOn}
-                            onPress={() => setStartOn(choice.dateKey)}
+                            isSelected={choice.kind === startKind}
+                            onPress={() => setStartKind(choice.kind)}
                           />
                         ))}
                       </View>

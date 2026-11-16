@@ -38,7 +38,7 @@ import { Fonts, Radius, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { syncScheduledNotifications } from '@/lib/notifications';
-import { isPro } from '@/lib/purchases';
+import { isPro, isProCached } from '@/lib/purchases';
 import { containsSelfHarmText } from '@/lib/self-harm-guard';
 import { attacksThePerson } from '@/lib/soft-guard';
 import { countChars, truncateChars } from '@/lib/text';
@@ -69,6 +69,9 @@ export default function KatsuScreen() {
   const [cardText, setCardText] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
+    // ⚠ 先に端末のキャッシュで埋めてから、言葉を並べる。通信の結果を待つ間に、購読している人の
+    //   4つ目以降が「ロック中」に見えていた(押すと課金画面が開いた。1.0.4 で直した)
+    setIsPaid(await isProCached());
     setMessages(await getMessages());
     setRoutines(await getRoutines());
     // 取得に失敗してもキャッシュで通す。課金の障害でコア体験を止めない

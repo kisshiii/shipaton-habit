@@ -59,7 +59,10 @@ export function syncWidget(): Promise<void> {
  */
 async function writeWidgetAfterChecks(): Promise<void> {
   for (let attempt = 0; attempt < 3; attempt += 1) {
-    await writeWidget();
+    // ⚠ 書けたら「拾い済み」を忘れる。書いた時点でウィジェット側の押した記録は空になっているので、
+    //   古い記録で付け直すおそれはもう無い。忘れないと、Today で外したあとにウィジェットで
+    //   付け直した2回目が拾われずに消えていた(1.0.4 で直した)
+    if (await writeWidget()) consumed.clear();
     const more = await takeWidgetChecks();
     if (!more) return;
   }
@@ -115,14 +118,17 @@ async function takeWidgetChecks(): Promise<number | null> {
         const key = props.forDay + ':' + id;
         if (consumed.has(key)) continue;
         hasAny = true;
-        consumed.add(key);
         byDay.set(props.forDay, [...(byDay.get(props.forDay) ?? []), id]);
       }
     }
     if (!hasAny) return null;
     // ⚠ 付けるだけ。付け外しではない(付いていれば何もしない)
     let applied = 0;
-    for (const [day, ids] of byDay) applied += await markCompletedOnDay(day, ids);
+    for (const [day, ids] of byDay) {
+      applied += await markCompletedOnDay(day, ids);
+      // 記録できてから「拾い済み」にする。先に入れると、書き込みに失敗した分が二度と拾われない
+      for (const id of ids) consumed.add(day + ':' + id);
+    }
     if (byDay.has(todayKey())) await syncScheduledNotifications();
     return applied;
   } catch {
@@ -131,7 +137,8 @@ async function takeWidgetChecks(): Promise<number | null> {
   }
 }
 
-async function writeWidget(): Promise<void> {
+/** 書けたら true(どの書き方でも、押した記録 `checkedIds` は空に戻る) */
+async function writeWidget(): Promise<boolean> {
   try {
     const [status, record, routines] = await Promise.all([
       evaluateGraduation(),
@@ -141,7 +148,7 @@ async function writeWidget(): Promise<void> {
     // ルーティンが無い人には何も出さない(判定そのものをしない人。spec §2)
     if (!status) {
       KatsuProgress.updateSnapshot({ dayLabel: '', todayLabel: '', ratio: 0, routines: [], checkedIds: [] });
-      return;
+      return true;
     }
     const { progress } = status;
     const labels = progressLabels();
@@ -189,7 +196,7 @@ async function writeWidget(): Promise<void> {
           },
         },
       ]);
-      return;
+      return true;
     }
     const day =
       progress.graduatedOn !== null
@@ -251,7 +258,9 @@ async function writeWidget(): Promise<void> {
       // 古い表示のまま押せると、押したのに記録されない(その日の分ではない)ことになる
       { date: dayAfter, props: { ...base, todayLabel: '', routines: [] } },
     ]);
+    return true;
   } catch {
     // 黙る。ウィジェットの都合で画面を止めない
+    return false;
   }
 }

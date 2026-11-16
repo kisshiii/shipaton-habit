@@ -27,7 +27,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { t } from '@/i18n';
 import { formatMonthDay, formatWeekday, todayKey } from '@/lib/date';
 import { todayWordFor } from '@/lib/message-pick';
-import { isProCached } from '@/lib/purchases';
+import { isPro, isProCached } from '@/lib/purchases';
 import { playAllDone, playCheck, playUncheck } from '@/lib/haptics';
 import {
   evaluateGraduation,
@@ -105,8 +105,10 @@ export default function TodayScreen() {
       await markOpenedToday();
     } else if (status && !status.progress.graduatedOn && (await markOpenedToday())) {
       // 数え直しのお知らせを出す日と、卒業した後は出さない
-      const { yesterday, doneDays, restsInWindow, countStartedOn } = status.progress;
-      if (yesterday === 'done') setDailyLine({ text: t.today.yesterdayDone(doneDays), countStartedOn });
+      const { yesterday, doneDaysThroughYesterday, restsInWindow, countStartedOn } = status.progress;
+      if (yesterday === 'done') {
+        setDailyLine({ text: t.today.yesterdayDone(doneDaysThroughYesterday), countStartedOn });
+      }
       if (yesterday === 'rest') {
         setDailyLine({
           text: t.today.yesterdayRest(Math.max(MAX_REST_DAYS - restsInWindow, 0), REST_WINDOW_DAYS),
@@ -126,6 +128,12 @@ export default function TodayScreen() {
       getNotificationPermission(),
       isProCached(),
     ]);
+    // 開いたまま日をまたいだら、前の日に出した一言とお知らせを引っ込める(1.0.4 で直した)。
+    // 新しい日の分は、このあとの checkGraduation が出し直す
+    if (dateRef.current !== nextRecord.date) {
+      setIsRestartNoticeOpen(false);
+      setDailyLine(null);
+    }
     dateRef.current = nextRecord.date;
     setRoutines(nextRoutines);
     setRecord(nextRecord);
@@ -137,6 +145,16 @@ export default function TodayScreen() {
     // アイコン長押しの項目も今日の状態に合わせる(plan §8 追加)
     await syncQuickActions(nextRoutines, nextRecord);
     await checkGraduation();
+    // 課金の状態を裏で確かめ直す(通信あり。失敗したらキャッシュのまま)。
+    // ⚠ Today しか開かない人は、解約しても古い「有料」のキャッシュのままで、ロックした言葉が
+    //   通知で届き続けていた(1.0.4 で直した)。変わっていたら予約を引き直す
+    isPro()
+      .then(async (active) => {
+        if (active === nextIsPaid) return;
+        setIsPaid(active);
+        await syncScheduledNotifications();
+      })
+      .catch(() => {});
   }, [checkGraduation]);
 
   useFocusEffect(

@@ -72,6 +72,16 @@ const graduatedOn = (records, changedOn = [], startedOn = START) =>
   progress(records, 400, changedOn, startedOn).graduatedOn;
 
 const cases = [
+  // --- その日最初の一言の日数(1.0.4) ----------------------------------------
+  ['「これでN日」は昨日の時点の日数(今日を先に済ませても1日多く出ない)', () => {
+    const r = build((i, k) => (i <= 10 ? done(k) : undefined)); // 0〜10日目までやり切り
+    const p = progress(r, 10); // 今日 = 10日目、今日も済み
+    assert.strictEqual(p.doneDays, 11);
+    assert.strictEqual(p.doneDaysThroughYesterday, 10);
+    const notYet = progress(build((i, k) => (i < 10 ? done(k) : undefined)), 10); // 今日はまだ
+    assert.strictEqual(notYet.doneDaysThroughYesterday, notYet.doneDays);
+    assert.strictEqual(notYet.doneDaysThroughYesterday, 10);
+  }],
   // --- 66日の数え方 ---------------------------------------------------------
   [`やり切った日が${N}日で、${N}日目が卒業日`, () => {
     const r = build((i, k) => (i < N ? done(k) : undefined));
