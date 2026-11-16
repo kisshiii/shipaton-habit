@@ -26,15 +26,14 @@ export function messageFor(
   isPaid: boolean,
   dayKey: string,
 ): KatsuMessage | undefined {
-  // ⚠ 無料に戻ったとき、**割り当ての無い言葉を先に探す。**
-  //   有料中に1件目へルーティンを割り当てていると、`messages[0]` を素で返した場合に
-  //   「特定のルーティン用に書いた言葉が全ルーティンで鳴る」ことになる。
-  //   共通のものが1つも無ければ先頭に落とす(鳴らさないよりは本人の言葉を届ける)。
+  // ⚠ 無料のときは**割り当てを見ない。**先頭3つを全ルーティンで日替わりにする(2026-11-16、本人判断。spec §2)。
+  //   1.0.3 までは割り当ての無いものだけを回していたため、有料のときにルーティンへ割り当てた言葉は、
+  //   無料に戻ると先頭3つに入っていてもどこにも届かなかった。画面ではロック表示にもならず、
+  //   卒業の画面の「3つ目までの言葉も届き続けます」とも食い違っていた。
   if (!isPaid) {
     const unlocked = messages.slice(0, FREE_MESSAGE_LIMIT);
-    const common = unlocked.filter((message) => message.routineId === undefined);
-    if (common.length === 0) return unlocked[0];
-    return common[pickIndex(`${dayKey}:${routine.id}`, common.length)];
+    if (unlocked.length === 0) return undefined;
+    return unlocked[pickIndex(`${dayKey}:${routine.id}`, unlocked.length)];
   }
 
   // そのルーティン専用があればその中から。無ければ共通の中から

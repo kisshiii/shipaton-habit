@@ -120,6 +120,16 @@ test('ルーティンが無ければ何も出さない', () => {
   assert.strictEqual(todayWordFor(three, [], [], false, '2026-12-05', at(21, 0)), undefined);
 });
 
+test('無料に戻った人: ルーティンに割り当てた言葉も、先頭3つなら全ルーティンで日替わりに届く', () => {
+  const assigned = [word('forRun', 'run'), word('b'), word('c'), word('locked', 'study')];
+  const seen = new Set();
+  for (let day = 1; day <= 30; day += 1) {
+    const key = `2026-12-${String(day).padStart(2, '0')}`;
+    for (const r of routines) seen.add(messageFor(assigned, r, false, key).id);
+  }
+  assert.deepStrictEqual([...seen].sort(), ['b', 'c', 'forRun']);
+});
+
 test('有料: そのルーティン専用の言葉があればそれを使う', () => {
   const mixed = [word('common'), word('forStudy', 'study')];
   assert.strictEqual(todayWordFor(mixed, routines, ['run'], true, '2026-12-05', at(21, 0)).id, 'forStudy');
