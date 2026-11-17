@@ -31,7 +31,9 @@ export function quickActionsFor(routines: RoutineItem[], today: DailyRecord): Qu
       return {
         id: `${ACTION_ID_PREFIX}${routine.id}`,
         title: t.quickActions.title(routine.time, routine.title),
-        icon: 'task',
+        // ⚠ 組み込みの絵('task' など)は iOS 26 の実機で「?」になった(2026-11-17、TestFlight 1.0.4 で発覚)。
+        //   SF Symbols を名指しする
+        icon: 'symbol:checkmark.circle',
         params,
       };
     });
