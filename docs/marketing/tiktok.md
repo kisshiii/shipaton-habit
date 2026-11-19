@@ -140,6 +140,12 @@ python3 tools/video/cut.py ~/katsu-video/cuts/P06-ja.cut -o ~/katsu-video/out/P0
 - 1枚目を写真にするときは、写真に TikTok の文字の機能で文を入れる(TikTok でいつも見る字のほうが広告に見えない)
 - 音楽は投稿のときに TikTok で付ける(商用利用可の音源、落ち着いた曲)
 
+**アニメーションを作る(2026-11-19):** 絵で人を動かす動画は `tools/video/anim/`。HTML の canvas で `?t=秒` の1コマを描き、`render.sh` で全部のコマを描いて mp4 にする(例: `happy.html`「a 2-minute habit, day 1 → day 66」18秒。描くのに10分ほど)
+
+```sh
+bash tools/video/anim/render.sh tools/video/anim/happy.html 18 ~/katsu-video/out3/happy.mp4
+```
+
 **スマホから頼む:** Mac の Claude Code で `/remote-control`(Mac は起こしておく)。クラウドの Claude Code では Mac の素材とシミュレーターが使えないので、文面を考えるだけになる。
 
 ---
@@ -168,6 +174,8 @@ python3 tools/video/cut.py ~/katsu-video/cuts/P06-ja.cut -o ~/katsu-video/out/P0
 | w47 | | | | | | | | |
 
 **2週間使っている人の数:** ASC の App アナリティクスの「保持」で見る【未確認: 14日後がそのまま出るか】。データ共有に同意した人だけの数字で、少ないと表示されない。30人に届くまでは、コメントとレビューのほうが確か。
+
+**わかったこと(2026-11-20):** Web から出した写真の投稿は、どれも再生 0 のままだった。11/19 に動画で出した投稿(R2「written on a good day」)は、翌日に 5 回見られた。**しばらくは動画で出す**(写真の2枚も、`cut.py` で動画にして出す)。11/20 に明るいアニメーション(happy、曲「Happy and Joyful」Audiopanda、無制限の曲から)を出した
 
 ### ストック(2026-11-15 に作成。`~/katsu-video/out/投稿メモ.md`)
 
