@@ -6,119 +6,96 @@
 <script src="parts.js"></script>
 <script>
 /*
- * KATSU「POV: you skipped ONE day」(休みの日)。?t=秒 の1コマを描く。17秒。
- * 大げさに絶望 → 通知「Yesterday was a rest day.」→ 色が戻って大喜び → 66日。
+ * KATSU ep. 2「POV: you skipped ONE day」(休みの日)。?t=秒 の1コマを描く。12秒。
+ * 大げさに絶望 →「rest day. 1 left.」→ 色が戻って大喜び → 締め。
+ * v2(2026-11-22): 1コマ目から全部見せる / 走る場面と66日目を削って12秒に / オチは大きな字で / 「23 days in」/ ep. 2
  * 通知の文はアプリの英語の文面そのまま(app/src/i18n/en.ts の yesterdayRest)。
+ * 効果音は TikTok の編集画面で置く: 1.5秒 悲しい音 / 3.6秒 レコードが止まる音 / 6.2秒 クラッカー
  * TikTok で隠れる範囲: 上200 / 下450(y>1470)/ 右150(x>930, y 700〜1600)。
  */
-const S = { hook: [0, 1.8], drama: [1.8, 4.6], wait: [4.6, 5.4], notif: [5.4, 7.6], joy: [7.6, 10.4], sprint: [10.4, 13.0], grad: [13.0, 14.6], end: [14.6, 17.0] };
+const S = { hook: [0, 1.5], drama: [1.5, 3.6], wait: [3.6, 4.2], notif: [4.2, 6.2], joy: [6.2, 8.6], end: [8.6, 12.0] };
 const inS = k => T >= S[k][0] && T < S[k][1];
-const lk = k => seg(T, S[k][0], S[k][1]);
 const t0 = k => S[k][0];
+const COUNTER_Y = 1330;
 
 /* 色の濃さ: 絶望で抜け、喜びで一気に戻る */
 function saturation() {
   if (T < t0('drama')) return 1;
-  if (T < t0('joy')) return lerp(1, 0, easeOut(seg(T, t0('drama'), t0('drama') + .6)));
+  if (T < t0('joy')) return lerp(1, 0, easeOut(seg(T, t0('drama'), t0('drama') + .5)));
   return easeOut(seg(T, t0('joy'), t0('joy') + .25));
 }
-/* カメラ: ズームの一撃と揺れ */
+/* カメラ: 揺れ・ズームの一撃・泣き顔への寄り */
 function camera() {
-  let z = 1, dx = 0, dy = 0, rot = 0;
+  let z = 1, dx = 0, dy = 0;
   const punch = (at, amt, dur = .25) => { const k = seg(T, at, at + dur); return k > 0 && k < 1 ? amt * (1 - easeOut(k)) : 0; };
-  const shake = (a, b, amt) => { if (T >= a && T < b) { dx += Math.sin(T * 97) * amt; dy += Math.cos(T * 83) * amt; } };
-  z += punch(.35, .22) + punch(t0('joy'), .3) + punch(t0('wait'), .12);
-  shake(.35, .9, 22); shake(t0('joy'), t0('joy') + .5, 26);
-  // 泣き顔にじわっと寄る
-  if (T >= 3.5 && T < t0('wait')) { const k = easeInOut(seg(T, 3.5, t0('wait'))); z += k * .2; dy -= k * 40; shake(3.5, t0('wait'), 6); }
-  // 走る場面: 節目で一撃
-  [33, 50].forEach((d, i) => { z += punch(t0('sprint') + .9 + i * .8, .14); });
-  ctx.translate(540 + dx, 960 + dy); ctx.scale(z, z); ctx.rotate(rot); ctx.translate(-540, -960);
+  const shake = (a, b, amt) => { if (T >= a && T < b) { const f = 1 - seg(T, a, b); dx += Math.sin(T * 97) * amt * f; dy += Math.cos(T * 83) * amt * f; } };
+  shake(0, .7, 24); shake(t0('joy'), t0('joy') + .5, 26);
+  z += punch(t0('joy'), .3) + punch(t0('wait'), .12) + punch(t0('notif'), .08);
+  if (T >= 3.0 && T < t0('wait')) { const k = easeInOut(seg(T, 3.0, t0('wait'))); z += k * .2; dy -= k * 40; dx += Math.sin(T * 80) * 5; }
+  ctx.translate(540 + dx, 960 + dy); ctx.scale(z, z); ctx.translate(-540, -960);
 }
 function sky(top, bottom) { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, top); g.addColorStop(1, bottom); ctx.fillStyle = g; ctx.fillRect(-200, -200, W + 400, H + 400); }
 function groundFill(c) { ctx.fillStyle = c; ctx.fillRect(-200, 1250, W + 400, H); }
 function cloud(x, y, s, a = 1) { ctx.save(); ctx.globalAlpha = a; ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = '#6d6a66';
   [[-90, 10, 70], [-20, -30, 90], [70, 0, 75], [0, 30, 80]].forEach(([cx, cy, r]) => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill(); }); ctx.restore(); }
-function rain(x, y, w, a = 1) { ctx.save(); ctx.globalAlpha = a; const r = rand(21); ctx.strokeStyle = '#9fc3e8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
-  for (let i = 0; i < 26; i++) { const rx = x + (r() - .5) * w, ph = (T * 1.6 + r()) % 1, ry = y + ph * 560; ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx - 8, ry + 40); ctx.stroke(); } ctx.restore(); }
-function speedLines(a = 1) { const r = rand(5); ctx.save(); ctx.globalAlpha = a * .7; ctx.strokeStyle = '#fff'; ctx.lineCap = 'round';
-  for (let i = 0; i < 22; i++) { const y = 300 + r() * 1150, len = 160 + r() * 340, x = ((r() * 2000 - T * 4200) % 1600 + 1600) % 1600 - 260; ctx.lineWidth = 4 + r() * 8; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + len, y); ctx.stroke(); } ctx.restore(); }
+function rain(x, y, w) { const r = rand(21); ctx.strokeStyle = '#9fc3e8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  for (let i = 0; i < 26; i++) { const rx = x + (r() - .5) * w, ph = (T * 1.6 + r()) % 1, ry = y + ph * 520; ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx - 8, ry + 40); ctx.stroke(); } }
 function bigText(text, y, size, a = 1, sc = 1, wob = 0, fill = '#fff') { ctx.save(); ctx.globalAlpha = a; ctx.translate(495 + Math.sin(T * 60) * wob, y + Math.cos(T * 53) * wob); ctx.scale(sc, sc);
   ctx.font = `900 ${size}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
   ctx.lineWidth = size * .16; ctx.strokeStyle = 'rgba(43,42,40,.92)'; ctx.strokeText(text, 0, 0); ctx.fillStyle = fill; ctx.fillText(text, 0, 0); ctx.restore(); }
 function pill(text, y, a = 1, sc = 1) { ctx.save(); ctx.globalAlpha = a; ctx.translate(495, y); ctx.scale(sc, sc); ctx.font = '800 56px -apple-system, sans-serif';
   const w = ctx.measureText(text).width + 100; ctx.fillStyle = '#2B2A28'; rrect(-w / 2, -62, w, 124, 62); ctx.fill(); ctx.fillStyle = '#F0EDE5'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, 2); ctx.restore(); }
-/* 踊る姿勢 */
+function tag(text) { ctx.save(); ctx.font = '800 40px -apple-system, sans-serif'; const w = ctx.measureText(text).width + 44; ctx.fillStyle = 'rgba(43,42,40,.9)'; rrect(60, 206, w, 64, 32); ctx.fill();
+  ctx.fillStyle = '#F0EDE5'; ctx.textBaseline = 'middle'; ctx.fillText(text, 82, 239); ctx.restore(); }
 function dancePose(extra = {}) { const k = Math.sin(T * 14); return Object.assign({ armL: -2.5 + k * .5, armR: 2.5 + k * .5, legL: .25 * k, legR: .25 * k, kneeL: .3, kneeR: .3, bob: -Math.abs(Math.sin(T * 14)) * 40, face: 'happy' }, extra); }
 const kneel = { legL: 1.35, kneeL: 2.75, legR: 1.15, kneeR: 2.6, armL: .35, armR: -.35 };
 
 function draw() {
   // ---------- 世界(カメラと色の濃さが効く) ----------
   ctx.save(); camera(); ctx.filter = `saturate(${saturation()})`;
-  if (T < t0('sprint')) {
-    const joyK = T >= t0('joy') ? 1 : 0;
-    sky(joyK ? '#8fd0ff' : '#ffb98a', joyK ? '#eef9ff' : '#ffe8c8'); groundFill(joyK ? '#a9d98f' : '#e9dcc7');
-    if (joyK) sun(820, 520, 130);
-    // 頭上の雨雲(絶望中だけ。喜びで吹き飛ぶ)
-    if (T >= t0('drama') + .3 && T < t0('joy') + .6) { const fly = easeOut(seg(T, t0('joy'), t0('joy') + .6)); const cy = lerp(820, 680, easeBack(seg(T, t0('drama') + .3, t0('drama') + .8)));
-      cloud(lerp(520, 1500, fly), lerp(cy, cy - 400, fly), 1, 1 - fly * .3); if (!joyK) rain(520, cy + 60, 300); }
-    let p;
-    if (inS('hook')) p = { x: 520, y: 1010, s: 1.1, shirt: '#ff7a59', face: T > .35 ? 'shock' : 'happy', armL: -.2, armR: T > .35 ? 2.7 : .2 };
-    else if (T < 2.4) { const k = easeInOut(seg(T, 1.8, 2.4)); p = { x: 520, y: lerp(1010, 1095, k), s: 1.1, shirt: '#ff7a59', face: 'cry', legL: kneel.legL * k, kneeL: kneel.kneeL * k, legR: kneel.legR * k, kneeR: kneel.kneeR * k, armL: .35, armR: -.35 }; }
-    else if (T < t0('notif')) p = Object.assign({ x: 520, y: 1095, s: 1.1, shirt: '#ff7a59', face: 'cry' }, kneel);
-    else if (T < t0('joy')) p = Object.assign({ x: 520, y: 1095, s: 1.1, shirt: '#ff7a59', face: 'wow' }, kneel);
-    else { const up = easeBack(seg(T, t0('joy'), t0('joy') + .35)); p = dancePose({ x: 520, y: lerp(1095, 1000, up), s: 1.1, shirt: '#ff7a59' }); }
-    person(p);
-    // スマホ(足元)
-    if (T >= t0('drama') && T < t0('joy')) { const buzz = T >= t0('wait') && T < t0('notif') + .3; phone(790, 1200, 90, 150, buzz ? 7 : 0, buzz ? 1 : 0); }
-    // 犬が飛び込む
-    if (T >= t0('joy') + .5) { const k = easeOut(seg(T, t0('joy') + .5, t0('joy') + 1.1)); const hop = -Math.abs(Math.sin(T * 12)) * 90; dog(lerp(1300, 820, k), 1170 + hop, T * 14, .9); }
-    // 数字(この話の主役): 23 のまま
-    if (T >= .35) { const tremble = T < t0('joy') && T >= t0('drama') ? 5 : 0; ctx.save(); ctx.translate(Math.sin(T * 70) * tremble, 0);
-      const glow = T >= t0('joy') ? 1 + .08 * Math.sin(T * 16) : 1; ctx.translate(495, 1380); ctx.scale(glow, glow); ctx.translate(-495, -1380); counter(23, 1380); ctx.restore(); }
-  } else if (T < t0('grad')) {
-    const rt = T - t0('sprint'); sky('#8fd0ff', '#eef9ff'); scenery(rt * 1500, '#9fd685', '#b9e3a0'); sun(820, 520, 120, .9);
-    const ph = rt * 18; person(runPose(ph, { x: 380, y: 980, shirt: '#ff7a59' })); dog(760, 1170, ph * 1.2, .9);
-    const day = Math.round(lerp(23, 65, easeInOut(seg(T, t0('sprint') + .1, t0('grad') - .1)))); counter(day, 1380);
-  } else if (T < t0('end')) {
-    sky('#ffd65c', '#fff6d6'); groundFill('#ffeab0'); const g0 = t0('grad');
-    ctx.save(); ctx.translate(540, 760); ctx.rotate(T * .8); for (let i = 0; i < 16; i++) { ctx.rotate(Math.PI / 8); ctx.fillStyle = i % 2 ? 'rgba(255,255,255,.55)' : 'rgba(255,255,255,.25)'; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-60, -900); ctx.lineTo(60, -900); ctx.fill(); } ctx.restore();
-    const jump = -Math.abs(Math.sin((T - g0) * 7)) * 80;
-    person({ x: 540, y: 1010 + jump, s: 1.1, shirt: '#ff7a59', armL: -2.5, armR: 2.5, legL: .15, legR: -.15 });
-    const c = easeBack(seg(T, g0 + .05, g0 + .45)); ctx.save(); ctx.translate(540, 700 + jump * .6); ctx.scale(c, c); ctx.fillStyle = '#2B2A28'; rrect(-230, -150, 460, 300, 30); ctx.fill();
-    ctx.fillStyle = '#F0EDE5'; ctx.font = '800 72px -apple-system, sans-serif'; ctx.textAlign = 'center'; ctx.fillText('66 days.', 0, -18); ctx.fillText('All done.', 0, 72); ctx.restore();
-    dog(830, 1170 - Math.abs(Math.sin(T * 12)) * 90, T * 14, .9); counter(66, 1380);
-  } else {
-    sky('#ffcf9e', '#fff3e0'); groundFill('#ffe2c2'); sun(800, 600, 110, .8);
-    person({ x: 330, y: 960, s: 1, shirt: '#ff7a59', armR: -2.5 + Math.sin(T * 10) * .35, armL: .1 });
-    dog(620, 1160, T * 3, .85);
-  }
+  const joy = T >= t0('joy');
+  sky(joy ? '#8fd0ff' : '#ffb98a', joy ? '#eef9ff' : '#ffe8c8'); groundFill(joy ? '#a9d98f' : '#e9dcc7');
+  if (joy) sun(820, 560, 120);
+  // 頭上の雨雲(絶望中だけ。喜びで吹き飛ぶ)
+  if (T >= t0('drama') + .2 && T < t0('joy') + .6) { const fly = easeOut(seg(T, t0('joy'), t0('joy') + .6)); const cy = lerp(820, 680, easeBack(seg(T, t0('drama') + .2, t0('drama') + .6)));
+    cloud(lerp(520, 1500, fly), lerp(cy, cy - 400, fly), 1); if (!joy) rain(520, cy + 60, 300); }
+  let p;
+  if (inS('hook')) p = { x: 520, y: 955, s: 1.1, shirt: '#ff7a59', face: 'shock', armL: -.2, armR: 2.7 };
+  else if (T < t0('drama') + .5) { const k = easeInOut(seg(T, t0('drama'), t0('drama') + .5)); p = { x: 520, y: lerp(955, 1095, k), s: 1.1, shirt: '#ff7a59', face: 'cry', legL: kneel.legL * k, kneeL: kneel.kneeL * k, legR: kneel.legR * k, kneeR: kneel.kneeR * k, armL: .35, armR: -.35 }; }
+  else if (T < t0('notif')) p = Object.assign({ x: 520, y: 1095, s: 1.1, shirt: '#ff7a59', face: 'cry' }, kneel);
+  else if (!joy) p = Object.assign({ x: 520, y: 1095, s: 1.1, shirt: '#ff7a59', face: 'wow' }, kneel);
+  else { const up = easeBack(seg(T, t0('joy'), t0('joy') + .35)); p = dancePose({ x: 520, y: lerp(1095, 950, up), s: 1.1, shirt: '#ff7a59' }); }
+  if (inS('end')) p.x = lerp(520, 360, easeInOut(seg(T, t0('end'), t0('end') + .4)));
+  person(p);
+  // スマホ(足元)
+  if (T >= t0('drama') && !joy) { const buzz = T >= t0('wait') && T < t0('notif') + .3; phone(790, 1200, 90, 150, buzz ? 7 : 0, buzz ? 1 : 0); }
+  // 犬が飛び込む
+  if (T >= t0('joy') + .4) { const k = easeOut(seg(T, t0('joy') + .4, t0('joy') + 1.0)); dog(lerp(1300, 800, k), 1170 - Math.abs(Math.sin(T * 12)) * 90, T * 14, .9); }
+  // 数字: 23 のまま
+  if (!inS('end')) { const tremble = T >= t0('drama') && !joy ? 5 : 0; const glow = joy ? 1 + .08 * Math.sin(T * 16) : 1;
+    ctx.save(); ctx.translate(Math.sin(T * 70) * tremble, 0); ctx.translate(495, COUNTER_Y); ctx.scale(glow, glow); ctx.translate(-495, -COUNTER_Y); counter(23, COUNTER_Y); ctx.restore(); }
   ctx.restore(); ctx.filter = 'none';
 
-  // ---------- 前景(色の濃さに関係なく、はっきり) ----------
-  if (T >= t0('joy') && T < t0('sprint') + .6) { confetti(t0('joy'), 90, 3, 540, 1100); confetti(t0('joy') + .15, 60, 9, 200, 1300, .8); confetti(t0('joy') + .15, 60, 13, 880, 1300, .8); }
-  if (inS('sprint')) speedLines();
-  if (T >= t0('grad') && T < t0('end')) { confetti(t0('grad'), 110, 17, 540, 1250); }
-  // 白い光(色が戻る瞬間)
+  // ---------- 前景 ----------
+  if (joy) { confetti(t0('joy'), 90, 3, 540, 1100); confetti(t0('joy') + .15, 60, 9, 200, 1300, .8); confetti(t0('joy') + .15, 60, 13, 880, 1300, .8); }
   if (T >= t0('joy') && T < t0('joy') + .25) { ctx.fillStyle = `rgba(255,255,255,${.85 * (1 - seg(T, t0('joy'), t0('joy') + .25))})`; ctx.fillRect(0, 0, W, H); }
 
   // ---------- 文字 ----------
-  if (inS('hook')) { const a = pop(.05), b = pop(.35); caption('POV: you skipped', 300, 84, a.a, a.sc); bigText('ONE day', 440, 150, b.a, b.sc, T < .9 ? 6 : 0, '#ffd56b'); }
+  tag('ep. 2');
+  if (inS('hook')) { caption('POV: you skipped', 330, 84); bigText('ONE day', 470, 150, 1, 1, T < .7 ? 6 : 0, '#ffd56b'); caption('(23 days in)', 600, 62); }
   if (inS('drama')) {
-    if (T < 3.0) { const a = pop(1.95); caption('it’s over.', 300, 96, a.a, a.sc); }
-    else if (T < 3.6) { const a = pop(3.0); caption('back to day 1…', 300, 96, a.a, a.sc); }
-    else { const k = seg(T, 3.6, 4.6); bigText('NOOOOO' + 'O'.repeat(Math.floor(k * 4)), 330, 140, 1, lerp(.9, 1.15, k), 9); }
+    if (T < 2.4) { const a = pop(t0('drama') + .05); caption('it’s over.', 330, 100, a.a, a.sc); }
+    else if (T < 3.0) { const a = pop(2.4); caption('back to day 1…', 330, 96, a.a, a.sc); }
+    else { const k = seg(T, 3.0, t0('wait')); bigText('NOOOO' + 'O'.repeat(Math.floor(k * 4)), 360, 140, 1, lerp(.9, 1.15, k), 9); }
   }
-  if (inS('wait')) { const a = pop(t0('wait') + .05); bigText('wait.', 330, 130, a.a, a.sc); }
-  if (inS('notif')) { const k = easeBack(seg(T, t0('notif'), t0('notif') + .35));
-    notifText(390, 'KATSU', 'Yesterday was a rest day. You have', '1 left in the last 7 days.', clamp(k * 3), lerp(.6, 1, k));
-    if (T > t0('notif') + 1.2) { const a = pop(t0('notif') + 1.2); caption('…huh?', 300, 100, a.a, a.sc); } }
-  if (inS('joy')) { if (T < t0('joy') + 1.4) { const a = pop(t0('joy') + .1); bigText('STILL 23?!', 330, 140, a.a, a.sc, 4, '#ffd56b'); }
-    else { const a = pop(t0('joy') + 1.4); bigText('LET’S GOOO', 330, 140, a.a, a.sc, 5, '#ffd56b'); } }
-  if (inS('sprint')) caption('day ' + Math.round(lerp(23, 65, easeInOut(seg(T, t0('sprint') + .1, t0('grad') - .1)))), 300, 100);
-  if (inS('grad')) { const a = pop(t0('grad')); caption('day 66', 300, 104, a.a, a.sc); }
-  if (inS('end')) { const a = pop(t0('end') + .05), b = pop(t0('end') + .55), c = pop(t0('end') + 1.1);
-    caption('rest days are built in.', 300, 80, a.a, a.sc); caption('2 in any 7 days', 420, 64, b.a, b.sc); pill('search “KATSU habit”', 1390, c.a, c.sc); }
+  if (inS('wait')) { const a = pop(t0('wait') + .03); bigText('wait.', 360, 140, a.a, a.sc); }
+  if (inS('notif')) { const a = pop(t0('notif')), b = pop(t0('notif') + .35), k = easeBack(seg(T, t0('notif') + .5, t0('notif') + .8));
+    bigText('rest day.', 330, 150, a.a, a.sc, 0, '#ffd56b'); bigText('1 left.', 480, 130, b.a, b.sc);
+    notifText(590, 'KATSU', 'Yesterday was a rest day. You have', '1 left in the last 7 days.', clamp(k * 3), lerp(.6, 1, k)); }
+  if (inS('joy')) { if (T < t0('joy') + 1.2) { const a = pop(t0('joy') + .1); bigText('STILL 23?!', 360, 150, a.a, a.sc, 4, '#ffd56b'); }
+    else { const a = pop(t0('joy') + 1.2); bigText('LET’S GOOO', 360, 150, a.a, a.sc, 5, '#ffd56b'); } }
+  if (inS('end')) { const a = pop(t0('end') + .05), b = pop(t0('end') + .45), c = pop(t0('end') + .9);
+    caption('rest days are built in.', 330, 80, a.a, a.sc); caption('2 in any 7 days', 450, 64, b.a, b.sc); pill('search “KATSU habit”', 1390, c.a, c.sc); }
 }
 const go = () => { draw(); document.title = 'done'; };
 if (icon.complete) go(); else { icon.onload = go; icon.onerror = go; }
