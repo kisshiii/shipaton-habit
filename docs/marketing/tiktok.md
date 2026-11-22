@@ -177,6 +177,8 @@ bash tools/video/anim/render.sh tools/video/anim/happy.html 18 ~/katsu-video/out
 
 **わかったこと(2026-11-19):** Web から出した写真の投稿は、どれも再生 0 のままだった。11/19 に動画で出した投稿(R2「written on a good day」)は、数時間で 5 回見られた。**しばらくは動画で出す**(写真の2枚も、`cut.py` で動画にして出す)。同じ日に明るいアニメーション(happy、曲「Happy and Joyful」Audiopanda、無制限の曲から)を出した
 
+**Instagram は見送り(2026-11-22、本人判断):** 今は TikTok に絞る。同じ動画をそのまま流すのは使い回しに見える(本人)。やるときは、アニメのコマを選んで**めくって読む漫画のカルーセル**にして、プロフィールに LP のリンクを載せる(Instagram はフォロワー0でもリンクを載せられる)
+
 ### ストック(2026-11-15 に作成。`~/katsu-video/out/投稿メモ.md`)
 
 | # | 1枚目の文 | 2枚目 |
