@@ -48,7 +48,7 @@ async function api(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
   const text = await r.text();
-  if (!r.ok) throw new Error(`${method} ${path} -> ${r.status} ${text.slice(0, 300)}`);
+  if (!r.ok) throw new Error(`${method} ${path} -> ${r.status} ${text.slice(0, 1200)}`);
   return text ? JSON.parse(text) : {};
 }
 async function patch(type, id, attributes, label, before) {
@@ -91,6 +91,11 @@ async function patch(type, id, attributes, label, before) {
         const want = SUB_DESCRIPTION[loc.attributes.locale];
         if (!want) { console.log(`  ${sub.attributes.productId} ${loc.attributes.locale}: 文面が無いので触らない`); continue; }
         if ([...want].length > 45) throw new Error(`${loc.attributes.locale}: 説明が45文字を超える`);
+        // ⚠ 公開中(ACTIVE)の説明は API では変えられない(409)。ASC の画面で変える(2026-11-22 に確認)
+        if (loc.attributes.state === 'ACTIVE' && loc.attributes.description !== want) {
+          console.log(`  ${sub.attributes.productId} ${loc.attributes.locale}: 公開中なので API では変えられない。ASC の画面で「${want}」に変える`);
+          continue;
+        }
         await patch('subscriptionLocalizations', loc.id, { description: want }, `${sub.attributes.productId} ${loc.attributes.locale}`, loc.attributes);
       }
     }

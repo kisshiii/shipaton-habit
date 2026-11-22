@@ -418,7 +418,7 @@ REST API なら:
 
 ## 1.0.4 の「このバージョンの新機能」 **【暫定】2026-11-15**
 
-**⚠ 下書き(2026-11-16 更新)。**特商法のリンクと、レビューで見つけた不具合の修正。利用者に関係のあるものだけ書く。
+**⚠ 2026-11-22 に ASC へ入れた。**特商法のリンクと、レビューで見つけた不具合の修正。利用者に関係のあるものだけ書く。
 
 ### 英語
 
@@ -427,6 +427,8 @@ REST API なら:
 • Back on the free plan, your first three sets of words now reach every routine, including ones you had assigned to a single routine.
 • Fixed a widget check-off that could go missing after unchecking a routine in the app.
 • Fixed Day 1 sometimes landing on the wrong day during setup.
+• Tap a locked set of words to see why it isn’t being sent and how to get it back.
+• Fixed the icon in the menu that appears when you press and hold the app icon.
 • Other small fixes.
 ```
 
@@ -437,6 +439,8 @@ REST API なら:
 ・無料のプランに戻ったとき、ルーティンに割り当てた言葉も、先頭の3つなら全ルーティンに届くようにしました。
 ・アプリでチェックを外したあと、ウィジェットで付け直したチェックが記録されないことがあったのを直しました。
 ・最初の設定で選んだ1日目が、ずれることがあったのを直しました。
+・届かなくなった言葉を押すと、理由と、また届くようにする方法が出るようにしました。
+・アプリのアイコンを長押ししたときのメニューの絵が「?」になっていたのを直しました。
 ・課金の画面に「特定商取引法に基づく表記」へのリンクを追加しました。
 ・そのほか細かな修正。
 ```
