@@ -1,0 +1,76 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/* 絵柄の試し その3: 切り絵(色紙を切って貼る)。?f=1 びっくり / 2 泣く / 3 喜ぶ
+ * ギザギザの切り口・紙の影・タイプライターの文字を切り貼りしたラベル */
+const W = 1080, H = 1920, F = +(new URLSearchParams(location.search).get('f') || 1);
+const ctx = document.getElementById('c').getContext('2d'); const icon = new Image(); icon.src = 'icon.png';
+const TYPE = '"American Typewriter", "Courier New", monospace';
+function rand(seed) { let s = seed % 2147483646 + 1; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+let sn = 1; const R = () => rand((sn++) * 7919);
+function ell(cx, cy, rx, ry, n = 40) { return Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2; return [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]; }); }
+function limbPts(a, b, wa, wb) { const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), nx = -Math.sin(ang), ny = Math.cos(ang), p = [];
+  for (let i = 0; i <= 8; i++) { const t = i / 8; p.push([a[0] + (b[0] - a[0]) * t + nx * (wa + (wb - wa) * t) / 2, a[1] + (b[1] - a[1]) * t + ny * (wa + (wb - wa) * t) / 2]); }
+  for (let i = 0; i <= 8; i++) { const aa = ang + Math.PI / 2 - i / 8 * Math.PI; p.push([b[0] + Math.cos(aa) * wb / 2, b[1] + Math.sin(aa) * wb / 2]); }
+  for (let i = 8; i >= 0; i--) { const t = i / 8; p.push([a[0] + (b[0] - a[0]) * t - nx * (wa + (wb - wa) * t) / 2, a[1] + (b[1] - a[1]) * t - ny * (wa + (wb - wa) * t) / 2]); }
+  for (let i = 0; i <= 8; i++) { const aa = ang - Math.PI / 2 - i / 8 * Math.PI; p.push([a[0] + Math.cos(aa) * wa / 2, a[1] + Math.sin(aa) * wa / 2]); } return p; }
+/* 切り口: 点を細かく足してギザギザに */
+function cut(pts, amp = 2.4) { const r = R(), out = []; for (let i = 0; i < pts.length; i++) { const a = pts[i], b = pts[(i + 1) % pts.length];
+  for (let k = 0; k < 3; k++) { const t = k / 3; out.push([a[0] + (b[0] - a[0]) * t + (r() - .5) * 2 * amp, a[1] + (b[1] - a[1]) * t + (r() - .5) * 2 * amp]); } } return out; }
+function paper(pts, col, lift = 1) { const p = cut(pts); ctx.save(); ctx.shadowColor = 'rgba(30,25,20,.32)'; ctx.shadowBlur = 8 * lift; ctx.shadowOffsetX = 4 * lift; ctx.shadowOffsetY = 6 * lift;
+  ctx.fillStyle = col; ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.fill(); ctx.restore();
+  // 紙の繊維
+  ctx.save(); ctx.beginPath(); p.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.closePath(); ctx.clip(); const r = R(); ctx.strokeStyle = 'rgba(255,255,255,.12)'; ctx.lineWidth = 1;
+  const xs = p.map((q) => q[0]), ys = p.map((q) => q[1]); for (let i = 0; i < 30; i++) { const x = Math.min(...xs) + r() * (Math.max(...xs) - Math.min(...xs)), y = Math.min(...ys) + r() * (Math.max(...ys) - Math.min(...ys)); ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + r() * 18, y + r() * 6); ctx.stroke(); } ctx.restore(); }
+function label(str, x, y, size, rot, bg = '#FBF8F1', col = '#2B2A28') { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.font = `bold ${size}px ${TYPE}`; const w = ctx.measureText(str).width;
+  paper([[-18, -size * .95], [w + 18, -size * .95], [w + 18, size * .35], [-18, size * .35]], bg, .8); ctx.fillStyle = col; ctx.textBaseline = 'alphabetic'; ctx.fillText(str, 0, 0); ctx.restore(); }
+
+const SKIN = '#EDC3A0', HOOD = '#E2703F', PANTS = '#34404F', SHOE = '#F6F2EA', HAIR = '#2B2A28';
+function person(x, y, s, P, face) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  const legs = () => { [[[-28, 0], P.kneeL, P.footL, -1], [[28, 0], P.kneeR, P.footR, 1]].forEach(([h, k, f, d]) => { paper(limbPts(h, k, 58, 48), PANTS); paper(limbPts(k, f, 48, 40), PANTS); paper(ell(f[0] + 14 * d, f[1] + 10, 42, 20, 24), SHOE); }); };
+  if (!P.legsFront) legs();
+  paper([[-72, -224], [0, -240], [72, -224], [92, -140], [76, 10], [-76, 10], [-92, -140]], HOOD);
+  paper([[-46, -70], [46, -70], [40, -30], [-40, -30]], '#C95E31', .5);
+  if (P.legsFront) legs();
+  [[[-62, -200], P.elbowL, P.handL], [[62, -200], P.elbowR, P.handR]].forEach(([sh, el, hd]) => { paper(limbPts(sh, el, 46, 38), HOOD); paper(limbPts(el, hd, 38, 30), HOOD); paper(ell(hd[0], hd[1], 22, 24, 20), SKIN); });
+  ctx.save(); ctx.translate(0, -330); ctx.rotate(P.tilt || 0);
+  paper(ell(0, 0, 78, 84), SKIN); paper([[-84, 0], [-80, -60], [-40, -96], [20, -100], [70, -80], [86, -20], [60, -48], [10, -52], [-30, -40], [-60, -30]], HAIR);
+  const dot = (cx, cy, rx, ry, c = '#2B2A28') => paper(ell(cx, cy, rx, ry, 16), c, .3);
+  dot(-44, 30, 14, 9, '#E89A86'); dot(44, 30, 14, 9, '#E89A86');
+  if (face === 'shock') { dot(-26, 2, 15, 19, '#FBF8F1'); dot(26, 2, 15, 19, '#FBF8F1'); dot(-26, 6, 7, 8); dot(26, 6, 7, 8); dot(0, 48, 13, 17); }
+  else if (face === 'sad') { paper([[-40, 8], [-14, 8], [-16, 14], [-38, 14]], '#2B2A28', .3); paper([[14, 8], [40, 8], [38, 14], [16, 14]], '#2B2A28', .3); paper([[-14, 52], [14, 52], [10, 46], [-10, 46]], '#2B2A28', .3); dot(-30, 34, 6, 10, '#7FA9D6'); }
+  else { paper([[-40, 8], [-27, -6], [-14, 8], [-20, 10], [-27, 2], [-34, 10]], '#2B2A28', .3); paper([[14, 8], [27, -6], [40, 8], [34, 10], [27, 2], [20, 10]], '#2B2A28', .3); paper([[-26, 34], [26, 34], [14, 62], [-14, 62]], '#2B2A28', .3); }
+  ctx.restore(); ctx.restore(); }
+const POSES = {
+  shock: { kneeL: [-34, 150], footL: [-38, 296], kneeR: [34, 150], footR: [38, 296], elbowL: [-112, -150], handL: [-68, -300], elbowR: [112, -150], handR: [68, -300] },
+  sit: { tilt: .12, legsFront: true, kneeL: [-46, -150], footL: [-56, 40], kneeR: [46, -150], footR: [56, 40], elbowL: [-104, -120], handL: [-30, -150], elbowR: [104, -120], handR: [30, -150] },
+  joy: { kneeL: [-74, 120], footL: [-40, 250], kneeR: [64, 96], footR: [140, 190], elbowL: [-130, -300], handL: [-150, -420], elbowR: [130, -300], handR: [150, -420] } };
+function dog(x, y, s) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); const T = '#C98E58';
+  [[-60, -14], [-30, 14], [40, -14], [68, 14]].forEach(([lx, dx]) => paper(limbPts([lx, 10], [lx + dx, 100], 28, 24), T)); paper(ell(0, 0, 100, 56), T); paper(limbPts([-90, -10], [-140, -80], 24, 14), T);
+  paper(ell(96, -50, 54, 50), T); paper(ell(70, -72, 18, 38, 18), '#8E5F35'); paper(ell(134, -34, 26, 20, 18), '#FBF8F1'); paper(ell(108, -62, 7, 7, 12), '#2B2A28', .3); paper(ell(152, -42, 9, 8, 12), '#2B2A28', .3); ctx.restore(); }
+function counter(n, y) { label(`DAY ${n} / 66`, 150, y, 64, -.02, '#2B2A28', '#FBF8F1'); }
+function grain() { const img = ctx.getImageData(0, 0, W, H), d = img.data, r = rand(5 + F); for (let i = 0; i < d.length; i += 4) { const n = (r() - .5) * 18; d[i] += n; d[i + 1] += n; d[i + 2] += n; } ctx.putImageData(img, 0, 0); }
+
+function draw() {
+  if (F === 1) { ctx.fillStyle = '#E9B84A'; ctx.fillRect(0, 0, W, H); paper([[-20, 1250], [1100, 1238], [1100, 1940], [-20, 1940]], '#D9A33A', .6);
+    label('POV:', 150, 330, 52, -.04); label('you skipped', 150, 440, 92, .02); label('ONE day.', 150, 560, 104, -.03, '#2B2A28', '#FBF8F1'); label('(23 days in)', 160, 660, 44, .03);
+    person(560, 1010, .9, POSES.shock, 'shock'); counter(23, 1400); }
+  if (F === 2) { ctx.fillStyle = '#2E3C52'; ctx.fillRect(0, 0, W, H); paper([[-20, 1262], [1100, 1250], [1100, 1940], [-20, 1940]], '#25303F', .6);
+    const r = rand(9); for (let i = 0; i < 40; i++) { const x = r() * W, y = 200 + r() * 1000; paper([[x, y], [x + 6, y], [x - 4, y + 46], [x - 10, y + 46]], '#9DB6D6', .4); }
+    [[430, 790, 86, 66], [650, 790, 86, 66], [540, 740, 112, 92], [540, 810, 150, 60]].forEach(([a, b, c, d]) => paper(ell(a, b, c, d), '#B9C1CB', .8));
+    label('it’s over.', 150, 420, 104, -.02); label('back to day 1…', 160, 530, 48, .03);
+    person(540, 1190, 1, POSES.sit, 'sad'); counter(23, 1400); }
+  if (F === 3) { ctx.fillStyle = '#7FB7A8'; ctx.fillRect(0, 0, W, H); paper([[-20, 1300], [1100, 1290], [1100, 1940], [-20, 1940]], '#6AA493', .6);
+    paper(ell(840, 300, 120, 120, 36), '#F2C14E'); const r = rand(3), cols = ['#E2703F', '#F2C14E', '#FBF8F1', '#2E3C52'];
+    for (let i = 0; i < 26; i++) { const x = 100 + r() * 860, y = 720 + r() * 520, a = r() * 6; paper([[-14, -6], [14, -6], [14, 6], [-14, 6]].map(([px, py]) => [x + px * Math.cos(a) - py * Math.sin(a), y + px * Math.sin(a) + py * Math.cos(a)]), cols[i % 4], .4); }
+    label('still', 150, 380, 60, -.03); label('23.', 330, 400, 140, .02, '#2B2A28', '#FBF8F1');
+    ctx.save(); ctx.translate(100, 500); ctx.rotate(-.015); paper([[0, 0], [790, 0], [790, 190], [0, 190]], '#FBF8F1', 1.2); ctx.fillStyle = '#2B2A28'; ctx.beginPath(); ctx.roundRect(28, 44, 104, 104, 22); ctx.fill();
+    if (icon.complete && icon.naturalWidth) ctx.drawImage(icon, 36, 52, 88, 88); ctx.font = `bold 34px ${TYPE}`; ctx.fillStyle = '#2B2A28'; ctx.fillText('KATSU', 160, 78);
+    ctx.font = `30px ${TYPE}`; ctx.fillText('Yesterday was a rest day.', 160, 124); ctx.fillText('You have 1 left in the last 7 days.', 160, 164); ctx.restore();
+    person(450, 1070, .85, POSES.joy, 'joy'); dog(790, 1190, .75); counter(23, 1430); }
+  grain(); }
+const go = () => { draw(); document.title = 'done'; }; if (icon.complete) go(); else { icon.onload = go; icon.onerror = go; }
+</script></body></html>
