@@ -2,7 +2,7 @@
   "expo": {
     "name": "KATSU",
     "slug": "app",
-    "version": "1.0.4",
+    "version": "1.0.5",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "app",
@@ -34,6 +34,7 @@
     },
     "plugins": [
       "expo-router",
+      "./plugins/with-widget-cancels-notifications",
       [
         "expo-splash-screen",
         {
