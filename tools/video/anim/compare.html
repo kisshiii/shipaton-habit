@@ -1,0 +1,106 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script src="parts.js"></script>
+<script>
+/*
+ * KATSU ep. 3「most habit apps vs KATSU」。?t=秒 の1コマを描く。11.5秒。
+ * 同じ「1日休んだ」で、ほかのアプリは 23 → 0、KATSU は「rest day. 1 left.」で 23 のまま。
+ * ほかのアプリの「streak」という語は使わない(数字が0に落ちる絵と火の印だけで見せる)。アプリ名も出さない。
+ * 通知の文はアプリの英語の文面そのまま(app/src/i18n/en.ts の yesterdayRest)。
+ * TikTok で隠れる範囲: 上200 / 下450(y>1470)/ 右150(x>930, y 700〜1600)。
+ */
+const S = { hook: [0, 1.4], apps: [1.4, 4.6], swap: [4.6, 5.0], katsu: [5.0, 8.6], end: [8.6, 11.5] };
+const inS = k => T >= S[k][0] && T < S[k][1];
+const t0 = k => S[k][0];
+const NUM_Y = 1330;
+const CELEBRATE = 6.4;                  // KATSU の場面で跳び上がる瞬間(それまでは、ひざをついたまま通知を見上げる)
+
+function saturation() {
+  if (inS('apps')) return lerp(1, 0, easeOut(seg(T, t0('apps') + .9, t0('apps') + 1.4)));
+  if (inS('swap')) return 0;
+  if (T >= t0('katsu')) return easeOut(seg(T, t0('katsu'), t0('katsu') + .25));
+  return 1;
+}
+function camera() {
+  let z = 1, dx = 0, dy = 0;
+  const punch = (at, amt, dur = .25) => { const k = seg(T, at, at + dur); return k > 0 && k < 1 ? amt * (1 - easeOut(k)) : 0; };
+  const shake = (a, b, amt) => { if (T >= a && T < b) { const f = 1 - seg(T, a, b); dx += Math.sin(T * 97) * amt * f; dy += Math.cos(T * 83) * amt * f; } };
+  shake(0, .6, 22); shake(t0('apps') + .9, t0('apps') + 1.5, 24); shake(CELEBRATE, CELEBRATE + .5, 24);
+  z += punch(t0('apps') + .9, .18) + punch(t0('katsu'), .15) + punch(CELEBRATE, .3);
+  ctx.translate(540 + dx, 960 + dy); ctx.scale(z, z); ctx.translate(-540, -960);
+}
+function sky(top, bottom) { const g = ctx.createLinearGradient(0, 0, 0, H); g.addColorStop(0, top); g.addColorStop(1, bottom); ctx.fillStyle = g; ctx.fillRect(-200, -200, W + 400, H + 400); }
+function groundFill(c) { ctx.fillStyle = c; ctx.fillRect(-200, 1250, W + 400, H); }
+function cloud(x, y, s) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = '#6d6a66';
+  [[-90, 10, 70], [-20, -30, 90], [70, 0, 75], [0, 30, 80]].forEach(([cx, cy, r]) => { ctx.beginPath(); ctx.arc(cx, cy, r, 0, 7); ctx.fill(); }); ctx.restore(); }
+function rain(x, y, w) { const r = rand(21); ctx.strokeStyle = '#9fc3e8'; ctx.lineWidth = 6; ctx.lineCap = 'round';
+  for (let i = 0; i < 26; i++) { const rx = x + (r() - .5) * w, ph = (T * 1.6 + r()) % 1, ry = y + ph * 520; ctx.beginPath(); ctx.moveTo(rx, ry); ctx.lineTo(rx - 8, ry + 40); ctx.stroke(); } }
+function bigText(text, y, size, a = 1, sc = 1, wob = 0, fill = '#fff') { ctx.save(); ctx.globalAlpha = a; ctx.translate(495 + Math.sin(T * 60) * wob, y + Math.cos(T * 53) * wob); ctx.scale(sc, sc);
+  ctx.font = `900 ${size}px -apple-system, "SF Pro Display", "Helvetica Neue", sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  ctx.lineWidth = size * .16; ctx.strokeStyle = 'rgba(43,42,40,.92)'; ctx.strokeText(text, 0, 0); ctx.fillStyle = fill; ctx.fillText(text, 0, 0); ctx.restore(); }
+function pill(text, y, a = 1, sc = 1) { ctx.save(); ctx.globalAlpha = a; ctx.translate(495, y); ctx.scale(sc, sc); ctx.font = '800 56px -apple-system, sans-serif';
+  const w = ctx.measureText(text).width + 100; ctx.fillStyle = '#2B2A28'; rrect(-w / 2, -62, w, 124, 62); ctx.fill(); ctx.fillStyle = '#F0EDE5'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, 2); ctx.restore(); }
+function tag(text) { ctx.save(); ctx.font = '800 40px -apple-system, sans-serif'; const w = ctx.measureText(text).width + 44; ctx.fillStyle = 'rgba(43,42,40,.9)'; rrect(60, 206, w, 64, 32); ctx.fill();
+  ctx.fillStyle = '#F0EDE5'; ctx.textBaseline = 'middle'; ctx.fillText(text, 82, 239); ctx.restore(); }
+/* 場面の名札(上の真ん中) */
+function label(text, a = 1, sc = 1, dark = false) { ctx.save(); ctx.globalAlpha = a; ctx.translate(495, 330); ctx.scale(sc, sc); ctx.font = '900 76px -apple-system, sans-serif';
+  const w = ctx.measureText(text).width + 90; ctx.fillStyle = dark ? '#2B2A28' : '#F0EDE5'; rrect(-w / 2, -58, w, 116, 58); ctx.fill();
+  ctx.fillStyle = dark ? '#F0EDE5' : '#2B2A28'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(text, 0, 4); ctx.restore(); }
+/* ほかのアプリの数字: 火の印つきの大きな数(23 → 0 に転げ落ちる) */
+function flameNum(n, flame, y) { ctx.save(); ctx.font = '900 190px -apple-system, "SF Pro Display", sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.lineJoin = 'round';
+  const s = String(n), w = ctx.measureText(s).width; const fx = 495 - w / 2 - 70;
+  if (flame > 0.02) { ctx.save(); ctx.translate(fx, y + 10); ctx.scale(flame, flame); const g = ctx.createLinearGradient(0, -80, 0, 70); g.addColorStop(0, '#ffd56b'); g.addColorStop(1, '#ff9a3c'); ctx.fillStyle = g;
+    ctx.beginPath(); ctx.moveTo(0, -90); ctx.bezierCurveTo(50, -30, 60, 20, 40, 50); ctx.quadraticCurveTo(0, 85, -40, 50); ctx.bezierCurveTo(-60, 20, -30, -20, 0, -90); ctx.fill(); ctx.restore(); }
+  else { ctx.strokeStyle = 'rgba(120,120,120,.8)'; ctx.lineWidth = 8; ctx.lineCap = 'round'; ctx.beginPath(); for (let i = 0; i < 3; i++) { const yy = y - 20 - i * 40 - ((T * 60) % 40); ctx.moveTo(fx + Math.sin(yy / 20) * 12, yy); ctx.lineTo(fx + Math.sin((yy - 30) / 20) * 12, yy - 30); } ctx.stroke(); }
+  ctx.lineWidth = 22; ctx.strokeStyle = '#fff'; ctx.strokeText(s, 495 + 40, y); ctx.fillStyle = '#2B2A28'; ctx.fillText(s, 495 + 40, y); ctx.restore(); }
+function dancePose(extra = {}) { const k = Math.sin(T * 14); return Object.assign({ armL: -2.5 + k * .5, armR: 2.5 + k * .5, legL: .25 * k, legR: .25 * k, kneeL: .3, kneeR: .3, bob: -Math.abs(Math.sin(T * 14)) * 40, face: 'happy' }, extra); }
+const kneel = { legL: 1.35, kneeL: 2.75, legR: 1.15, kneeR: 2.6, armL: .35, armR: -.35 };
+
+function draw() {
+  ctx.save(); camera(); ctx.filter = `saturate(${saturation()})`;
+  const happy = T >= t0('katsu');
+  sky(happy ? '#8fd0ff' : '#ffb98a', happy ? '#eef9ff' : '#ffe8c8'); groundFill(happy ? '#a9d98f' : '#e9dcc7');
+  if (happy) sun(820, 600, 120);
+  const fall = t0('apps') + .9;           // ほかのアプリで数字が落ちる瞬間
+  if (T >= fall + .2 && T < t0('swap')) { const cy = lerp(820, 690, easeBack(seg(T, fall + .2, fall + .6))); cloud(520, cy, 1); rain(520, cy + 60, 300); }
+  let p;
+  if (inS('hook')) p = { x: 520, y: 955, s: 1.1, shirt: '#ff7a59', face: 'shock', armL: -.2, armR: 2.7 };
+  else if (inS('apps') && T < fall) p = { x: 520, y: 955, s: 1.1, shirt: '#ff7a59', face: 'meh' };
+  else if (!happy) { const k = easeInOut(seg(T, fall, fall + .5)); p = { x: 520, y: lerp(955, 1095, k), s: 1.1, shirt: '#ff7a59', face: 'cry', legL: kneel.legL * k, kneeL: kneel.kneeL * k, legR: kneel.legR * k, kneeR: kneel.kneeR * k, armL: .35, armR: -.35 }; }
+  else if (T < CELEBRATE) p = Object.assign({ x: 520, y: 1095, s: 1.1, shirt: '#ff7a59', face: 'wow' }, kneel);
+  else { const up = easeBack(seg(T, CELEBRATE, CELEBRATE + .35)); p = dancePose({ x: 520, y: lerp(1095, 950, up), s: 1.1, shirt: '#ff7a59' }); }
+  if (inS('end')) p.x = lerp(520, 360, easeInOut(seg(T, t0('end'), t0('end') + .4)));
+  person(p);
+  if (T >= CELEBRATE + .3) { const k = easeOut(seg(T, CELEBRATE + .3, CELEBRATE + .9)); dog(lerp(1300, 800, k), 1170 - Math.abs(Math.sin(T * 12)) * 90, T * 14, .9); }
+  // 数字
+  if (inS('hook')) counter(23, NUM_Y);
+  else if (!happy) { const k = seg(T, fall, fall + .45); const n = Math.round(lerp(23, 0, easeOut(k))); flameNum(n, 1 - k, NUM_Y + 10 * Math.sin(k * 20) * (1 - k)); }
+  else if (!inS('end')) { const glow = 1 + .08 * Math.sin(T * 16); ctx.save(); ctx.translate(495, NUM_Y); ctx.scale(glow, glow); ctx.translate(-495, -NUM_Y); counter(23, NUM_Y); ctx.restore(); }
+  ctx.restore(); ctx.filter = 'none';
+
+  if (T >= CELEBRATE) { confetti(CELEBRATE, 90, 3, 540, 1100); confetti(CELEBRATE + .15, 60, 9, 200, 1300, .8); confetti(CELEBRATE + .15, 60, 13, 880, 1300, .8); }
+  // 切り替え: 黒い幕が横切る
+  if (inS('swap')) { const k = seg(T, t0('swap'), S.swap[1]); ctx.fillStyle = '#2B2A28'; ctx.fillRect(lerp(-1100, 1100, easeInOut(k)), 0, 1100, H);
+    if (k > .25 && k < .85) bigText('KATSU:', 900, 170, 1, 1, 0, '#ffd56b'); }
+  if (T >= t0('katsu') && T < t0('katsu') + .25) { ctx.fillStyle = `rgba(255,255,255,${.85 * (1 - seg(T, t0('katsu'), t0('katsu') + .25))})`; ctx.fillRect(0, 0, W, H); }
+
+  // 文字
+  tag('ep. 3');
+  if (inS('hook')) { bigText('skip ONE day:', 360, 130, 1, 1, T < .6 ? 6 : 0, '#ffd56b'); caption('most habit apps vs KATSU', 500, 66); caption('(23 days in)', 600, 56); }
+  if (inS('apps')) { const a = pop(t0('apps')); label('most habit apps:', a.a, a.sc);
+    if (T >= fall + .3) { const b = pop(fall + .3); bigText('back to 0.', 500, 120, b.a, b.sc, 0); } }
+  if (inS('katsu')) { label('KATSU:', 1, 1, true);
+    if (T < CELEBRATE) { const a = pop(t0('katsu') + .1), b = pop(t0('katsu') + .4), k = easeBack(seg(T, t0('katsu') + .5, t0('katsu') + .8));
+      bigText('rest day.', 470, 130, a.a, a.sc, 0, '#ffd56b'); bigText('1 left.', 590, 110, b.a, b.sc);
+      notifText(650, 'KATSU', 'Yesterday was a rest day. You have', '1 left in the last 7 days.', clamp(k * 3), lerp(.6, 1, k)); }
+    else { const a = pop(CELEBRATE); bigText('still 23.', 500, 150, a.a, a.sc, 4, '#ffd56b'); } }
+  if (inS('end')) { const a = pop(t0('end') + .05), b = pop(t0('end') + .45), c = pop(t0('end') + .9);
+    caption('rest days are built in.', 330, 80, a.a, a.sc); caption('2 in any 7 days', 450, 64, b.a, b.sc); pill('search “KATSU habit”', 1390, c.a, c.sc); }
+}
+const go = () => { draw(); document.title = 'done'; };
+if (icon.complete) go(); else { icon.onload = go; icon.onerror = go; }
+</script>
+</body></html>

@@ -1,0 +1,43 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}canvas{display:block;image-rendering:pixelated}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/* 絵柄の試し その5: ドット絵(昔のゲーム)。?f=1 びっくり / 2 泣く / 3 喜ぶ
+ * 180x320 の小さな画面に描いて、6倍に拡大(ぼかさない)。文字もドットにする */
+const W = 1080, H = 1920, S = 6, w = 180, h = 320, F = +(new URLSearchParams(location.search).get('f') || 1);
+const out = document.getElementById('c').getContext('2d'); out.imageSmoothingEnabled = false;
+const lo = document.createElement('canvas'); lo.width = w; lo.height = h; const c = lo.getContext('2d'); c.imageSmoothingEnabled = false;
+const PAL = { K: '#22201E', S: '#F0C8A0', O: '#E8703A', o: '#B8552A', P: '#3B4A6B', W: '#F4F0E6', M: '#B8453A', T: '#C98E58', D: '#8E5F35', B: '#7FB0E0', Y: '#F2C14E' };
+function rand(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+function px(x, y, col, ww = 1, hh = 1) { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), ww, hh); }
+function sprite(rows, x, y, cell = 3) { rows.forEach((row, j) => [...row].forEach((ch, i) => { if (PAL[ch]) px(x + i * cell, y + j * cell, PAL[ch], cell, cell); })); }
+/* ドットの文字: 小さく描いてから、半透明を切り捨てる */
+function ptext(str, x, y, size, col, align = 'left') { const t = document.createElement('canvas'); t.width = w; t.height = size * 2; const g = t.getContext('2d');
+  g.font = `bold ${size}px Menlo, Monaco, monospace`; g.textBaseline = 'top'; g.textAlign = align; g.fillStyle = col; g.fillText(str, align === 'center' ? w / 2 : 0, 1);
+  const img = g.getImageData(0, 0, t.width, t.height); for (let i = 3; i < img.data.length; i += 4) img.data[i] = img.data[i] > 110 ? 255 : 0; g.putImageData(img, 0, 0);
+  c.drawImage(t, align === 'center' ? 0 : x, y); }
+function windowBox(x, y, ww, hh) { px(x, y, PAL.K, ww, hh); px(x + 1, y + 1, PAL.W, ww - 2, hh - 2); px(x + 2, y + 2, PAL.K, ww - 4, hh - 4); }
+const SHOCK = ['...KKKKKK...', '..KKKKKKKK..', '..KSSSSSSK..', 'S.SWKSSWKS.S', 'S.SSSSSSSS.S', 'O.SSSMMSSS.O', 'O..SSMMSS..O', 'OO..SSSS..OO', '.OOOOOOOOOO.', '..OOOOOOoo..', '..OOOOOOoo..', '..OOOOOOoo..',
+  '..OOOOOOoo..', '..PPPPPPPP..', '..PPP..PPP..', '..PPP..PPP..', '..PPP..PPP..', '..PPP..PPP..', '.WWWW..WWWW.'];
+const SAD = ['...KKKKKK...', '..KKKKKKKK..', '..KSSSSSSK..', '..SKKSSKKS..', '..SBSSSSSS..', '...SSKKSS...', '....SSSS....', '..OOOOOOOO..', '.OOPPPPPPOO.', '.OSPPPPPPSO.', '.OOPPPPPPOO.', '..OPPPPPPO..', '..OPP..PPO..', '..OPP..PPO..', '.WWWW..WWWW.'];
+const JOY = ['S............S', 'SO..........OS', '.O..KKKKKK..O.', '.OOKKKKKKKKOO.', '..OKSSSSSSKO..', '...SKSSSSKSS..', '...SSSSSSSSS..', '...SSMMMMSSS..', '....SSSSSS....', '..OOOOOOOOOO..', '...OOOOOOoo...', '...OOOOOOoo...',
+  '...OOOOOOoo...', '...PPPPPPPP...', '..PPP....PPP..', '.PPP......PPP.', 'WWW........WWW'];
+const DOG = ['.........DD.', 'T.......TTTT', '.T.....TTKTT', '..TTTTTTTTTK', '..TTTTTTTTM.', '..TTTTTTTT..', '..T.T..T.T..', '..T.T..T.T..'];
+function hud(n) { px(0, 236, PAL.K, w, 20); ptext(`DAY ${n}/66`, 8, 240, 11, PAL.W); for (let i = 0; i < 2; i++) sprite(['.K.K.', 'KYKYK', 'KYYYK', '.KYK.', '..K..'], 118 + i * 14, 241, 2); }
+
+function draw() {
+  if (F === 1) { px(0, 0, '#F5D58A', w, h); px(0, 200, '#D9B060', w, 120); const r = rand(3); for (let i = 0; i < 40; i++) px(r() * w, 200 + r() * 80, '#C79F50', 2, 1);
+    ptext('POV:', 10, 40, 10, PAL.K); ptext('you skipped', 10, 54, 15, PAL.K); ptext('ONE day.', 10, 72, 18, PAL.O); ptext('(23 days in)', 10, 96, 10, '#7A6A50');
+    sprite(SHOCK, 66, 124, 4); ptext('?', 122, 112, 14, PAL.K); hud(23); }
+  if (F === 2) { px(0, 0, '#2C3550', w, h); px(0, 220, '#232A40', w, 100); const r = rand(7); for (let i = 0; i < 70; i++) px(r() * w, 30 + r() * 190, PAL.B, 1, 4);
+    [[60, 140, 22, 12], [80, 132, 26, 16], [100, 140, 22, 12]].forEach(([x, y, a, b]) => { for (let yy = -b; yy <= b; yy++) { const ww = Math.round(a * Math.sqrt(1 - (yy / b) ** 2)); px(x - ww, y + yy, '#8A93A8', ww * 2, 1); } });
+    ptext('it’s over.', 10, 40, 18, PAL.W); ptext('back to day 1...', 10, 64, 10, '#AAB3C8'); sprite(SAD, 66, 160, 4); hud(23); }
+  if (F === 3) { px(0, 0, '#8FD0E8', w, h); px(0, 230, '#7CC07A', w, 90); for (let yy = -14; yy <= 14; yy++) { const ww = Math.round(14 * Math.sqrt(1 - (yy / 14) ** 2)); px(150 - ww, 40 + yy, PAL.Y, ww * 2, 1); }
+    const r = rand(5), cols = [PAL.O, PAL.Y, PAL.W, PAL.P]; for (let i = 0; i < 30; i++) px(10 + r() * 160, 120 + r() * 110, cols[i % 4], 2, 1);
+    windowBox(6, 30, 168, 52); ptext('KATSU:', 12, 36, 10, PAL.W); ptext('Yesterday was a', 12, 49, 10, PAL.W); ptext('rest day. 1 left.', 12, 62, 10, PAL.W);
+    ptext('still 23.', 10, 92, 18, PAL.K); sprite(JOY, 40, 150, 4); sprite(DOG, 118, 204, 3); hud(23); }
+  out.drawImage(lo, 0, 0, W, H); }
+draw(); document.title = 'done';
+</script></body></html>

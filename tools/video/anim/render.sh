@@ -16,11 +16,23 @@ C="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 [ -f "$DIR/icon.png" ] || cp "$ROOT/app/assets/images/icon.png" "$DIR/icon.png"
 export HTML FRAMES C
-seq 0 $((N - 1)) | xargs -P "$JOBS" -I{} bash -c '
-  i={}; t=$(python3 -c "print(f\"{$i/30:.4f}\")"); P=$(mktemp -d)
-  "$C" --headless=new --disable-gpu --hide-scrollbars --user-data-dir="$P" --allow-file-access-from-files \
-    --force-device-scale-factor=1 --window-size=1080,1920 --virtual-time-budget=1500 \
-    --screenshot="$FRAMES/f$(printf %04d $i).png" "file://$HTML?t=$t" 2>/dev/null; rm -rf "$P"'
+# ⚠ macOS の xargs は -I {} だと命令の長さが足りなくなる。コマ番号は引数 $1 で渡す
+# ⚠ ヘッドレスの Chrome は、まれに起動したまま固まる(2026-11-22、510コマ中2コマで30分止まった。描き直すと普通に描けた)。
+#   1コマ60秒で打ち切って、3回までやり直す(macOS には timeout コマンドが無いので自分で待つ)
+seq 0 $((N - 1)) | xargs -P "$JOBS" -n 1 bash -c '
+  i=$1; t=$(python3 -c "print(f\"{$i/30:.4f}\")"); F="$FRAMES/f$(printf %04d $i).png"
+  for try in 1 2 3; do
+    P=$(mktemp -d)
+    "$C" --headless=new --disable-gpu --hide-scrollbars --user-data-dir="$P" --allow-file-access-from-files \
+      --force-device-scale-factor=1 --window-size=1080,1920 --virtual-time-budget=1500 \
+      --screenshot="$F" "file://$HTML?t=$t" 2>/dev/null & pid=$!
+    for s in $(seq 1 60); do kill -0 $pid 2>/dev/null || break; sleep 1; done
+    kill $pid 2>/dev/null; rm -rf "$P"
+    [ -s "$F" ] && break
+  done
+  [ -s "$F" ] || echo "frame $i failed" >&2' _
+missing=$(for i in $(seq 0 $((N - 1))); do [ -s "$FRAMES/f$(printf %04d $i).png" ] || echo $i; done)
+[ -z "$missing" ] || { echo "描けなかったコマ: $missing(素材は $FRAMES に残す)" >&2; exit 1; }
 mkdir -p "$(dirname "$OUT")"
 ffmpeg -y -v error -framerate 30 -i "$FRAMES/f%04d.png" -f lavfi -i anullsrc=r=44100:cl=stereo \
   -c:v libx264 -preset medium -crf 18 -pix_fmt yuv420p -c:a aac -shortest -movflags +faststart "$OUT"

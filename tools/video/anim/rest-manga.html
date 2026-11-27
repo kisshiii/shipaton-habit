@@ -1,0 +1,95 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/* A/B テスト 5本目: マンガの「1日サボった」(12秒)。?t=秒。部品は style5.html と同じ */
+/* 絵柄の試し その4: マンガ(白黒+オレンジ1色)。?f=1 びっくり / 2 泣く / 3 喜ぶ
+ * 墨の線・スクリーントーン・集中線・吹き出し。感嘆符は使わない */
+const W = 1080, H = 1920, T = +(new URLSearchParams(location.search).get('t') || 0), F = T < 1.5 ? 1 : T < 6.2 ? 2 : 3;
+const ctx = document.getElementById('c').getContext('2d'); const icon = new Image(); icon.src = 'icon.png';
+const INK = '#151413', PAPER = '#F7F4EC', SPOT = '#E8794C', FONT = '"Avenir Next Condensed", "Arial Narrow", sans-serif';
+function rand(seed) { let s = seed % 2147483646 + 1; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+let sn = 1; const R = () => rand((sn++) * 7919);
+function ell(cx, cy, rx, ry, n = 30) { return Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2; return [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]; }); }
+function limbPts(a, b, wa, wb) { const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), nx = -Math.sin(ang), ny = Math.cos(ang), p = [];
+  for (let i = 0; i <= 6; i++) { const t = i / 6; p.push([a[0] + (b[0] - a[0]) * t + nx * (wa + (wb - wa) * t) / 2, a[1] + (b[1] - a[1]) * t + ny * (wa + (wb - wa) * t) / 2]); }
+  for (let i = 0; i <= 6; i++) { const aa = ang + Math.PI / 2 - i / 6 * Math.PI; p.push([b[0] + Math.cos(aa) * wb / 2, b[1] + Math.sin(aa) * wb / 2]); }
+  for (let i = 6; i >= 0; i--) { const t = i / 6; p.push([a[0] + (b[0] - a[0]) * t - nx * (wa + (wb - wa) * t) / 2, a[1] + (b[1] - a[1]) * t - ny * (wa + (wb - wa) * t) / 2]); }
+  for (let i = 0; i <= 6; i++) { const aa = ang - Math.PI / 2 - i / 6 * Math.PI; p.push([a[0] + Math.cos(aa) * wa / 2, a[1] + Math.sin(aa) * wa / 2]); } return p; }
+function path(pts, closed = true) { ctx.beginPath(); const n = pts.length, m = (i) => [(pts[i % n][0] + pts[(i + 1) % n][0]) / 2, (pts[i % n][1] + pts[(i + 1) % n][1]) / 2];
+  if (!closed) { ctx.moveTo(...pts[0]); for (let i = 1; i < n - 1; i++) { const q = m(i); ctx.quadraticCurveTo(pts[i][0], pts[i][1], q[0], q[1]); } ctx.lineTo(...pts[n - 1]); return; }
+  const s = m(0); ctx.moveTo(s[0], s[1]); for (let i = 1; i <= n; i++) { const q = m(i); ctx.quadraticCurveTo(pts[i % n][0], pts[i % n][1], q[0], q[1]); } ctx.closePath(); }
+function shape(pts, fill, w = 6) { path(pts); if (fill) { ctx.fillStyle = fill; ctx.fill(); } ctx.strokeStyle = INK; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.stroke(); }
+function line(pts, w = 6) { path(pts, false); ctx.strokeStyle = INK; ctx.lineWidth = w; ctx.lineCap = 'round'; ctx.stroke(); }
+/* スクリーントーン(網点) */
+function tone(clip, r = 3.2, step = 11, alpha = 1) { ctx.save(); path(clip); ctx.clip(); ctx.fillStyle = INK; ctx.globalAlpha = alpha;
+  for (let y = 0; y < H; y += step) for (let x = (y / step) % 2 ? step / 2 : 0; x < W; x += step) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); } ctx.restore(); }
+function toneRect(x0, y0, x1, y1, rFrom, rTo, step = 11) { ctx.save(); ctx.beginPath(); ctx.rect(x0, y0, x1 - x0, y1 - y0); ctx.clip(); ctx.fillStyle = INK;
+  for (let y = y0; y < y1; y += step) { const r = rFrom + (rTo - rFrom) * (y - y0) / (y1 - y0); for (let x = x0 + ((y / step) % 2 ? step / 2 : 0); x < x1; x += step) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); } } ctx.restore(); }
+
+function person(x, y, s, P, face) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  const legs = () => { [[[-28, 0], P.kneeL, P.footL, -1], [[28, 0], P.kneeR, P.footR, 1]].forEach(([h, k, f, d]) => { const a = limbPts(h, k, 56, 46), b = limbPts(k, f, 46, 38); shape(a, '#fff'); tone(a, 2.6, 9); shape(b, '#fff'); tone(b, 2.6, 9); shape(a, null); shape(b, null); shape(ell(f[0] + 14 * d, f[1] + 10, 40, 19, 20), '#fff', 5); }); };
+  if (!P.legsFront) legs();
+  const hood = [[-72, -224], [0, -240], [72, -224], [92, -140], [76, 8], [-76, 8], [-92, -140]]; shape(hood, SPOT); line([[-40, -60], [0, -52], [42, -62]], 4);
+  if (P.legsFront) legs();
+  [[[-62, -200], P.elbowL, P.handL], [[62, -200], P.elbowR, P.handR]].forEach(([sh, el, hd]) => { shape(limbPts(sh, el, 44, 36), SPOT, 5); shape(limbPts(el, hd, 36, 28), SPOT, 5); shape(ell(hd[0], hd[1], 21, 23, 16), '#fff', 5); });
+  ctx.save(); ctx.translate(0, -330); ctx.rotate(P.tilt || 0); shape(ell(0, 0, 76, 82), '#fff');
+  path([[-82, -4], [-80, -56], [-46, -94], [6, -100], [56, -90], [84, -40], [82, -8], [60, -40], [44, -20], [30, -50], [6, -30], [-20, -52], [-40, -26], [-60, -40]]); ctx.fillStyle = INK; ctx.fill();
+  line([[-50, 26], [-40, 22]], 3); line([[-46, 32], [-36, 28]], 3); line([[38, 22], [48, 26]], 3); line([[34, 28], [44, 32]], 3);   // ほおの斜線
+  if (face === 'shock') { shape(ell(-27, 2, 16, 20, 16), '#fff', 4); shape(ell(27, 2, 16, 20, 16), '#fff', 4); ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(-27, 4, 5, 0, 7); ctx.arc(27, 4, 5, 0, 7); ctx.fill(); shape(ell(0, 48, 12, 17, 14), INK, 3);
+    line([[-46, -28], [-16, -36]], 5); line([[46, -28], [16, -36]], 5); for (let i = 0; i < 4; i++) line([[-60 + i * 6, -60], [-56 + i * 6, -40]], 3); }
+  else if (face === 'sad') { line([[-40, 8], [-27, 16], [-14, 8]], 5); line([[14, 8], [27, 16], [40, 8]], 5); line([[-12, 52], [0, 44], [12, 52]], 5); line([[-42, -16], [-18, -24]], 4); line([[42, -16], [18, -24]], 4);
+    ctx.fillStyle = '#fff'; path(ell(-30, 34, 6, 12, 10)); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 3; ctx.stroke(); for (let i = 0; i < 9; i++) line([[-60 + i * 14, -80], [-60 + i * 14, -30]], 2.5); }
+  else { line([[-40, 6], [-27, -8], [-14, 6]], 5); line([[14, 6], [27, -8], [40, 6]], 5); path([[-26, 34], [0, 38], [26, 34], [14, 62], [0, 68], [-14, 62]]); ctx.fillStyle = INK; ctx.fill(); }
+  ctx.restore(); ctx.restore(); }
+const POSES = {
+  shock: { kneeL: [-34, 150], footL: [-38, 296], kneeR: [34, 150], footR: [38, 296], elbowL: [-112, -150], handL: [-68, -300], elbowR: [112, -150], handR: [68, -300] },
+  sit: { tilt: .12, legsFront: true, kneeL: [-46, -150], footL: [-56, 40], kneeR: [46, -150], footR: [56, 40], elbowL: [-104, -120], handL: [-30, -150], elbowR: [104, -120], handR: [30, -150] },
+  joy: { kneeL: [-74, 120], footL: [-40, 250], kneeR: [64, 96], footR: [140, 190], elbowL: [-130, -300], handL: [-150, -420], elbowR: [130, -300], handR: [150, -420] } };
+function dog(x, y, s) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s); [[-60, -14], [-30, 14], [40, -14], [68, 14]].forEach(([lx, dx]) => shape(limbPts([lx, 10], [lx + dx, 100], 26, 22), '#fff', 5));
+  const b = ell(0, 0, 100, 56); shape(b, '#fff'); tone(ell(0, 20, 96, 34), 2.4, 9); shape(b, null); shape(limbPts([-90, -10], [-140, -80], 22, 12), '#fff', 5);
+  shape(ell(96, -50, 52, 48), '#fff'); shape(ell(70, -72, 18, 36, 14), INK, 4); ctx.fillStyle = INK; ctx.beginPath(); ctx.arc(108, -62, 7, 0, 7); ctx.arc(150, -42, 9, 0, 7); ctx.fill(); ctx.restore(); }
+function panel(x0, y0, x1, y1) { ctx.strokeStyle = INK; ctx.lineWidth = 10; ctx.strokeRect(x0, y0, x1 - x0, y1 - y0); }
+function focusLines(cx, cy, r0, n, seed) { const r = rand(seed); ctx.fillStyle = INK; for (let i = 0; i < n; i++) { const a = r() * Math.PI * 2, w = .004 + r() * .01, r1 = r0 + r() * 120;
+  ctx.beginPath(); ctx.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1); ctx.lineTo(cx + Math.cos(a - w) * 1400, cy + Math.sin(a - w) * 1400); ctx.lineTo(cx + Math.cos(a + w) * 1400, cy + Math.sin(a + w) * 1400); ctx.closePath(); ctx.fill(); } }
+function bubble(x, y, w, h, tail, lines, size) { ctx.save(); path(ell(x + w / 2, y + h / 2, w / 2, h / 2, 40)); ctx.fillStyle = '#fff'; ctx.fill();
+  ctx.beginPath(); ctx.moveTo(x + w * .42, y + h - 10); ctx.lineTo(tail[0], tail[1]); ctx.lineTo(x + w * .58, y + h - 14); ctx.closePath(); ctx.fill(); ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.stroke();
+  path(ell(x + w / 2, y + h / 2, w / 2, h / 2, 40)); ctx.stroke(); ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.moveTo(x + w * .42, y + h - 14); ctx.lineTo(x + w * .58, y + h - 18); ctx.lineTo(x + w * .5, y + h + 4); ctx.fill();
+  ctx.fillStyle = INK; ctx.textAlign = 'center'; ctx.font = `700 ${size}px ${FONT}`; lines.forEach((t, i) => ctx.fillText(t, x + w / 2, y + h / 2 + (i - (lines.length - 1) / 2) * size * 1.1 + size * .35)); ctx.restore(); }
+function box(x, y, w, h, lines, size, bg = '#fff', col = INK) { ctx.fillStyle = bg; ctx.fillRect(x, y, w, h); ctx.strokeStyle = INK; ctx.lineWidth = 6; ctx.strokeRect(x, y, w, h);
+  ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.font = `700 ${size}px ${FONT}`; lines.forEach((t, i) => ctx.fillText(t, x + 28, y + 28 + size * (i + .85) * 1.1)); }
+function sfx(str, x, y, size, rot) { ctx.save(); ctx.translate(x, y); ctx.rotate(rot); ctx.font = `900 italic ${size}px ${FONT}`; ctx.lineJoin = 'round'; ctx.lineWidth = size * .22; ctx.strokeStyle = INK; ctx.strokeText(str, 0, 0); ctx.fillStyle = '#fff'; ctx.fillText(str, 0, 0); ctx.restore(); }
+function counter(n, y) { box(70, y - 70, 520, 100, [`DAY ${n} / 66`], 62, INK, '#fff'); }
+
+
+const seg = (a, b) => Math.max(0, Math.min(1, (T - a) / (b - a)));
+function popAt(t0) { const k = seg(t0, t0 + .3), c1 = 1.70158, c3 = c1 + 1; return { a: Math.min(1, k * 2), sc: .7 + .3 * (1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2)) }; }
+function withPop(t0, x, y, fn) { if (T < t0) return; const p = popAt(t0); ctx.save(); ctx.globalAlpha = p.a; ctx.translate(x, y); ctx.scale(p.sc, p.sc); ctx.translate(-x, -y); fn(); ctx.restore(); }
+const shake = () => T < .6 ? Math.sin(T * 70) * 8 * (1 - T / .6) : 0;
+const bob = (o = 0) => Math.abs(Math.sin((T - 6.2) * 9 + o));
+
+function phone(x, y, buzz) { const sh = buzz ? Math.sin(T * 90) * 5 : 0; ctx.fillStyle = INK; ctx.fillRect(x - 34 + sh, y - 60, 68, 120);
+  if (buzz) { ctx.fillStyle = SPOT; ctx.fillRect(x - 24 + sh, y - 48, 48, 92); line([[x - 56 + sh, y - 30], [x - 70 + sh, y], [x - 56 + sh, y + 30]], 4); line([[x + 56 + sh, y - 30], [x + 70 + sh, y], [x + 56 + sh, y + 30]], 4); } }
+function draw() {
+  sn = 1; ctx.fillStyle = PAPER; ctx.fillRect(0, 0, W, H);
+  ctx.save(); ctx.beginPath(); ctx.rect(60, 230, 960, 1100); ctx.clip(); ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, W, H);
+  if (F === 1) { focusLines(540, 760, 260, 170, 4); person(540 + shake(), 1060, .9, POSES.shock, 'shock'); sfx('GASP', 640, 560, 120, -.12); }
+  if (F === 2) { toneRect(60, 230, 1020, 1410, 1, 4.2); const r = rand(6); for (let i = 0; i < 110; i++) { const x = 60 + r() * 960, y = 230 + (r() * 1100 + T * 900) % 1100; line([[x, y], [x, y + 40 + r() * 80]], 2.5); }
+    ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.ellipse(540, 1260, 260, 50, 0, 0, 7); ctx.fill(); person(540, 1230, 1, POSES.sit, T < 4.2 ? 'sad' : 'shock'); phone(800, 1240, T >= 3.6 && T < 4.8);
+    if (T >= 3.6 && T < 4.2) sfx('BZZT', 690, 1100, 90, -.1); }
+  if (F === 3) { const r = rand(8); ctx.save(); ctx.translate(540, 820); ctx.rotate((T - 6.2) * .3); for (let i = 0; i < 26; i++) { ctx.rotate(Math.PI * 2 / 26); ctx.fillStyle = i % 2 ? INK : '#fff'; ctx.beginPath(); ctx.moveTo(0, -120); ctx.lineTo(-16 - r() * 10, -900); ctx.lineTo(16 + r() * 10, -900); ctx.fill(); } ctx.restore();
+    tone(ell(540, 820, 520, 520, 40), 2, 12, .5); person(470, 1130 - bob() * 36, .85, POSES.joy, 'joy'); dog(800, 1240 - bob(1) * 26, .7);
+    for (let i = 0; i < 9; i++) { const x = 120 + r() * 840, y = 600 + r() * 600, s = .7 + .3 * Math.sin(T * 8 + i); ctx.save(); ctx.translate(x, y); ctx.scale(s, s); ctx.fillStyle = '#fff'; ctx.strokeStyle = INK; ctx.lineWidth = 4; ctx.beginPath(); for (let k = 0; k < 8; k++) { const rr = k % 2 ? 8 : 26, a = k * Math.PI / 4; ctx.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); } ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.restore(); } }
+  ctx.restore(); panel(60, 230, 1020, 1330);
+  if (F === 1) { box(100, 270, 600, 210, ['POV:', 'you skipped ONE day.'], 58); box(110, 500, 330, 76, ['(23 days in)'], 40); }
+  if (F === 2) { if (T < 3.6) { if (T >= 1.55) box(100, 270, 520, T >= 2.4 ? 200 : 120, T >= 2.4 ? ['it’s over.', 'back to day 1…'] : ['it’s over.'], 64, INK, '#fff'); }
+    else if (T < 4.2) withPop(3.62, 300, 380, () => box(100, 270, 400, 160, ['wait.'], 100, INK, '#fff'));
+    else { box(100, 270, 520, 200, ['rest day.', '1 left.'], 76, INK, '#fff'); if (T >= 4.7) box(100, 500, 820, 210, ['KATSU', 'Yesterday was a rest day.', 'You have 1 left in the last 7 days.'], 46); } }
+  if (F === 3) { if (T < 8.6) withPop(6.25, 760, 620, () => bubble(560, 420, 400, 200, [560, 680], ['still 23.'], 72));
+    else { box(100, 270, 700, 260, ['rest days are built in.', '2 in any 7 days'], 58); if (T >= 9.6) box(240, 1350, 600, 100, ['search “KATSU habit”'], 54, INK, '#fff'); } }
+  if (!(F === 3 && T >= 9.6)) counter(23, 1400);
+}
+const go = () => { draw(); document.title = 'done'; }; if (icon.complete) go(); else { icon.onload = go; icon.onerror = go; }
+</script></body></html>
