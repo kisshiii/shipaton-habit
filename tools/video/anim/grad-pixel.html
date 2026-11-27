@@ -1,0 +1,103 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}canvas{display:block;image-rendering:pixelated}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/*
+ * TikTok「POV: my habit app told me to DELETE it.」(ドット絵、14秒)。?t=秒 の1コマを描く。部品は style6.html と同じ。
+ * 卒業したときのアプリの本物の文面を使う(app/src/i18n/en.ts の graduation.titleFree / noteFree、certificate.headline)。
+ * 1コマ目にアプリの名前を出さない(docs/marketing/tiktok.md「守ること」)。
+ * 180x320 の小さな画面に描いて6倍にする。TikTok で隠れる範囲(拡大前): 上33 / 下245より下 / 右155より右(高さ117〜267)
+ */
+const W = 1080, H = 1920, S = 6, w = 180, h = 320, T = +(new URLSearchParams(location.search).get('t') || 0);
+const out = document.getElementById('c').getContext('2d'); out.imageSmoothingEnabled = false;
+const lo = document.createElement('canvas'); lo.width = w; lo.height = h; const c = lo.getContext('2d'); c.imageSmoothingEnabled = false;
+const PAL = { K: '#22201E', S: '#F0C8A0', O: '#E8703A', o: '#B8552A', P: '#3B4A6B', W: '#F4F0E6', M: '#B8453A', T: '#C98E58', D: '#8E5F35', B: '#7FB0E0', Y: '#F2C14E' };
+function rand(seed) { let s = seed; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+function px(x, y, col, ww = 1, hh = 1) { c.fillStyle = col; c.fillRect(Math.round(x), Math.round(y), ww, hh); }
+function sprite(rows, x, y, cell = 3) { rows.forEach((row, j) => [...row].forEach((ch, i) => { if (PAL[ch]) px(x + i * cell, y + j * cell, PAL[ch], cell, cell); })); }
+/* ドットの文字: 小さく描いてから、半透明を切り捨てる */
+function ptext(str, x, y, size, col, align = 'left') { const t = document.createElement('canvas'); t.width = w; t.height = size * 2; const g = t.getContext('2d');
+  g.font = `bold ${size}px Menlo, Monaco, monospace`; g.textBaseline = 'top'; g.textAlign = align; g.fillStyle = col; g.fillText(str, align === 'center' ? w / 2 : 0, 1);
+  const img = g.getImageData(0, 0, t.width, t.height); for (let i = 3; i < img.data.length; i += 4) img.data[i] = img.data[i] > 110 ? 255 : 0; g.putImageData(img, 0, 0);
+  c.drawImage(t, align === 'center' ? 0 : x, y); }
+function windowBox(x, y, ww, hh) { px(x, y, PAL.K, ww, hh); px(x + 1, y + 1, PAL.W, ww - 2, hh - 2); px(x + 2, y + 2, PAL.K, ww - 4, hh - 4); }
+const SHOCK = ['...KKKKKK...', '..KKKKKKKK..', '..KSSSSSSK..', 'S.SWKSSWKS.S', 'S.SSSSSSSS.S', 'O.SSSMMSSS.O', 'O..SSMMSS..O', 'OO..SSSS..OO', '.OOOOOOOOOO.', '..OOOOOOoo..', '..OOOOOOoo..', '..OOOOOOoo..',
+  '..OOOOOOoo..', '..PPPPPPPP..', '..PPP..PPP..', '..PPP..PPP..', '..PPP..PPP..', '..PPP..PPP..', '.WWWW..WWWW.'];
+const SAD = ['...KKKKKK...', '..KKKKKKKK..', '..KSSSSSSK..', '..SKKSSKKS..', '..SBSSSSSS..', '...SSKKSS...', '....SSSS....', '..OOOOOOOO..', '.OOPPPPPPOO.', '.OSPPPPPPSO.', '.OOPPPPPPOO.', '..OPPPPPPO..', '..OPP..PPO..', '..OPP..PPO..', '.WWWW..WWWW.'];
+const JOY = ['S............S', 'SO..........OS', '.O..KKKKKK..O.', '.OOKKKKKKKKOO.', '..OKSSSSSSKO..', '...SKSSSSKSS..', '...SSSSSSSSS..', '...SSMMMMSSS..', '....SSSSSS....', '..OOOOOOOOOO..', '...OOOOOOoo...', '...OOOOOOoo...',
+  '...OOOOOOoo...', '...PPPPPPPP...', '..PPP....PPP..', '.PPP......PPP.', 'WWW........WWW'];
+const DOG = ['.........DD.', 'T.......TTTT', '.T.....TTKTT', '..TTTTTTTTTK', '..TTTTTTTTM.', '..TTTTTTTT..', '..T.T..T.T..', '..T.T..T.T..'];
+const RUN_A = ['...KKKKKK...', '..KKKKKKKK..', '..KSSSSSSK..', '..SKSSSSKS..', '..SSSSSSSS..', '...SSMMSS...', '....SSSS....',
+  '.OOOOOOOOO..', 'S.OOOOOOO.O.', '..OOOOOOO..S', '..OOOOOOO...', '..PPPPPPP...', '.PPP...PPP..', 'PPP.....PPP.', 'WW.......WW.'];
+const RUN_B = ['...KKKKKK...', '..KKKKKKKK..', '..KSSSSSSK..', '..SKSSSSKS..', '..SSSSSSSS..', '...SSMMSS...', '....SSSS....',
+  '..OOOOOOO.S.', '.SOOOOOOO...', '..OOOOOOO...', '..OOOOOOO...', '..PPPPPPP...', '...PPPPP....', '...PP.PP....', '..WWW.WWW...'];
+const PHONE = ['KKKK', 'KOOK', 'KOOK', 'KOOK', 'KKKK'];
+const HEART = ['.Y.Y.', 'YYYYY', 'YYYYY', '.YYY.', '..Y..'], HEART_EMPTY = ['.W.W.', 'W.W.W', 'W...W', '.W.W.', '..W..'];
+const seg = (a, b) => Math.max(0, Math.min(1, (T - a) / (b - a)));
+const on = (t0) => T >= t0;
+function hud(day, lives) { px(0, 236, PAL.K, w, 20); ptext(`DAY ${day}/66`, 8, 240, 11, PAL.W); for (let i = 0; i < 2; i++) sprite(i < lives ? HEART : HEART_EMPTY, 118 + i * 14, 241, 2); }
+function circle(cx, cy, r, col) { for (let yy = -r; yy <= r; yy++) { const ww = Math.round(r * Math.sqrt(1 - (yy / r) ** 2)); px(cx - ww, cy + yy, col, ww * 2, 1); } }
+
+const SC = { hook: [0, 1.8], rewind: [1.8, 2.6], run: [2.6, 8.2], clear: [8.2, 10.2], msg: [10.2, 12.0], end: [12.0, 14.0] };
+const inS = (k) => T >= SC[k][0] && T < SC[k][1];
+/* 走る場面の日付(1 → 66)。23日目に休み、7日後にハートが戻る */
+const dayAt = () => Math.max(1, Math.min(66, Math.round(1 + 65 * seg(SC.run[0] + .1, SC.run[1] - .2))));
+
+function draw() {
+  c.clearRect(0, 0, w, h);
+  if (inS('hook')) {
+    px(0, 0, '#F5D58A', w, h); px(0, 210, '#D9B060', w, 110);
+    ptext('POV:', 10, 36, 10, PAL.K); ptext('my habit app', 10, 50, 15, PAL.K); ptext('told me to', 10, 68, 15, PAL.K); ptext('DELETE it.', 10, 88, 20, PAL.O);
+    const sh = T < .6 ? Math.round(Math.sin(T * 70) * 2) : 0;
+    sprite(SHOCK, 62 + sh, 136, 4); sprite(PHONE, 112, 150, 3); px(110, 148, PAL.Y, 1, 1); px(126, 148, PAL.Y, 1, 1);
+    ptext('?', 120, 118, 14, PAL.K); hud(66, 2);
+  }
+  if (inS('rewind')) {
+    px(0, 0, '#3A4256', w, h); const r = rand(Math.floor(T * 30));
+    for (let i = 0; i < 14; i++) px(0, r() * h, 'rgba(255,255,255,.25)', w, 1 + Math.round(r() * 2));
+    ptext('<< 66 days', 10, 120, 18, PAL.W); ptext('earlier', 10, 142, 18, PAL.W);
+  }
+  if (inS('run')) {
+    const d = dayAt(), k = (d - 1) / 65;
+    // 空は朝焼け → 昼 → 夕方へ
+    const sky = k < .33 ? '#F7B58A' : k < .66 ? '#8FD0E8' : '#F2C38A';
+    px(0, 0, sky, w, h); px(0, 214, '#7CC07A', w, 106);
+    const scroll = Math.floor((T - SC.run[0]) * 60);
+    for (let i = 0; i < 5; i++) { const x = ((i * 50 - scroll) % 250 + 250) % 250 - 30; px(x, 40 + (i % 2) * 14, PAL.W, 22, 5); px(x + 4, 36 + (i % 2) * 14, PAL.W, 14, 4); }
+    for (let i = 0; i < 6; i++) { const x = ((i * 40 - scroll * 2) % 240 + 240) % 240 - 20; px(x + 4, 196, '#6B4A2E', 3, 18); circle(x + 5, 190, 8, '#4E9A55'); }
+    const frame = Math.floor(T * 10) % 2;
+    sprite(frame ? RUN_A : RUN_B, 56, 150, 4);
+    if (d >= 33) sprite(DOG, 112, 196 - (frame ? 2 : 0), 3);
+    ptext(`DAY ${d}`, 10, 34, 26, PAL.K);
+    const rest = d >= 23 && d < 30;
+    if (d >= 23 && d < 27) { windowBox(6, 70, 168, 22); ptext('rest day. 1 left.', 12, 76, 10, PAL.W); }
+    hud(d, rest ? 1 : 2);
+  }
+  if (inS('clear')) {
+    px(0, 0, '#F2C14E', w, h); px(0, 220, '#E0A93A', w, 100);
+    for (let i = 0; i < 12; i++) { const a = i / 12 * Math.PI * 2 + T * .8; for (let r = 40; r < 160; r += 4) px(90 + Math.cos(a) * r, 140 + Math.sin(a) * r, 'rgba(255,255,255,.35)', 2, 2); }
+    const r = rand(5), cols = [PAL.O, PAL.W, PAL.P, PAL.K];
+    for (let i = 0; i < 34; i++) px(10 + r() * 160, 100 + (r() * 130 + (T - SC.clear[0]) * 50) % 130, cols[i % 4], 2, 1);
+    ptext('66 days.', 10, 34, 24, PAL.K); if (on(SC.clear[0] + .35)) ptext('All done.', 10, 62, 24, PAL.K);
+    const bob = Math.round(Math.abs(Math.sin((T - SC.clear[0]) * 9)) * 8);
+    sprite(JOY, 40, 150 - bob, 4); sprite(DOG, 118, 206 - Math.round(Math.abs(Math.sin((T - SC.clear[0]) * 9 + 1)) * 4), 3); hud(66, 2);
+  }
+  if (inS('msg')) {
+    px(0, 0, '#8FD0E8', w, h); px(0, 230, '#7CC07A', w, 90); circle(150, 40, 14, PAL.Y);
+    windowBox(6, 66, 168, 66); const lines = ['KATSU:', 'You can stop here', 'or keep going.', 'Delete it whenever', 'you like.'];
+    const shown = Math.floor(seg(SC.msg[0], SC.msg[0] + 1.0) * 66);   // 1文字ずつ出す(会話窓らしく)
+    let used = 0; lines.forEach((ln, i) => { const n = Math.max(0, Math.min(ln.length, shown - used)); used += ln.length; if (n) ptext(ln.slice(0, n), 12, 72 + i * 12, 10, i ? PAL.W : PAL.Y); });
+    sprite(JOY, 40, 150, 4); sprite(DOG, 118, 206, 3); hud(66, 2);
+  }
+  if (inS('end')) {
+    px(0, 0, '#F5D58A', w, h); px(0, 220, '#D9B060', w, 100);
+    ptext('an app that’s happy', 10, 40, 14, PAL.K); if (on(SC.end[0] + .4)) { ptext('when you stop', 10, 60, 14, PAL.K); ptext('needing it.', 10, 80, 20, PAL.O); }
+    sprite(JOY, 40, 150, 4); sprite(DOG, 118, 206, 3);
+    if (on(SC.end[0] + .9)) { windowBox(16, 234, 148, 24); ptext('search "KATSU habit"', 22, 240, 10, PAL.W); }
+  }
+  out.drawImage(lo, 0, 0, W, H);
+}
+draw(); document.title = 'done';
+</script></body></html>
