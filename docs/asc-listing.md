@@ -525,10 +525,12 @@ REST API なら:
 
 ⚠ 「Challenge」と言っても、競争やランキングにはしない。比べる相手はいない(spec §1)。
 
+**2026-11-27 に審査に出した。**⚠ 審査に出すには**ディープリンクが必須**(無いと 409 で断られる)。`app:///`(アプリの最初の画面。まだ設定していない人には最初の設定)を入れた。アプリの URL の形式は `app.json` の `scheme`(`app`)
+
 ### フィーチャーの推薦(Featuring Nominations)
 
 - **種類:** アプリの機能強化(App Enhancements)
-- **名前:** `KATSU 1.0.3 — Start a habit on January 1`
+- **名前:** `KATSU — Start a habit on January 1`(2026-11-27 に版の番号を外した。前は `KATSU 1.0.3 — …`)
 - **載せてほしい時期:** 2026年12月26日 〜 2027年1月10日
 - **地域・言語:** アプリの配信地域すべて / 英語・日本語
 - **App 内イベント:** 承認されたら「1月1日から、66日」を添付する
@@ -544,17 +546,18 @@ a notification. Finish everything on 66 days (up to two rest days in any
 seven) and you graduate: KATSU gives you a certificate and, if you're
 subscribed, shows you how to cancel.
 
-Version 1.0.3 is built for the new year. Onboarding asks when Day 1
-should be, and in December you can choose January 1. Day 1 gets a short
-celebration and a card to share. Notifications have a Done button, and a
-home and lock screen widget shows the day count and lets you check off
-routines. Nothing is ever called a failure.
+It is built for the new year. Onboarding asks when Day 1 should be, and in
+December you can choose January 1. Notifications have a Done button, and
+the home screen widget shows the day count and lets you check off
+routines; checking one off there also stops that day's reminder, without
+opening the app. Nothing is ever called a failure.
 
 There is no server: what people write never leaves the device. An
 on-device check with Apple's Foundation Models suggests rewriting words
-that attack the person, without blocking or sending anything.
+that attack the person, without blocking or sending anything. The first
+three sets of words are free.
 
-Made by one developer in Japan. English and Japanese.
+English and Japanese.
 ```
 
 **補足(Helpful details):**

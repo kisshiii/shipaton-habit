@@ -185,6 +185,8 @@
 
 ### 審査への出し方
 
+⚠ **同時に審査に出せる提出は、iOS で2つまで**(2026-11-27、`MAX_IN_REVIEW_SUBMISSIONS_PER_PLATFORM_LIMIT_REACHED`)。版の審査と App 内イベントの審査が出ていると、CPP は待つ。
+
 §0-3 の `reviewSubmissionItems.appCustomProductPageVersion` を使う。
 
 ### 上限
