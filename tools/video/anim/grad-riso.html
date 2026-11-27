@@ -1,0 +1,206 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<style>html,body{margin:0;width:1080px;height:1920px;overflow:hidden;background:#000}canvas{display:block}</style>
+</head><body>
+<canvas id="c" width="1080" height="1920"></canvas>
+<script>
+/*
+ * TikTok「POV: my habit app told me to delete it.」(手描き・印刷風、14秒)。?t=秒 の1コマを描く。部品は rest-riso.html / style3.html と同じ。
+ * 卒業したときのアプリの本物の文面を使う(app/src/i18n/en.ts の graduation.titleFree / noteFree、certificate.headline)。
+ * 1コマ目にアプリの名前を出さない(docs/marketing/tiktok.md「守ること」)。
+ */
+const W = 1080, H = 1920;
+const Q = new URLSearchParams(location.search);
+const T = +(Q.get('t') || 0);
+const F = 1;      // 1 びっくり / 2 泣く〜通知 / 3 喜ぶ〜締め
+const BOIL = Math.floor(T * 8) % 4;          // 線を1秒に8回描き直す(手描きアニメの震え)
+const ctx = document.getElementById('c').getContext('2d');
+const icon = new Image(); icon.src = 'icon.png';
+const INK = '#2B2A28', PAPER = '#F3EDE1', ORANGE = '#E8794C', BLUE = '#5677A8', SKIN = '#F1CDAE', TAN = '#D6A06A';
+const SERIF = 'Georgia, "Times New Roman", serif';
+const MIS = [7, 5];   // 刷りのズレ
+let MULT = true;      // 塗りを乗算で重ねるか(濃い地の上では切る)
+
+function rand(seed) { let s = seed % 2147483646 + 1; return () => { s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; }; }
+let seedN = 1; const nextSeed = () => (seedN++) * 7919 + BOIL * 104729;
+function jitter(pts, amp) { const r = rand(nextSeed()); return pts.map(([x, y]) => [x + (r() - .5) * 2 * amp, y + (r() - .5) * 2 * amp]); }
+function smooth(pts, closed) { ctx.beginPath(); const n = pts.length; if (n < 2) return;
+  if (!closed) { ctx.moveTo(pts[0][0], pts[0][1]); for (let i = 1; i < n - 1; i++) { const mx = (pts[i][0] + pts[i + 1][0]) / 2, my = (pts[i][1] + pts[i + 1][1]) / 2; ctx.quadraticCurveTo(pts[i][0], pts[i][1], mx, my); } ctx.lineTo(pts[n - 1][0], pts[n - 1][1]); return; }
+  const m = (i) => [(pts[i % n][0] + pts[(i + 1) % n][0]) / 2, (pts[i % n][1] + pts[(i + 1) % n][1]) / 2];
+  const s = m(0); ctx.moveTo(s[0], s[1]); for (let i = 1; i <= n; i++) { const p = pts[i % n], q = m(i); ctx.quadraticCurveTo(p[0], p[1], q[0], q[1]); } ctx.closePath(); }
+function ell(cx, cy, rx, ry, n = 26) { return Array.from({ length: n }, (_, i) => { const a = i / n * Math.PI * 2; return [cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]; }); }
+function limbPts(a, b, wa, wb) { const ang = Math.atan2(b[1] - a[1], b[0] - a[0]), nx = -Math.sin(ang), ny = Math.cos(ang), pts = [];
+  for (let i = 0; i <= 6; i++) { const t = i / 6; pts.push([a[0] + (b[0] - a[0]) * t + nx * (wa + (wb - wa) * t) / 2, a[1] + (b[1] - a[1]) * t + ny * (wa + (wb - wa) * t) / 2]); }
+  for (let i = 0; i <= 6; i++) { const aa = ang + Math.PI / 2 - i / 6 * Math.PI; pts.push([b[0] + Math.cos(aa) * wb / 2, b[1] + Math.sin(aa) * wb / 2]); }
+  for (let i = 6; i >= 0; i--) { const t = i / 6; pts.push([a[0] + (b[0] - a[0]) * t - nx * (wa + (wb - wa) * t) / 2, a[1] + (b[1] - a[1]) * t - ny * (wa + (wb - wa) * t) / 2]); }
+  for (let i = 0; i <= 6; i++) { const aa = ang - Math.PI / 2 - i / 6 * Math.PI; pts.push([a[0] + Math.cos(aa) * wa / 2, a[1] + Math.sin(aa) * wa / 2]); }
+  return pts; }
+/* 塗り(ずらして乗算)と墨の線 */
+function fill(pts, col, mis = true) { ctx.save(); if (MULT) ctx.globalCompositeOperation = 'multiply'; if (mis) ctx.translate(MIS[0], MIS[1]); ctx.fillStyle = col; smooth(jitter(pts, 1.5), true); ctx.fill(); ctx.restore(); }
+function ink(pts, closed = true, w = 6, amp = 2.2) { ctx.strokeStyle = INK; ctx.lineWidth = w; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; smooth(jitter(pts, amp), closed); ctx.stroke(); }
+function inkFill(pts, col = INK) { ctx.fillStyle = col; smooth(jitter(pts, 2), true); ctx.fill(); }
+/* 網点(pts の内側に、dir 方向へ濃くなる点) */
+function halftone(pts, col, from, to, maxR = 6, step = 15) { ctx.save(); smooth(pts, true); ctx.clip(); ctx.fillStyle = col; ctx.globalCompositeOperation = 'multiply';
+  const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+  for (let y = Math.min(...ys); y < Math.max(...ys); y += step) for (let x = Math.min(...xs) + ((y / step) % 2 ? step / 2 : 0); x < Math.max(...xs); x += step) {
+    const t = Math.max(0, Math.min(1, ((x - from[0]) * (to[0] - from[0]) + (y - from[1]) * (to[1] - from[1])) / ((to[0] - from[0]) ** 2 + (to[1] - from[1]) ** 2)));
+    const r = maxR * t; if (r > .6) { ctx.beginPath(); ctx.arc(x, y, r, 0, 7); ctx.fill(); } }
+  ctx.restore(); }
+
+function person(x, y, s, P, face, shirt = ORANGE) {
+  ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  // 影(網点)
+  halftone(ell(0, P.ground, 170, 26), INK, [0, P.ground - 40], [0, P.ground + 60], 4.5, 12);
+  const legs = () => { [[[-28, 0], P.kneeL, P.footL, -1], [[28, 0], P.kneeR, P.footR, 1]].forEach(([h, k, f, d]) => {
+    const pts = [...limbPts(h, k, 58, 46)]; inkFill(pts, '#3A3936'); inkFill(limbPts(k, f, 46, 38), '#3A3936');
+    const sh = ell(f[0] + 14 * d, f[1] + 10, 42, 20); fill(sh, PAPER, false); ink(sh, true, 5); }); };
+  if (!P.legsFront) legs();
+  // パーカー
+  const hood = [[-72, -224], [-36, -240], [0, -236], [36, -240], [72, -224], [90, -150], [84, -60], [74, 8], [0, 18], [-74, 8], [-84, -60], [-90, -150]];
+  fill(hood, shirt); halftone(hood, INK, [10, -100], [100, -100], 4, 14); ink(hood, true, 6);
+  ink([[-40, -60], [0, -52], [42, -62]], false, 4); ink([[-14, -226], [-16, -176]], false, 3.5); ink([[14, -226], [16, -176]], false, 3.5);
+  if (P.legsFront) legs();
+  // 腕
+  [[[-62, -200], P.elbowL, P.handL], [[62, -200], P.elbowR, P.handR]].forEach(([sh, el, hd]) => {
+    const up = limbPts(sh, el, 44, 36), lo = limbPts(el, hd, 36, 28); fill(up, shirt); fill(lo, shirt); ink(up, true, 5); ink(lo, true, 5);
+    const h = ell(hd[0], hd[1], 21, 23, 16); fill(h, SKIN, false); ink(h, true, 4.5); });
+  // 頭
+  ctx.save(); ctx.translate(0, -330); ctx.rotate(P.tilt || 0);
+  const head = ell(0, 0, 76, 82); fill(head, SKIN); ink(head, true, 6);
+  inkFill([[-82, -4], [-80, -56], [-46, -92], [6, -98], [56, -88], [84, -40], [82, -8], [56, -46], [22, -50], [-4, -30], [-30, -48], [-60, -38]]);
+  ctx.save(); ctx.globalCompositeOperation = 'multiply'; ctx.fillStyle = 'rgba(232,121,76,.5)'; [[-46, 30], [46, 30]].forEach(([cx, cy]) => { smooth(jitter(ell(cx, cy, 15, 10, 12), 1), true); ctx.fill(); }); ctx.restore();
+  if (face === 'shock') { [[-27, 2], [27, 2]].forEach(([ex, ey]) => { const e = ell(ex, ey, 15, 19, 14); fill(e, '#fff', false); ink(e, true, 4); inkFill(ell(ex, ey + 4, 7, 8, 10)); });
+    inkFill(ell(0, 48, 13, 17, 14)); ink([[-44, -26], [-18, -32]], false, 5); ink([[44, -26], [18, -32]], false, 5); }
+  else if (face === 'sad') { ink([[-40, 8], [-27, 17], [-14, 8]], false, 5.5); ink([[14, 8], [27, 17], [40, 8]], false, 5.5); ink([[-13, 52], [0, 44], [13, 52]], false, 5);
+    ink([[-42, -18], [-18, -24]], false, 4.5); ink([[42, -18], [18, -24]], false, 4.5); fill(ell(-30, 34, 6, 10, 10), BLUE, false); }
+  else { ink([[-40, 6], [-27, -8], [-14, 6]], false, 5.5); ink([[14, 6], [27, -8], [40, 6]], false, 5.5); inkFill([[-26, 34], [0, 40], [26, 34], [14, 62], [0, 68], [-14, 62]]); }
+  ctx.restore(); ctx.restore();
+}
+const POSES = {
+  shock: { ground: 312, kneeL: [-34, 150], footL: [-38, 296], kneeR: [34, 150], footR: [38, 296], elbowL: [-112, -150], handL: [-68, -300], elbowR: [112, -150], handR: [68, -300] },
+  sit: { ground: 60, tilt: .12, legsFront: true, kneeL: [-46, -150], footL: [-56, 40], kneeR: [46, -150], footR: [56, 40], elbowL: [-104, -120], handL: [-30, -150], elbowR: [104, -120], handR: [30, -150] },
+  joy: { ground: 430, kneeL: [-74, 120], footL: [-40, 250], kneeR: [64, 96], footR: [140, 190], elbowL: [-130, -300], handL: [-150, -420], elbowR: [130, -300], handR: [150, -420] },
+};
+function dog(x, y, s) { ctx.save(); ctx.translate(x, y); ctx.scale(s, s);
+  halftone(ell(0, 120, 140, 20), INK, [0, 90], [0, 150], 4, 12);
+  [[-60, -14], [-30, 14], [40, -14], [68, 14]].forEach(([lx, dx]) => { const l = limbPts([lx, 10], [lx + dx, 100], 26, 22); fill(l, TAN); ink(l, true, 4.5); });
+  const body = ell(0, 0, 100, 56); fill(body, TAN); halftone(body, INK, [0, -20], [0, 60], 4, 13); ink(body, true, 5.5);
+  const tail = limbPts([-90, -10], [-140, -80], 22, 12); fill(tail, TAN); ink(tail, true, 4.5);
+  const head = ell(96, -50, 52, 48); fill(head, TAN); ink(head, true, 5.5);
+  const ear = ell(70, -72, 18, 36, 14); inkFill(ear, '#8E6136'); ink(ear, true, 4);
+  const snout = ell(134, -34, 26, 20, 14); fill(snout, PAPER, false); ink(snout, true, 4);
+  inkFill(ell(108, -62, 7, 7, 10)); inkFill(ell(152, -40, 9, 8, 10)); fill(ell(140, -12, 10, 15, 12), ORANGE, false); ctx.restore(); }
+
+function text(str, x, y, size, col, style = 'bold') { ctx.font = `${style} ${size}px ${SERIF}`; ctx.fillStyle = col; ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic'; ctx.fillText(str, x, y); return ctx.measureText(str).width; }
+function underline(x, y, w, col) { ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 9; ctx.lineCap = 'round'; const r = rand(nextSeed());
+  ctx.beginPath(); ctx.moveTo(x - 6, y + 4); for (let i = 1; i <= 8; i++) ctx.lineTo(x + w * i / 8, y + (r() - .5) * 8 + (i === 8 ? -6 : 0)); ctx.stroke();
+  ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(x + 10, y + 18); for (let i = 1; i <= 6; i++) ctx.lineTo(x + w * .85 * i / 6, y + 16 + (r() - .5) * 6); ctx.stroke(); ctx.restore(); }
+function counter(n, y, col, sub) { const w = text(`${n}`, 140, y, 120, col); text(' of 66 days', 140 + w, y, 44, sub, 'italic');
+  ink([[140, y + 40], [850, y + 40]], false, 3, 1.2); ctx.save(); ctx.strokeStyle = col; ctx.lineWidth = 12; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(140, y + 40); ctx.lineTo(140 + 710 * n / 66, y + 40); ctx.stroke(); ctx.restore(); }
+function notif(y) { const box = []; const x0 = 96, x1 = 884, y0 = y, y1 = y + 192, r = 40;
+  for (let i = 0; i <= 8; i++) box.push([x0 + r + (x1 - x0 - 2 * r) * i / 8, y0]); for (let i = 0; i <= 3; i++) box.push([x1, y0 + r + (y1 - y0 - 2 * r) * i / 3]);
+  for (let i = 0; i <= 8; i++) box.push([x1 - r - (x1 - x0 - 2 * r) * i / 8, y1]); for (let i = 0; i <= 3; i++) box.push([x0, y1 - r - (y1 - y0 - 2 * r) * i / 3]);
+  fill(box, '#FFFFFF', false); fill(box.map(([px, py]) => [px + 8, py + 8]), 'rgba(43,42,40,.12)', false); fill(box, '#FFFFFF', false); ink(box, true, 5, 1.6);
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.roundRect(126, y + 44, 104, 104, 24); ctx.fill(); if (icon.complete && icon.naturalWidth) ctx.drawImage(icon, 134, y + 52, 88, 88);
+  ctx.font = `700 34px -apple-system, sans-serif`; ctx.fillStyle = INK; ctx.fillText('KATSU', 256, y + 78); ctx.font = `500 32px -apple-system, sans-serif`;
+  ctx.fillText('Yesterday was a rest day. You have', 256, y + 124); ctx.fillText('1 left in the last 7 days.', 256, y + 164); }
+
+function paper(col) { ctx.fillStyle = col; ctx.fillRect(0, 0, W, H); }
+function grain(alpha) { const img = ctx.getImageData(0, 0, W, H), d = img.data, r = rand(31 + F + BOIL);
+  for (let i = 0; i < d.length; i += 4) { const n = (r() - .5) * 255 * alpha; d[i] += n; d[i + 1] += n; d[i + 2] += n; } ctx.putImageData(img, 0, 0);
+  const rr = rand(77); ctx.strokeStyle = 'rgba(43,42,40,.05)'; ctx.lineWidth = 1; for (let i = 0; i < 120; i++) { const x = rr() * W, y = rr() * H, l = 10 + rr() * 30, a = rr() * 6; ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + Math.cos(a) * l, y + Math.sin(a) * l); ctx.stroke(); } }
+
+
+const seg = (a, b) => Math.max(0, Math.min(1, (T - a) / (b - a)));
+function popAt(t0) { const k = seg(t0, t0 + .3), c1 = 1.70158, c3 = c1 + 1; return { a: Math.min(1, k * 2), sc: .7 + .3 * (1 + c3 * Math.pow(k - 1, 3) + c1 * Math.pow(k - 1, 2)) }; }
+function withPop(t0, x, y, fn) { if (T < t0) return; const p = popAt(t0); ctx.save(); ctx.globalAlpha = p.a; ctx.translate(x, y); ctx.scale(p.sc, p.sc); ctx.translate(-x, -y); fn(); ctx.restore(); }
+function rect(x0, y0, x1, y1) { const p = []; for (let i = 0; i <= 6; i++) p.push([x0 + (x1 - x0) * i / 6, y0]); for (let i = 1; i <= 2; i++) p.push([x1, y0 + (y1 - y0) * i / 3]);
+  for (let i = 0; i <= 6; i++) p.push([x1 - (x1 - x0) * i / 6, y1]); for (let i = 1; i <= 2; i++) p.push([x0, y1 - (y1 - y0) * i / 3]); return p; }
+function phone(x, y, buzz) { const sh = buzz ? Math.sin(T * 90) * 5 : 0; ctx.save(); ctx.translate(x + sh, y);
+  const body = rect(-34, -60, 34, 60); fill(body, INK, false); ink(body, true, 5, 1);
+  if (buzz) { fill(rect(-24, -48, 24, 44), ORANGE, false); for (let i = 0; i < 2; i++) { ink([[50 + i * 16, -28], [58 + i * 16, 0], [50 + i * 16, 28]], false, 4, 1); ink([[-50 - i * 16, -28], [-58 - i * 16, 0], [-50 - i * 16, 28]], false, 4, 1); } }
+  ctx.restore(); }
+function pill(str, y) { ctx.font = `bold 54px ${SERIF}`; const w = ctx.measureText(str).width + 90, x0 = 495 - w / 2; const b = rect(x0, y - 62, x0 + w, y + 50);
+  fill(b, INK, false); ink(b, true, 5, 1.5); text(str, x0 + 45, y + 8, 54, PAPER); }
+
+
+const SC = { hook: [0, 1.8], rewind: [1.8, 2.6], run: [2.6, 8.2], clear: [8.2, 10.2], msg: [10.2, 12.0], end: [12.0, 14.0] };
+const inS = (k) => T >= SC[k][0] && T < SC[k][1];
+const dayAt = () => Math.max(1, Math.min(66, Math.round(1 + 65 * seg(SC.run[0] + .1, SC.run[1] - .2))));
+/* 走る姿勢(2コマを交互に) */
+POSES.runA = { ground: 312, kneeL: [44, 130], footL: [20, 280], kneeR: [-34, 140], footR: [-118, 226], elbowL: [-110, -130], handL: [-70, -70], elbowR: [104, -170], handR: [140, -250] };
+POSES.runB = { ground: 312, kneeL: [-34, 140], footL: [-118, 226], kneeR: [44, 130], footR: [20, 280], elbowL: [-104, -170], handL: [-140, -250], elbowR: [110, -130], handR: [70, -70] };
+/* アプリの言葉のカード(notif と同じ描き方で、文面だけ変える) */
+function card(y, lines) {
+  const x0 = 96, x1 = 884, y1 = y + 110 + lines.length * 50, r = 40, box = [];
+  for (let i = 0; i <= 8; i++) box.push([x0 + r + (x1 - x0 - 2 * r) * i / 8, y]); for (let i = 0; i <= 3; i++) box.push([x1, y + r + (y1 - y - 2 * r) * i / 3]);
+  for (let i = 0; i <= 8; i++) box.push([x1 - r - (x1 - x0 - 2 * r) * i / 8, y1]); for (let i = 0; i <= 3; i++) box.push([x0, y1 - r - (y1 - y - 2 * r) * i / 3]);
+  MULT = false; fill(box.map(([px2, py]) => [px2 + 8, py + 8]), 'rgba(43,42,40,.12)', false); fill(box, '#FFFFFF', false); ink(box, true, 5, 1.6); MULT = true;
+  ctx.fillStyle = INK; ctx.beginPath(); ctx.roundRect(126, y + 40, 104, 104, 24); ctx.fill(); if (icon.complete && icon.naturalWidth) ctx.drawImage(icon, 134, y + 48, 88, 88);
+  ctx.font = `700 34px -apple-system, sans-serif`; ctx.fillStyle = INK; ctx.fillText('KATSU', 256, y + 78);
+  ctx.font = `500 34px -apple-system, sans-serif`; lines.forEach((ln, i) => ctx.fillText(ln, 256, y + 130 + i * 50));
+}
+function trees(scroll) { for (let i = 0; i < 6; i++) { const x = ((i * 230 - scroll) % 1380 + 1380) % 1380 - 150;
+  ink([[x, 1300], [x + 4, 1180]], false, 7, 1.5); const c2 = ell(x + 2, 1140, 62, 58, 18); fill(c2, '#9BAE93', false); ink(c2, true, 5); } }
+
+function draw() {
+  seedN = 1; paper(PAPER);
+  if (inS('hook')) {
+    ink([[40, 1300], [300, 1296], [620, 1302], [1040, 1297]], false, 4, 2);
+    const sh = T < .6 ? Math.sin(T * 70) * 8 * (1 - T / .6) : 0;
+    person(520 + sh, 1000, .9, POSES.shock, 'shock');
+    phone(700, 760, true);
+    text('POV:', 140, 300, 44, INK, 'italic'); text('my habit app', 140, 400, 96, INK); text('told me to', 140, 500, 96, INK);
+    const w = text('delete it.', 140, 610, 110, INK); underline(140, 640, w, ORANGE);
+    text('(day 66)', 140, 720, 44, '#6E6960', 'italic');
+  }
+  if (inS('rewind')) {
+    ctx.fillStyle = BLUE; ctx.fillRect(0, 0, W, H);
+    const r = rand(Math.floor(T * 24)); for (let i = 0; i < 18; i++) { const y = r() * H; ink([[0, y], [W, y + (r() - .5) * 10]], false, 2 + r() * 4, 2); }
+    text('<<', 140, 820, 140, PAPER); text('66 days', 140, 960, 120, PAPER); text('earlier…', 140, 1080, 96, PAPER, 'italic');
+  }
+  if (inS('run')) {
+    const d = dayAt(), rt = T - SC.run[0];
+    const sun = ell(830, 300 + Math.sin(rt * .5) * 20, 110, 110, 26); fill(sun, ORANGE, false); halftone(sun, INK, [760, 230], [900, 370], 3.5, 13); ink(sun, true, 5);
+    trees(rt * 520);
+    ink([[0, 1300], [360, 1296], [720, 1302], [1080, 1298]], false, 4, 2);
+    for (let i = 0; i < 9; i++) { const x = ((i * 140 - rt * 900) % 1260 + 1260) % 1260 - 90; ink([[x, 1330], [x + 50, 1330]], false, 4, 1); }
+    const frame = Math.floor(T * 9) % 2;
+    person(430, 1000 - (frame ? 14 : 0), .85, frame ? POSES.runA : POSES.runB, 'joy');
+    if (d >= 33) dog(790, 1190 - (frame ? 10 : 0), .75);
+    text('day', 140, 330, 56, '#6E6960', 'italic'); text(String(d), 250, 340, 150, INK);
+    if (d >= 23 && d < 27) { const w = text('rest day. 1 left.', 140, 470, 64, INK, 'italic'); underline(140, 494, w, ORANGE); }
+    counter(d, 1420, INK, '#6E6960');
+  }
+  if (inS('clear')) {
+    const ct = T - SC.clear[0];
+    const sun = ell(540, 760, 260, 260, 40); fill(sun, ORANGE, false); halftone(sun, INK, [400, 600], [700, 920], 4, 14); ink(sun, true, 6);
+    const r = rand(9); for (let i = 0; i < 30; i++) { const x = 100 + r() * 860 + Math.sin(T * 3 + i) * 20, y = 560 + (r() * 700 + ct * 260) % 720, a = r() * 6 + T * 2, c2 = i % 3 === 0 ? BLUE : i % 3 === 1 ? ORANGE : PAPER;
+      const pts = [[-14, -6], [14, -6], [14, 6], [-14, 6]].map(([px2, py]) => [x + px2 * Math.cos(a) - py * Math.sin(a), y + px2 * Math.sin(a) + py * Math.cos(a)]); fill(pts, c2, false); ink(pts, true, 3, .8); }
+    ink([[40, 1300], [300, 1296], [620, 1302], [1040, 1297]], false, 4, 2);
+    person(450, 1070 - Math.abs(Math.sin(ct * 9)) * 36, .85, POSES.joy, 'joy'); dog(790, 1180 - Math.abs(Math.sin(ct * 9 + 1)) * 30, .75);
+    withPop(SC.clear[0] + .05, 140, 360, () => text('66 days.', 140, 360, 130, INK));
+    withPop(SC.clear[0] + .4, 140, 490, () => { const w = text('All done.', 140, 490, 130, INK); underline(140, 520, w, ORANGE); });
+    counter(66, 1420, INK, '#6E6960');
+  }
+  if (inS('msg')) {
+    ink([[40, 1300], [300, 1296], [620, 1302], [1040, 1297]], false, 4, 2);
+    person(450, 1070, .85, POSES.joy, 'joy'); dog(790, 1180, .75);
+    const k = seg(SC.msg[0], SC.msg[0] + .3); ctx.save(); ctx.globalAlpha = k; ctx.translate(0, (1 - k) * -60);
+    card(330, ['You can stop here or keep going.', 'Delete it whenever you like.']); ctx.restore();
+    counter(66, 1420, INK, '#6E6960');
+  }
+  if (inS('end')) {
+    ink([[40, 1300], [300, 1296], [620, 1302], [1040, 1297]], false, 4, 2);
+    person(450, 1070 - Math.abs(Math.sin((T - SC.end[0]) * 4)) * 14, .85, POSES.joy, 'joy'); dog(790, 1180, .75);
+    withPop(SC.end[0] + .05, 140, 360, () => text('an app that’s happy', 140, 360, 80, INK));
+    withPop(SC.end[0] + .4, 140, 470, () => text('when you stop', 140, 470, 80, INK));
+    withPop(SC.end[0] + .7, 140, 590, () => { const w = text('needing it.', 140, 590, 110, INK); underline(140, 620, w, ORANGE); });
+    withPop(SC.end[0] + 1.1, 495, 1420, () => pill('search “KATSU habit”', 1420));
+  }
+  grain(.06);
+}
+const go = () => { draw(); document.title = 'done'; };
+if (icon.complete) go(); else { icon.onload = go; icon.onerror = go; }
+</script>
+</body></html>
